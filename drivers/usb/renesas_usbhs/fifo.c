@@ -658,6 +658,16 @@ static int usbhsf_pio_try_pop(struct usbhs_pkt *pkt, int *is_done)
 
 	rcv_len = usbhsf_fifo_rcv_len(priv, fifo);
 
+	/*
+	 * Fifo buffer is becoming invalid after not completed data reading.
+	 * In such case fifo neither full nor empty.
+	 * It leads to problem, when ready interrupt was not occur.
+	 * This checking prevent to block fifo when not all data is received.
+	 * Now if a transfer is partially read, the rest of the transfer will be deleted.
+	 */
+	if (rcv_len > pkt->length)
+		pkt->length = rcv_len;
+
 	buf		= pkt->buf    + pkt->actual;
 	len		= pkt->length - pkt->actual;
 	len		= min(len, rcv_len);
