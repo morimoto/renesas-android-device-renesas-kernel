@@ -1423,8 +1423,10 @@ static void android_work(struct work_struct *data)
 	if (gi->connected != gi->sw_connected) {
 		if (gi->connected)
 			status[0] = true;
-		else
+		else {
 			status[2] = true;
+			status[1] = false;
+		}
 		gi->sw_connected = gi->connected;
 	}
 	spin_unlock_irqrestore(&cdev->lock, flags);
