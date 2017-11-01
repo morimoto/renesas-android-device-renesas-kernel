@@ -22,17 +22,16 @@
 
 #include "pcm3168a.h"
 
-#define PCM3168A_FORMATS (/*SNDRV_PCM_FMTBIT_S16_LE | */\
-			 SNDRV_PCM_FMTBIT_S24_3LE | \
-			 SNDRV_PCM_FMTBIT_S24_LE | \
-			 SNDRV_PCM_FMTBIT_S32_LE)
+#define PCM3168A_FORMATS (SNDRV_PCM_FMTBIT_S16_LE | \
+						  SNDRV_PCM_FMTBIT_S24_3LE | \
+						  SNDRV_PCM_FMTBIT_S24_LE)
 
-#define PCM3168A_FMT_I2S		0x0
-#define PCM3168A_FMT_LEFT_J		0x1
+#define PCM3168A_FMT_I2S			0x0
+#define PCM3168A_FMT_LEFT_J			0x1
 #define PCM3168A_FMT_RIGHT_J		0x2
 #define PCM3168A_FMT_RIGHT_J_16		0x3
-#define PCM3168A_FMT_DSP_A		0x4
-#define PCM3168A_FMT_DSP_B		0x5
+#define PCM3168A_FMT_DSP_A			0x4
+#define PCM3168A_FMT_DSP_B			0x5
 #define PCM3168A_FMT_I2S_TDM		0x6
 #define PCM3168A_FMT_LEFT_J_TDM		0x7
 /* High speed */
@@ -51,7 +50,7 @@ static const char *const pcm3168a_supply_names[PCM3168A_NUM_SUPPLIES] = {
 
 #define TDM_MODE_NONE	0
 #define TDM_MODE_NORM	1
-#define TDM_MODE_HS	2
+#define TDM_MODE_HS		2
 
 struct pcm3168a_priv {
 	struct regulator_bulk_data supplies[PCM3168A_NUM_SUPPLIES];
@@ -554,7 +553,7 @@ static int pcm3168a_set_tdm_slot(struct snd_soc_dai *dai,
 	if ((slots != 8) && (slots != 4))
 		return -EINVAL;
 
-	if ((slot_width != 32) && (slot_width != 24))
+	if ((slot_width != 16) && (slot_width != 24))
 		return -EINVAL;
 
 	pcm3168a->slots = slots;
@@ -755,8 +754,8 @@ int pcm3168a_probe(struct device *dev, struct regmap *regmap)
 	pm_runtime_idle(dev);
 
 	if (pcm3168a->tdm != TDM_MODE_NONE) {
-		pcm3168a_dai.playback.channels_min = 8;
-		pcm3168a_dai.capture.channels_min = 8;
+		pcm3168a_dai.playback.channels_min = 4;
+		pcm3168a_dai.capture.channels_min = 4;
 	}
 
 	ret = snd_soc_register_codec(dev, &pcm3168a_driver,
