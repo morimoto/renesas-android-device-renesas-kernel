@@ -1,0 +1,7 @@
+
+config I2C_SI4689
+	tristate "Silicon Labs Si4689 AM/FM/DAB Radio Receiver support with I2C"
+	depends on I2C && RADIO_SI4689
+	---help---
+	  This is a driver for I2C devices with the Silicon Labs SI4689
+	  chip.
