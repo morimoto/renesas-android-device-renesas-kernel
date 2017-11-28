@@ -2064,8 +2064,8 @@ static int rcar_vin_get_formats(struct soc_camera_device *icd, unsigned int idx,
 	const struct soc_mbus_pixelfmt *fmt;
 
 	ret = v4l2_subdev_call(sd, pad, enum_mbus_code, NULL, &code);
-	if (ret < 0)
-		return 0;
+	if (ret < 0 && ret != -ENOIOCTLCMD)
+		return ret;
 
 	fmt = soc_mbus_get_fmtdesc(code.code);
 	if (!fmt) {
@@ -2087,7 +2087,7 @@ static int rcar_vin_get_formats(struct soc_camera_device *icd, unsigned int idx,
 		int shift;
 
 		ret = v4l2_subdev_call(sd, pad, get_fmt, NULL, &fmt);
-		if (ret < 0)
+		if (ret < 0 && ret != -ENOIOCTLCMD)
 			return ret;
 
 		/* Cache current client geometry */
