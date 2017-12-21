@@ -48,6 +48,10 @@
 		/* Initial value of versaclock out4 */
 		clock-frequency = <33000000>;
 	};
+
+	vspm_if {
+		compatible = "renesas,vspm_if";
+	};
 };
 
 &du {
