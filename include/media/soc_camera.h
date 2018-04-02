@@ -119,6 +119,7 @@ struct soc_camera_host_ops {
 	int (*enum_framesizes)(struct soc_camera_device *, struct v4l2_frmsizeenum *);
 	int (*enum_frameintervals)(struct soc_camera_device *, struct v4l2_frmivalenum *);
 	unsigned int (*poll)(struct file *, poll_table *);
+	int (*get_edid)(struct soc_camera_device *, struct v4l2_edid *);
 };
 
 #define SOCAM_SENSOR_INVERT_PCLK	(1 << 0)
