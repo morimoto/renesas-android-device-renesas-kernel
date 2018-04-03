@@ -9,6 +9,8 @@
  *
  * Copyright (C) 2016, Synopsys, Inc.
  *
+ * Copyright (C) 2018 GlobalLogic
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
  * published by the Free Software Foundation version 2.
@@ -364,6 +366,9 @@ static int ov5647_sensor_power(struct v4l2_subdev *sd, int on)
 
 		if (ret < 0)
 			dev_dbg(&client->dev, "disable oe failed\n");
+
+		/* Power down PHY LP RX, Power down PHY HS TX */
+		ov5647_write(sd, 0x3018, 0x44 | 0x18);
 
 		ret = set_sw_standby(sd, true);
 
