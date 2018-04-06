@@ -54,6 +54,7 @@ static const char *pup_states_names[] = {
 };
 
 static const struct v4l2_frequency_band bands[] = {
+    /*Region::ITU_1*/
     {
         .type = V4L2_TUNER_RADIO,
         .index = 0,
@@ -62,16 +63,38 @@ static const struct v4l2_frequency_band bands[] = {
                 V4L2_TUNER_CAP_FREQ_BANDS |
                 V4L2_TUNER_CAP_HWSEEK_BOUNDED |
                 V4L2_TUNER_CAP_HWSEEK_WRAP,
-        .rangelow   = FM_FREQ_RANGE_LOW,
-        .rangehigh  = FM_FREQ_RANGE_HIGH,
+        .rangelow   = FM_FREQ_ITU_1_RANGE_LOW,
+        .rangehigh  = FM_FREQ_ITU_1_RANGE_HIGH,
         .modulation = V4L2_BAND_MODULATION_FM,
     },
     {
         .type = V4L2_TUNER_RADIO,
         .index = 1,
         .capability = V4L2_TUNER_CAP_LOW | V4L2_TUNER_CAP_FREQ_BANDS,
-        .rangelow   = AM_FREQ_RANGE_LOW,
-        .rangehigh  = AM_FREQ_RANGE_HIGH,
+        .rangelow   = AM_FREQ_ITU_1_RANGE_LOW,
+        .rangehigh  = AM_FREQ_ITU_1_RANGE_HIGH,
+        .modulation = V4L2_BAND_MODULATION_AM,
+    },
+
+    /*Region::JAPAN*/
+    {
+        .type = V4L2_TUNER_RADIO,
+        .index = 2,
+        .capability = V4L2_TUNER_CAP_LOW | V4L2_TUNER_CAP_STEREO |
+                V4L2_TUNER_CAP_RDS | V4L2_TUNER_CAP_RDS_BLOCK_IO |
+                V4L2_TUNER_CAP_FREQ_BANDS |
+                V4L2_TUNER_CAP_HWSEEK_BOUNDED |
+                V4L2_TUNER_CAP_HWSEEK_WRAP,
+        .rangelow   = FM_FREQ_JAPAN_RANGE_LOW,
+        .rangehigh  = FM_FREQ_JAPAN_RANGE_HIGH,
+        .modulation = V4L2_BAND_MODULATION_FM,
+    },
+    {
+        .type = V4L2_TUNER_RADIO,
+        .index = 3,
+        .capability = V4L2_TUNER_CAP_LOW | V4L2_TUNER_CAP_FREQ_BANDS,
+        .rangelow   = AM_FREQ_JAPAN_RANGE_LOW,
+        .rangehigh  = AM_FREQ_JAPAN_RANGE_HIGH,
         .modulation = V4L2_BAND_MODULATION_AM,
     },
 };
@@ -1191,7 +1214,7 @@ static int si46xx_init_fm(struct si4689_device *rdev)
     si46xx_set_property(rdev, SI46XX_PIN_CONFIG_ENABLE, 0x0003);
     si46xx_set_property(rdev, SI46XX_FM_SOFTMUTE_SNR_LIMITS, 0x0000); // set the SNR limits for soft mute attenuation
     si46xx_set_property(rdev, SI46XX_FM_TUNE_FE_CFG, 0x0000); // front end switch open
-    si46xx_set_property(rdev, SI46XX_FM_SEEK_BAND_BOTTOM, 88000 / 10);
+    si46xx_set_property(rdev, SI46XX_FM_SEEK_BAND_BOTTOM, 76000 / 10);
     si46xx_set_property(rdev, SI46XX_FM_SEEK_BAND_TOP, 108000 / 10);
 
     //si46xx_set_property(rdev, SI46XX_DIGITAL_IO_OUTPUT_SAMPLE_RATE, 48000);
