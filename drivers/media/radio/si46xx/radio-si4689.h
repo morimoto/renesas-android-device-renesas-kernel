@@ -137,8 +137,12 @@ struct si4689_device {
 #define SI46XX_AUDIO_DE_EMPHASIS_OFF                        0x02
 
 /* The supported radio frequency ranges in kHz */
-#define FM_FREQ_RANGE_LOW                                   (87500U * 16U)
-#define FM_FREQ_RANGE_HIGH                                  (108000U * 16U)
-#define AM_FREQ_RANGE_LOW                                   (520U * 16U)
-#define AM_FREQ_RANGE_HIGH                                  (1710U * 16U)
+#define FM_FREQ_ITU_1_RANGE_LOW                             (87500U * 16U)
+#define FM_FREQ_ITU_1_RANGE_HIGH                            (108000U * 16U)
+#define AM_FREQ_ITU_1_RANGE_LOW                             (531U * 16U)
+#define AM_FREQ_ITU_1_RANGE_HIGH                            (1620U * 16U)
 
+#define FM_FREQ_JAPAN_RANGE_LOW                             (76000U * 16U)
+#define FM_FREQ_JAPAN_RANGE_HIGH                            (90000U * 16U)
+#define AM_FREQ_JAPAN_RANGE_LOW                             (526U * 16U)
+#define AM_FREQ_JAPAN_RANGE_HIGH                            (1606U * 16U)
