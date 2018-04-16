@@ -12,6 +12,7 @@
 #include <linux/module.h>
 #include <linux/pm_runtime.h>
 #include <linux/regulator/consumer.h>
+#include <linux/gpio.h>
 
 #include <sound/pcm_params.h>
 #include <sound/soc.h>
@@ -63,6 +64,7 @@ struct pcm3168a_priv {
 	unsigned long sysclk;
 
 	struct pcm3168a_io_params io_params[2];
+	int snd_clk_sel_gpio;
 };
 
 static const char *const pcm3168a_roll_off[] = { "Sharp", "Slow" };
@@ -439,6 +441,19 @@ static int pcm3168a_hw_params(struct snd_pcm_substream *substream,
 
 	ratio = pcm3168a->sysclk / rate;
 
+	/*KF U102 SND_Clk_SEL*/
+	if (pcm3168a->snd_clk_sel_gpio) {
+		if (0 == (44100 % rate)) {
+			/*Switch to ClkSND 44.1 kHz*/
+			gpio_set_value_cansleep(pcm3168a->snd_clk_sel_gpio, 1);
+			dev_dbg(component->dev, "clk select pin high\n");
+		} else {
+			/*Switch to Clk8SND 48 kHz*/
+			gpio_set_value_cansleep(pcm3168a->snd_clk_sel_gpio, 0);
+			dev_dbg(component->dev, "clk select pin low\n");
+		}
+	}
+
 	if (dai->id == PCM3168A_DAI_DAC) {
 		max_ratio = PCM3168A_NUM_SCKI_RATIOS_DAC;
 		reg = PCM3168A_DAC_PWR_MST_FMT;
@@ -790,6 +805,31 @@ int pcm3168a_probe(struct device *dev, struct regmap *regmap)
 		goto err_regulator;
 	}
 
+	/* get TDM mode */
+	if (dev->of_node) {
+		ret = of_property_read_u32(dev->of_node, "snd_clk_sel_gpio",
+				(u32 *)&pcm3168a->snd_clk_sel_gpio);
+		if (unlikely(ret)) {
+			dev_err(dev, "read clock select gpio failed");
+			goto err_regulator;
+		}
+	}
+
+	if (pcm3168a->snd_clk_sel_gpio) {
+		ret = gpio_request(pcm3168a->snd_clk_sel_gpio, "pcm3168a_clk_sel");
+		if (unlikely(ret)) {
+			dev_err(dev, "gpio %d request failed", pcm3168a->snd_clk_sel_gpio);
+			goto err_regulator;
+		}
+
+		ret = gpio_direction_output(pcm3168a->snd_clk_sel_gpio, 0);
+		if (unlikely(ret)) {
+			dev_err(dev, "unable to configure gpio %d",
+					pcm3168a->snd_clk_sel_gpio);
+			goto err_regulator;
+		}
+	}
+
 	pm_runtime_set_active(dev);
 	pm_runtime_enable(dev);
 	pm_runtime_idle(dev);
@@ -804,6 +844,7 @@ int pcm3168a_probe(struct device *dev, struct regmap *regmap)
 	return 0;
 
 err_regulator:
+	gpio_free(pcm3168a->snd_clk_sel_gpio);
 	regulator_bulk_disable(ARRAY_SIZE(pcm3168a->supplies),
 			pcm3168a->supplies);
 err_clk:
@@ -817,6 +858,7 @@ static void pcm3168a_disable(struct device *dev)
 {
 	struct pcm3168a_priv *pcm3168a = dev_get_drvdata(dev);
 
+	gpio_free(pcm3168a->snd_clk_sel_gpio);
 	regulator_bulk_disable(ARRAY_SIZE(pcm3168a->supplies),
 			       pcm3168a->supplies);
 	clk_disable_unprepare(pcm3168a->scki);
