@@ -30,6 +30,7 @@
 #include <linux/interrupt.h>
 #include <linux/firmware.h>
 #include <linux/uaccess.h>
+#include <linux/jiffies.h>
 
 #include <media/v4l2-common.h>
 #include <media/v4l2-ioctl.h>
@@ -329,14 +330,16 @@ static int si46xx_read_status(struct si4689_device *rdev,
     char *buf, size_t len)
 {
     struct device *dev = &rdev->client->dev;
-    int ret, timeout = 2000;
+    int ret;
+    unsigned long stop_jiffies;
+    int flag = 1;
 
     if(!buf || len < 4) {
         return -EINVAL;
     }
 
-    while(--timeout)
-    {
+    stop_jiffies = jiffies + 2*HZ;	// timeout after 2 sec.
+    while(time_before(jiffies, stop_jiffies)) {
         buf[0] = SI46XX_RD_REPLY;
 
         ret = si46xx_i2c_xfer(rdev, buf, 1, len);
@@ -926,15 +929,17 @@ static uint8_t si46xx_rds_parse(struct si4689_device *rdev, uint16_t *block)
 static int si46xx_fm_rds_status(struct si4689_device *rdev)
 {
     struct device *dev = &rdev->client->dev;
-    int ret, timeout = 2000;
+    int ret;
     char buf[21];
     uint16_t blocks[4];
+    unsigned long stop_jiffies;
 
     dev_dbg(dev, "%s\n", __func__);
 
     memset(&rdev->rds, 0, sizeof(struct si46xx_fm_rds_data));
 
-    while(--timeout) {
+    stop_jiffies = jiffies + 2*HZ;     // timeout after 2 sec.
+    while(time_before(jiffies, stop_jiffies)) {
 
         buf[0] = SI46XX_FM_RDS_STATUS;
         buf[1] = 1;
@@ -961,7 +966,7 @@ static int si46xx_fm_rds_status(struct si4689_device *rdev)
         if (!rdev->rds.sync)
             break;
 
-        mdelay(1);
+        msleep(1);
 
         if (si46xx_rds_parse(rdev, blocks))
             break;
@@ -970,7 +975,7 @@ static int si46xx_fm_rds_status(struct si4689_device *rdev)
             break;
     }
 
-    if (!timeout) {
+    if (time_after(jiffies, stop_jiffies)) {
         dev_warn(&rdev->client->dev, "Timeout wait for RDS data sync.\n");
         return -ETIME;
     }
@@ -988,7 +993,7 @@ static int si46xx_init_boot_mode(struct si4689_device *rdev)
     gpio_set_value_cansleep(rdev->reset_gpio, 0);
     msleep(10);
     gpio_set_value_cansleep(rdev->reset_gpio, 1);
-    mdelay(100);
+    msleep(100);
 
     rdev->mode = si46xx_get_sys_mode(rdev);
 
