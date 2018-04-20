@@ -29,6 +29,7 @@
 #include <linux/delay.h>
 #include <linux/interrupt.h>
 #include <linux/firmware.h>
+#include <linux/uaccess.h>
 
 #include <media/v4l2-common.h>
 #include <media/v4l2-ioctl.h>
@@ -97,7 +98,9 @@ static ssize_t si4689_fops_read(struct file *file, char __user *buf,
 
     ret = si46xx_fm_rds_status(rdev);
     if (!ret && rdev->rds.sync != 0) {
-        memcpy(buf, &rdev->rds.data, count);
+        if (copy_to_user(buf, &rdev->rds.data, count))
+                return -EFAULT;
+        *ppos += count;
         return count;
     }
     return ret;
