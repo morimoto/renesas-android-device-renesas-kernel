@@ -360,9 +360,6 @@ static void rsnd_ssi_config_init(struct rsnd_mod *mod,
 	u32 wsr;
 	int is_tdm;
 
-	if (rsnd_ssi_is_parent(mod, io))
-		return;
-
 	is_tdm = rsnd_runtime_is_ssi_tdm(io);
 
 	/*
