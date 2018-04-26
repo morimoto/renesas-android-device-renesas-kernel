@@ -367,12 +367,18 @@ static int si46xx_check_status(struct si4689_device *rdev)
 {
     struct device *dev = &rdev->client->dev;
     int ret;
-    char buf[4];
+    char *buf = kzalloc(4, GFP_DMA);
 
-    ret = si46xx_read_status(rdev, buf, sizeof(buf));
+    if (!buf) {
+        dev_err(&rdev->client->dev, "%s: Allocate buffer failed\n",
+            __func__);
+        return -ENOMEM;
+    }
+
+    ret = si46xx_read_status(rdev, buf, 4);
     if (ret) {
         dev_err(dev, "%s: read status failed: %d\n", __func__, ret);
-        return ret;
+        goto cleanup;
     }
 
     if (buf[0] & (1 << 6)) {
@@ -400,6 +406,9 @@ static int si46xx_check_status(struct si4689_device *rdev)
             ret = -EINVAL;
         }
     }
+
+cleanup:
+    kfree(buf);
     return ret;
 }
 
@@ -407,56 +416,79 @@ static int si46xx_get_sys_mode(struct si4689_device *rdev)
 {
     struct device *dev = &rdev->client->dev;
     int ret;
-    uint8_t buf[6] = {SI46XX_GET_SYS_STATE, 0, 0, 0, 0, 0};
+    char *buf = kzalloc(6, GFP_DMA);
 
-    ret = si46xx_i2c_xfer(rdev, &buf, 2, 0);
+    if (!buf) {
+        dev_err(&rdev->client->dev, "%s: Allocate buffer failed\n",
+            __func__);
+        return -ENOMEM;
+    }
+    buf[0] = SI46XX_GET_SYS_STATE;
+
+    ret = si46xx_i2c_xfer(rdev, buf, 2, 0);
     if (ret) {
         dev_err(dev, "%s: SI46XX_GET_SYS_STATE failed: %d\n", __func__, ret);
-        return ret;
+        goto cleanup;
     }
 
     buf[0] = SI46XX_RD_REPLY;
 
-    ret = si46xx_i2c_xfer(rdev, &buf, 1, 6);
+    ret = si46xx_i2c_xfer(rdev, buf, 1, 6);
     if (ret) {
         dev_err(dev, "%s: SI46XX_RD_REPLY failed: %d\n", __func__, ret);
-        return ret;
+        goto cleanup;
     }
 
     if (ret)
-        return ret;
+        goto cleanup;
 
     switch(buf[4])
     {
         case 0:
             dev_info(dev, "%s: Bootloader is active\n", __func__);
-            return SI46XX_MODE_BOOT;
+            ret =  SI46XX_MODE_BOOT;
+            goto cleanup;
         case 1:
         case 4:
             dev_info(dev, "%s: FMHD is active\n", __func__);
-            return SI46XX_MODE_FM;
+            ret = SI46XX_MODE_FM;
+            goto cleanup;
         case 2:
             dev_info(dev, "%s: DAB is active\n", __func__);
-            return SI46XX_MODE_DAB;;
+            ret = SI46XX_MODE_DAB;
+            goto cleanup;
         case 3:
             dev_info(dev, "%s: TDMB or data only DAB image is active\n", __func__);
-            return SI46XX_MODE_DAB;
+            ret = SI46XX_MODE_DAB;
+            goto cleanup;
         case 5:
             dev_info(dev, "%s: AMHD is active\n", __func__);
-            return SI46XX_MODE_AM;
+            ret = SI46XX_MODE_AM;
+            goto cleanup;
         case 6:
             dev_info(dev, "%s: AMHD Demod is active\n", __func__);
-            return SI46XX_MODE_AM;
+            ret = SI46XX_MODE_AM;
+            goto cleanup;
     }
 
     dev_info(dev, "%s: Unknown mode\n", __func__);
-    return SI46XX_MODE_UNK;
+    ret = SI46XX_MODE_UNK;
+
+cleanup:
+    kfree(buf);
+    return ret;
 }
 
 static int si46xx_powerup(struct si4689_device *rdev)
 {
     int ret;
-    uint8_t data[16];
+    char *data = kzalloc(16, GFP_DMA);
+
+    if (!data) {
+        dev_err(&rdev->client->dev, "%s: Allocate buffer failed\n",
+            __func__);
+        return -ENOMEM;
+    }
 
     dev_dbg(&rdev->client->dev, "%s\n", __func__);
 
@@ -479,17 +511,27 @@ static int si46xx_powerup(struct si4689_device *rdev)
 
     ret = si46xx_i2c_xfer(rdev, data, 16, 0);
     if (ret)
-        return ret;
+        goto cleanup;
 
     msleep(1); // wait 20us after powerup (datasheet)
 
-    return si46xx_check_status(rdev);
+    ret = si46xx_check_status(rdev);
+
+cleanup:
+    kfree(data);
+    return ret;
 }
 
 static int si46xx_load_init(struct si4689_device *rdev)
 {
     int ret;
-    char data[2];
+    char *data = kzalloc(2, GFP_DMA);
+
+    if (!data) {
+        dev_err(&rdev->client->dev, "%s: Allocate buffer failed\n",
+            __func__);
+        return -ENOMEM;
+    }
 
     dev_dbg(&rdev->client->dev, "%s\n", __func__);
 
@@ -498,11 +540,15 @@ static int si46xx_load_init(struct si4689_device *rdev)
 
     ret = si46xx_i2c_xfer(rdev, data, 2, 0);
     if (ret)
-        return ret;
+        goto cleanup;
 
     msleep(4); // wait 4ms (datasheet)
 
-    return si46xx_check_status(rdev);
+    ret = si46xx_check_status(rdev);
+
+cleanup:
+    kfree(data);
+    return ret;
 }
 
 static int si46xx_host_load_data(struct si4689_device *rdev,
@@ -510,7 +556,7 @@ static int si46xx_host_load_data(struct si4689_device *rdev,
 {
     int ret;
     size_t payload_size = len + 4;
-    uint8_t *payload = kzalloc(payload_size, GFP_KERNEL);
+    uint8_t *payload = kzalloc(payload_size, GFP_DMA);
 
     if (!payload) {
         dev_err(&rdev->client->dev, "%s: Allocate payload buffer (%zu bytes) failed\n",
@@ -587,7 +633,13 @@ out:
 static int si46xx_flash_load(struct si4689_device *rdev, uint32_t offset)
 {
     int ret;
-    uint8_t cmd[16];
+    char *cmd = kzalloc(16, GFP_DMA);
+
+    if (!cmd) {
+        dev_err(&rdev->client->dev, "%s: Allocate buffer failed\n",
+            __func__);
+        return -ENOMEM;
+    }
 
     dev_info(&rdev->client->dev, "%s: offset=0x%x\n", __func__, offset);
 
@@ -606,16 +658,26 @@ static int si46xx_flash_load(struct si4689_device *rdev, uint32_t offset)
 
     ret = si46xx_i2c_xfer(rdev, cmd, 12, 0);
     if (ret)
-        return ret;
+        goto cleanup;
 
-    return si46xx_check_status(rdev);
+    ret = si46xx_check_status(rdev);
+
+cleanup:
+    kfree(cmd);
+    return ret;
 }
 
 static int si46xx_print_part_info(struct si4689_device *rdev)
 {
     int ret;
-    char buf[22];
     struct device *dev = &rdev->client->dev;
+    char *buf = kzalloc(22, GFP_DMA);
+
+    if (!buf) {
+        dev_err(&rdev->client->dev, "%s: Allocate buffer failed\n",
+            __func__);
+        return -ENOMEM;
+    }
 
     buf[0] = SI46XX_GET_PART_INFO;
     buf[1] = 0;
@@ -623,24 +685,35 @@ static int si46xx_print_part_info(struct si4689_device *rdev)
     ret = si46xx_i2c_xfer(rdev, buf, 2, 0);
     if (ret) {
         dev_err(dev, "SI46XX_GET_PART_INFO failed: %d\n", ret);
-        return ret;
+        goto cleanup;
     }
 
-    ret = si46xx_read_status(rdev, buf, sizeof(buf));
+    ret = si46xx_read_status(rdev, buf, 22);
     if (ret) {
-        return ret;
+        goto cleanup;
     }
 
     dev_info(dev, "CHIPREV:\t0x%02x\n", buf[4]);
     dev_info(dev, "ROMID:\t0x%02x\n", buf[5]);
     dev_info(dev, "PART:\t%04d\n", (buf[9] << 8) | buf[8]);
-    return 0;
+
+    ret = 0;
+
+cleanup:
+    kfree(buf);
+    return ret;
 }
 
 static int si46xx_boot(struct si4689_device *rdev)
 {
     int ret, attempts = 5;
-    char cmd[2];
+    char *cmd = kzalloc(2, GFP_DMA);
+
+    if (!cmd) {
+        dev_err(&rdev->client->dev, "%s: Allocate buffer failed\n",
+            __func__);
+        return -ENOMEM;
+    }
 
     dev_dbg(&rdev->client->dev, "%s\n", __func__);
 
@@ -650,13 +723,15 @@ static int si46xx_boot(struct si4689_device *rdev)
 
         ret = si46xx_i2c_xfer(rdev, cmd, 2, 0);
         if (ret)
-            return ret;
+            goto cleanup;
 
         msleep(300); // 63ms at analog fm, 198ms at DAB
 
         ret = si46xx_check_status(rdev);
     } while ((attempts--) && (ret));
 
+cleanup:
+    kfree(cmd);
     return ret;
 }
 
@@ -690,8 +765,14 @@ static int si46xx_boot_flash(struct si4689_device *rdev, int offset)
 
 static int si46xx_seek_start(struct si4689_device *rdev, uint8_t up, uint8_t wrap)
 {
-    uint8_t cmd[6];
     int ret;
+    char *cmd = kzalloc(6, GFP_DMA);
+
+    if (!cmd) {
+        dev_err(&rdev->client->dev, "%s: Allocate buffer failed\n",
+            __func__);
+        return -ENOMEM;
+    }
 
     dev_dbg(&rdev->client->dev, "%s: up=%d, wrap=%d\n", __func__, (int)up, (int)wrap);
 
@@ -699,8 +780,10 @@ static int si46xx_seek_start(struct si4689_device *rdev, uint8_t up, uint8_t wra
         cmd[0] = SI46XX_AM_SEEK_START;
     else if (rdev->mode == SI46XX_MODE_FM)
         cmd[0] = SI46XX_FM_SEEK_START;
-    else
-        return -EINVAL;
+    else {
+        ret = -EINVAL;
+        goto cleanup;
+    }
 
     cmd[1] = 0;
     cmd[2] = (up & 0x01)<<1 | (wrap & 0x01);
@@ -711,16 +794,26 @@ static int si46xx_seek_start(struct si4689_device *rdev, uint8_t up, uint8_t wra
     ret = si46xx_i2c_xfer(rdev, cmd, 6, 0);
     if (ret) {
         dev_err(&rdev->client->dev, "SI46XX_x_SEEK_START failed: %d\n", ret);
-        return ret;
+        goto cleanup;
     }
 
-    return si46xx_check_status(rdev);
+    ret = si46xx_check_status(rdev);
+
+cleanup:
+    kfree(cmd);
+    return ret;
 }
 
 int si46xx_set_property(struct si4689_device *rdev, uint16_t property_id, uint16_t value)
 {
     int ret;
-    uint8_t cmd[6];
+    char *cmd = kzalloc(6, GFP_DMA);
+
+    if (!cmd) {
+        dev_err(&rdev->client->dev, "%s: Allocate buffer failed\n",
+            __func__);
+        return -ENOMEM;
+    }
 
     dev_dbg(&rdev->client->dev, "%s(id=0x%04x, value=0x%04x)\n",
         __func__, property_id, value);
@@ -735,7 +828,7 @@ int si46xx_set_property(struct si4689_device *rdev, uint16_t property_id, uint16
     ret = si46xx_i2c_xfer(rdev, cmd, 6, 0);
     if (ret) {
         dev_err(&rdev->client->dev, "SI46XX_SET_PROPERTY failed: %d\n", ret);
-        return ret;
+        goto cleanup;
     }
 
     ret = si46xx_check_status(rdev);
@@ -744,13 +837,21 @@ int si46xx_set_property(struct si4689_device *rdev, uint16_t property_id, uint16
             property_id, value, ret);
     }
 
+cleanup:
+    kfree(cmd);
     return ret;
 }
 
 static int si46xx_tune_freq(struct si4689_device *rdev, uint32_t khz, uint16_t antcap)
 {
     int ret;
-    uint8_t cmd[6];
+    char *cmd = kzalloc(6, GFP_DMA);
+
+    if (!cmd) {
+        dev_err(&rdev->client->dev, "%s: Allocate buffer failed\n",
+            __func__);
+        return -ENOMEM;
+    }
 
     dev_dbg(&rdev->client->dev, "%s(khz=%d, antcap=%d)\n", __func__, khz, antcap);
 
@@ -763,7 +864,8 @@ static int si46xx_tune_freq(struct si4689_device *rdev, uint32_t khz, uint16_t a
     else {
         dev_err(&rdev->client->dev, "%s: Invalid mode %d\n",
             __func__, rdev->mode);
-        return -EINVAL;
+        ret = -EINVAL;
+        goto cleanup;
     }
 
     cmd[1] = 0;
@@ -778,7 +880,7 @@ static int si46xx_tune_freq(struct si4689_device *rdev, uint32_t khz, uint16_t a
     ret = si46xx_i2c_xfer(rdev, cmd, 6, 0);
     if (ret) {
         dev_err(&rdev->client->dev, "SI46XX_x_TUNE_FREQ failed: %d\n", ret);
-        return ret;
+        goto cleanup;
     }
 
     ret = si46xx_check_status(rdev);
@@ -787,33 +889,54 @@ static int si46xx_tune_freq(struct si4689_device *rdev, uint32_t khz, uint16_t a
             khz, antcap, ret);
     }
 
+cleanup:
+    kfree(cmd);
     return ret;
 }
 
 static int si46xx_tune_wait(struct si4689_device *rdev, int timeout)
 {
     int ret;
-    char status[5];
+    char *status = kzalloc(5, GFP_DMA);
+
+    if (!status) {
+        dev_err(&rdev->client->dev, "%s: Allocate buffer failed\n",
+            __func__);
+        return -ENOMEM;
+    }
 
     do {
-        ret = si46xx_read_status(rdev, status, sizeof(status));
+        ret = si46xx_read_status(rdev, status, 5);
         if (ret)
-            return ret;
+            goto cleanup;
 
         if (status[0] & (1 << 0))
-            return 0;
+        {
+            ret = 0;
+            goto cleanup;
+        }
 
         msleep(1);
     } while (--timeout > 0);
 
-    return -ETIME;
+    ret = -ETIME;
+
+cleanup:
+    kfree(status);
+    return ret;
 }
 
 static int si46xx_rsq_status(struct si4689_device *rdev)
 {
     struct device *dev = &rdev->client->dev;
     int ret, to_read;
-    char cmd[20];
+    char *cmd = kzalloc(20, GFP_DMA);
+
+    if (!cmd) {
+        dev_err(&rdev->client->dev, "%s: Allocate buffer failed\n",
+            __func__);
+        return -ENOMEM;
+    }
 
     dev_dbg(dev, "%s\n", __func__);
 
@@ -825,7 +948,8 @@ static int si46xx_rsq_status(struct si4689_device *rdev)
         to_read = 20;
     } else {
         dev_err(dev, "%s EINVAL\n", __func__);
-        return -EINVAL;
+        ret = -EINVAL;
+        goto cleanup;
     }
 
     rdev->freq_khz = 0;
@@ -837,13 +961,13 @@ static int si46xx_rsq_status(struct si4689_device *rdev)
     ret = si46xx_i2c_xfer(rdev, cmd, 2, 0);
     if (ret) {
         dev_err(dev, "SI46XX_x_RSQ_STATUS failed: %d\n", ret);
-        return ret;
+        goto cleanup;
     }
 
     ret = si46xx_read_status(rdev, cmd, to_read);
     if (ret) {
         dev_err(dev, "Read status failed: %d\n", ret);
-        return ret;
+        goto cleanup;
     }
 
     rdev->freq_khz = (cmd[7] << 8) | cmd[6];
@@ -867,7 +991,12 @@ static int si46xx_rsq_status(struct si4689_device *rdev)
     }
 
     dev_dbg(dev, "%s <-\n", __func__);
-    return 0;
+
+    ret = 0;
+
+cleanup:
+    kfree(cmd);
+    return ret;
 }
 
 static uint8_t si46xx_rds_parse(struct si4689_device *rdev, uint16_t *block)
@@ -930,9 +1059,15 @@ static int si46xx_fm_rds_status(struct si4689_device *rdev)
 {
     struct device *dev = &rdev->client->dev;
     int ret;
-    char buf[21];
     uint16_t blocks[4];
     unsigned long stop_jiffies;
+    char *buf = kzalloc(21, GFP_DMA);
+
+    if (!buf) {
+        dev_err(&rdev->client->dev, "%s: Allocate buffer failed\n",
+            __func__);
+        return -ENOMEM;
+    }
 
     dev_dbg(dev, "%s\n", __func__);
 
@@ -947,13 +1082,13 @@ static int si46xx_fm_rds_status(struct si4689_device *rdev)
         ret = si46xx_i2c_xfer(rdev, buf, 2, 0);
         if (ret) {
             dev_err(&rdev->client->dev, "SI46XX_FM_RDS_STATUS failed: %d\n", ret);
-            return ret;
+            goto cleanup;
         }
 
         ret = si46xx_read_status(rdev, buf, 20);
         if (ret) {
             dev_err(&rdev->client->dev, "Read status failed: %d\n", ret);
-            return ret;
+            goto cleanup;
         }
 
         blocks[0] = buf[12] + (buf[13]<<8);
@@ -977,12 +1112,18 @@ static int si46xx_fm_rds_status(struct si4689_device *rdev)
 
     if (time_after(jiffies, stop_jiffies)) {
         dev_warn(&rdev->client->dev, "Timeout wait for RDS data sync.\n");
-        return -ETIME;
+        ret = -ETIME;
+        goto cleanup;
     }
 
     dev_dbg(dev, "RDSSYNC: %u\n", (buf[5] & 0x02) ? 1 : 0);
     dev_dbg(dev, "PI: %d  Name:%s\n", rdev->rds.data.pi, rdev->rds.data.ps_name);
-    return 0;
+
+    ret = 0;
+
+cleanup:
+    kfree(buf);
+    return ret;
 }
 
 static int si46xx_init_boot_mode(struct si4689_device *rdev)
