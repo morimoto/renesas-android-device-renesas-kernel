@@ -26,6 +26,7 @@
 #define MAX96705_ID		0x41
 #define MAX9286_ID		0x40
 #define BROADCAST		0x6f
+#define TIMEOUT_LEN		16
 
 static inline int reg8_read(struct i2c_client *client, u8 reg, u8 *val)
 {
