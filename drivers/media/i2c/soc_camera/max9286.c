@@ -173,7 +173,7 @@ static int max9286_reverse_channel_setup(struct i2c_client *client, int idx)
 	struct max9286_priv *priv = i2c_get_clientdata(client);
 	u8 val = 0;
 	int timeout = priv->timeout;
-	char timeout_str[10];
+	char timeout_str[TIMEOUT_LEN];
 	int ret = 0;
 
 	/* Reverse channel enable */
@@ -241,7 +241,7 @@ static int max9286_reverse_channel_setup(struct i2c_client *client, int idx)
 	priv->csi2_outord |= ((hweight8(priv->links_mask) - 1) << (idx * 2));
 
 out:
-	sprintf(timeout_str, "retries=%d", priv->timeout - timeout);
+	snprintf(timeout_str, TIMEOUT_LEN, "retries=%d", priv->timeout - timeout);
 	dev_info(&client->dev, "link%d %s %sat 0x%x %s %s\n", idx, ser_name(priv->ser_id),
 			       ret == -EADDRINUSE ? "already " : "", priv->max9271_addr_map[idx],
 			       ret == -ETIMEDOUT ? "not found: timeout GMSL link establish" : "",
