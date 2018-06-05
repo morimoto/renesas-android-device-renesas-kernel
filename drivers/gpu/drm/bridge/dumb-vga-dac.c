@@ -140,6 +140,8 @@ static int dumb_vga_attach(struct drm_bridge *bridge)
 		return -ENODEV;
 	}
 
+	vga->connector.interlace_allowed = 1;
+
 	drm_connector_helper_add(&vga->connector,
 				 &dumb_vga_con_helper_funcs);
 	ret = drm_connector_init(bridge->dev, &vga->connector,
