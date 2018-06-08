@@ -423,10 +423,8 @@ void tcp_retransmit_timer(struct sock *sk)
 		 */
 		return;
 	}
-	if (!tp->packets_out)
+	if (!tp->packets_out || tcp_write_queue_empty(sk))
 		goto out;
-
-	WARN_ON(tcp_write_queue_empty(sk));
 
 	tp->tlp_high_seq = 0;
 
