@@ -197,6 +197,13 @@ config INPUT_KEYCOMBO
 	---help---
 	  Say Y here if you want to take action when some keys are pressed;
 
+config INPUT_KEYLONGPRESS
+	bool "Long press key"
+	depends on INPUT
+	select INPUT_KEYRESET
+	---help---
+	  Say Y here if you want to poweroff when some keys are long pressed;
+
 comment "Input Device Drivers"
 
 source "drivers/input/keyboard/Kconfig"
