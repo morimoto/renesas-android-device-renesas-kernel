@@ -117,6 +117,7 @@ struct soc_camera_host_ops {
 	int (*get_parm)(struct soc_camera_device *, struct v4l2_streamparm *);
 	int (*set_parm)(struct soc_camera_device *, struct v4l2_streamparm *);
 	int (*enum_framesizes)(struct soc_camera_device *, struct v4l2_frmsizeenum *);
+	int (*enum_frameintervals)(struct soc_camera_device *, struct v4l2_frmivalenum *);
 	unsigned int (*poll)(struct file *, poll_table *);
 };
 

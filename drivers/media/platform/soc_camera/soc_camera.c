@@ -357,6 +357,15 @@ static int soc_camera_enum_framesizes(struct file *file, void *fh,
 	return ici->ops->enum_framesizes(icd, fsize);
 }
 
+static int soc_camera_enum_frameintervals(struct file *file, void *fh,
+					 struct  v4l2_frmivalenum *fival)
+{
+	struct soc_camera_device *icd = file->private_data;
+	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
+
+	return ici->ops->enum_frameintervals(icd, fival);
+}
+
 static int soc_camera_reqbufs(struct file *file, void *priv,
 			      struct v4l2_requestbuffers *p)
 {
@@ -1838,6 +1847,40 @@ static int default_enum_framesizes(struct soc_camera_device *icd,
 	return 0;
 }
 
+static int default_enum_frameintervals(struct soc_camera_device *icd,
+				   struct v4l2_frmivalenum *fival)
+{
+	int ret;
+	struct v4l2_subdev *sd = soc_camera_to_subdev(icd);
+	const struct soc_camera_format_xlate *xlate;
+	struct v4l2_subdev_frame_interval_enum fie = {
+		.index = fival->index,
+		.which = V4L2_SUBDEV_FORMAT_ACTIVE,
+		.width = fival->width,
+		.height= fival->height,
+	};
+	struct v4l2_subdev_frame_size_enum fse = {
+		.index = 0,
+		.which = V4L2_SUBDEV_FORMAT_ACTIVE,
+	};
+
+	xlate = soc_camera_xlate_by_fourcc(icd, fival->pixel_format);
+	if (!xlate)
+		return -EINVAL;
+	fie.code = xlate->code;
+	fse.code = xlate->code;
+
+	// Evaluate time interval.
+	ret = v4l2_subdev_call(sd, pad, enum_frame_interval, NULL, &fie);
+	if (ret < 0)
+		return ret;
+
+	fival->discrete = fie.interval;
+	fival->type = V4L2_FRMIVAL_TYPE_DISCRETE;
+
+	return 0;
+}
+
 int soc_camera_host_register(struct soc_camera_host *ici)
 {
 	struct soc_camera_host *ix;
@@ -1863,6 +1906,8 @@ int soc_camera_host_register(struct soc_camera_host *ici)
 		ici->ops->get_parm = default_g_parm;
 	if (!ici->ops->enum_framesizes)
 		ici->ops->enum_framesizes = default_enum_framesizes;
+	if (!ici->ops->enum_frameintervals)
+		ici->ops->enum_frameintervals = default_enum_frameintervals;
 
 	mutex_lock(&list_lock);
 	list_for_each_entry(ix, &hosts, list) {
@@ -2000,6 +2045,7 @@ static const struct v4l2_ioctl_ops soc_camera_ioctl_ops = {
 	.vidioc_s_std		 = soc_camera_s_std,
 	.vidioc_g_std		 = soc_camera_g_std,
 	.vidioc_enum_framesizes  = soc_camera_enum_framesizes,
+	.vidioc_enum_frameintervals = soc_camera_enum_frameintervals,
 	.vidioc_reqbufs		 = soc_camera_reqbufs,
 	.vidioc_querybuf	 = soc_camera_querybuf,
 	.vidioc_qbuf		 = soc_camera_qbuf,
