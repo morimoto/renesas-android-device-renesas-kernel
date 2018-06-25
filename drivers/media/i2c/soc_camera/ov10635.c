@@ -31,6 +31,21 @@
 #define OV10635_VERSION_REG		0xa635
 #define OV10635_VERSION(pid, ver)	(((pid) << 8) | ((ver) & 0xff))
 
+enum ov10635_frame_rate {
+	OV10635_5_FPS = 0,
+	OV10635_10_FPS,
+	OV10635_15_FPS,
+	OV10635_30_FPS,
+	OV10635_NUM_FRAMERATES,
+};
+
+static const int ov10635_framerates[] = {
+	[OV10635_5_FPS] = 5,
+	[OV10635_10_FPS] = 10,
+	[OV10635_15_FPS] = 15,
+	[OV10635_30_FPS] = 30,
+};
+
 struct ov10635_priv {
 	struct v4l2_subdev		sd;
 	struct v4l2_ctrl_handler	hdl;
@@ -202,6 +217,25 @@ static int ov10635_enum_frame_size(struct v4l2_subdev *sd,
 	fse->min_height = OV10635_MAX_HEIGHT;
 	fse->max_width  = OV10635_MAX_WIDTH;
 	fse->max_height = OV10635_MAX_HEIGHT;
+
+	return 0;
+}
+
+static int ov10635_enum_frame_interval(struct v4l2_subdev *sd,
+				  struct v4l2_subdev_pad_config *cfg,
+				  struct v4l2_subdev_frame_interval_enum *fie)
+{
+	if (fie->pad)
+		return -EINVAL;
+	if (fie->width != OV10635_MAX_WIDTH || fie->height != OV10635_MAX_HEIGHT)
+		return -EINVAL;
+	if (fie->code != MEDIA_BUS_FMT_YUYV8_2X8)
+		return -EINVAL;
+	if (fie->index >= OV10635_NUM_FRAMERATES)
+		return -EINVAL;
+
+	fie->interval.numerator = 1;
+	fie->interval.denominator = ov10635_framerates[fie->index];
 
 	return 0;
 }
@@ -491,6 +525,7 @@ static struct v4l2_subdev_video_ops ov10635_video_ops = {
 static const struct v4l2_subdev_pad_ops ov10635_subdev_pad_ops = {
 	.enum_mbus_code	= ov10635_enum_mbus_code,
 	.enum_frame_size	= ov10635_enum_frame_size,
+	.enum_frame_interval	= ov10635_enum_frame_interval,
 	.get_fmt	= ov10635_get_fmt,
 	.set_fmt	= ov10635_set_fmt,
 	.get_selection	= ov10635_get_selection,
