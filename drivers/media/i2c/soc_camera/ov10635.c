@@ -308,14 +308,20 @@ static int ov10635_s_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *parms)
 	struct ov10635_priv *priv = to_ov10635(client);
 	struct v4l2_captureparm *cp = &parms->parm.capture;
 	int ret = 0;
+	int cp_denominator;
 
 	if (parms->type != V4L2_BUF_TYPE_VIDEO_CAPTURE)
 		return -EINVAL;
 	if (cp->extendedmode != 0)
 		return -EINVAL;
+	if (cp->timeperframe.denominator == 0 || cp->timeperframe.numerator == 0)
+		return -EINVAL;
+	if ( (cp->timeperframe.denominator % cp->timeperframe.numerator) != 0)
+		return -EINVAL;
+	cp_denominator = cp->timeperframe.denominator / cp->timeperframe.numerator;
 
-	if (priv->fps_denominator != cp->timeperframe.denominator) {
-		switch (cp->timeperframe.denominator) {
+	if (priv->fps_denominator != cp_denominator) {
+		switch (cp_denominator) {
 		case 5:
 			ret = ov10635_set_regs(client, ov10635_regs_5fps,
 					       ARRAY_SIZE(ov10635_regs_5fps));
@@ -337,7 +343,7 @@ static int ov10635_s_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *parms)
 			goto out;
 		}
 
-		priv->fps_denominator = cp->timeperframe.denominator;
+		priv->fps_denominator = cp_denominator;
 	}
 
 out:
