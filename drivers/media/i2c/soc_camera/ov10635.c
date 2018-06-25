@@ -189,6 +189,23 @@ static int ov10635_enum_mbus_code(struct v4l2_subdev *sd,
 	return 0;
 }
 
+static int ov10635_enum_frame_size(struct v4l2_subdev *sd,
+				  struct v4l2_subdev_pad_config *cfg,
+				  struct v4l2_subdev_frame_size_enum *fse)
+{
+	if (fse->index)
+		return -EINVAL;
+	if (fse->code != MEDIA_BUS_FMT_YUYV8_2X8)
+		return -EINVAL;
+
+	fse->min_width  = OV10635_MAX_WIDTH;
+	fse->min_height = OV10635_MAX_HEIGHT;
+	fse->max_width  = OV10635_MAX_WIDTH;
+	fse->max_height = OV10635_MAX_HEIGHT;
+
+	return 0;
+}
+
 static int ov10635_get_edid(struct v4l2_subdev *sd, struct v4l2_edid *edid)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(sd);
@@ -466,18 +483,19 @@ static const struct v4l2_ctrl_ops ov10635_ctrl_ops = {
 
 static struct v4l2_subdev_video_ops ov10635_video_ops = {
 	.s_stream	= ov10635_s_stream,
-	.g_mbus_config	= ov10635_g_mbus_config,
 	.g_parm		= ov10635_g_parm,
 	.s_parm		= ov10635_s_parm,
+	.g_mbus_config	= ov10635_g_mbus_config,
 };
 
 static const struct v4l2_subdev_pad_ops ov10635_subdev_pad_ops = {
-	.get_edid	= ov10635_get_edid,
 	.enum_mbus_code	= ov10635_enum_mbus_code,
-	.get_selection	= ov10635_get_selection,
-	.set_selection	= ov10635_set_selection,
+	.enum_frame_size	= ov10635_enum_frame_size,
 	.get_fmt	= ov10635_get_fmt,
 	.set_fmt	= ov10635_set_fmt,
+	.get_selection	= ov10635_get_selection,
+	.set_selection	= ov10635_set_selection,
+	.get_edid	= ov10635_get_edid,
 };
 
 static struct v4l2_subdev_ops ov10635_subdev_ops = {
