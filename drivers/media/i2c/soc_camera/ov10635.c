@@ -615,8 +615,6 @@ static int ov10635_parse_dt(struct device_node *np, struct ov10635_priv *priv)
 		if (!endpoint)
 			break;
 
-		of_node_put(endpoint);
-
 		of_property_read_u32(endpoint, "dvp-order", &priv->dvp_order);
 
 		rendpoint = of_parse_phandle(endpoint, "remote-endpoint", 0);
@@ -640,6 +638,8 @@ static int ov10635_parse_dt(struct device_node *np, struct ov10635_priv *priv)
 		    !kstrtouint(strrchr(rendpoint->full_name, '@') + 1, 0, &priv->port))
 			break;
 	}
+
+	of_node_put(endpoint);
 
 	if (!priv->max9286_addr && !priv->ti964_addr && !priv->ti954_addr) {
 		dev_err(&client->dev, "deserializer does not present for OV10635\n");
