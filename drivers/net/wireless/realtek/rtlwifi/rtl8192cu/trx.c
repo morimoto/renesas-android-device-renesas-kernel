@@ -305,6 +305,7 @@ bool rtl92cu_rx_query_desc(struct ieee80211_hw *hw,
 	struct rx_fwinfo_92c *p_drvinfo;
 	struct rx_desc_92c *p_desc = (struct rx_desc_92c *)pdesc;
 	u32 phystatus = GET_RX_DESC_PHY_STATUS(pdesc);
+	struct ieee80211_hdr *hdr;
 
 	stats->length = (u16) GET_RX_DESC_PKT_LEN(pdesc);
 	stats->rx_drvinfo_size = (u8)GET_RX_DESC_DRVINFO_SIZE(pdesc) *
@@ -346,6 +347,13 @@ bool rtl92cu_rx_query_desc(struct ieee80211_hw *hw,
 	}
 	/*rx_status->qual = stats->signal; */
 	rx_status->signal = stats->recvsignalpower + 10;
+
+	hdr = (struct ieee80211_hdr *)(skb->data);
+	if (unlikely(ieee80211_is_beacon(hdr->frame_control) ||
+			ieee80211_is_probe_resp(hdr->frame_control))) {
+		rx_status->boottime_ns = ktime_get_boot_ns();
+	}
+
 	return true;
 }
 
