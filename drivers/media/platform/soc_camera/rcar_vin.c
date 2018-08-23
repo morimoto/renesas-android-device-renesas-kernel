@@ -1331,6 +1331,15 @@ static const struct vb2_ops rcar_vin_vb2_ops = {
 	.wait_finish	= vb2_ops_wait_finish,
 };
 
+static bool is_queue_buf_empty(struct rcar_vin_priv *priv)
+{
+	int i;
+	for (i = 0; i < MAX_BUFFER_NUM; i++)
+		if (priv->queue_buf[i])
+			return false;
+	return true;
+}
+
 static irqreturn_t rcar_vin_irq(int irq, void *data)
 {
 	struct rcar_vin_priv *priv = data;
@@ -1370,8 +1379,7 @@ static irqreturn_t rcar_vin_irq(int irq, void *data)
 		else
 			slot = 0;
 
-		if (!is_continuous_transfer(priv) || ((priv->state == RUNNING)
-			&& !list_empty(&priv->capture))) {
+		if (!is_continuous_transfer(priv) || priv->state == RUNNING) {
 			priv->queue_buf[slot]->field = priv->field;
 			priv->queue_buf[slot]->sequence = priv->sequence++;
 			priv->queue_buf[slot]->vb2_buf.timestamp =
@@ -1387,6 +1395,7 @@ static irqreturn_t rcar_vin_irq(int irq, void *data)
 			if (hw_stopped)
 				priv->state = STOPPED;
 			else if (list_empty(&priv->capture) &&
+				is_queue_buf_empty(priv) &&
 				priv->state == RUNNING)
 				/*
 				 * The continuous capturing requires an
