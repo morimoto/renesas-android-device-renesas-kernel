@@ -31,6 +31,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <unistd.h>
+#include <inttypes.h>
 
 #include <libfdt_env.h>
 #include <fdt.h>
@@ -215,6 +216,7 @@ void append_to_property(struct node *node,
 const char *get_unitname(struct node *node);
 struct property *get_property(struct node *node, const char *propname);
 cell_t propval_cell(struct property *prop);
+cell_t propval_cell_n(struct property *prop, int n);
 struct property *get_property_by_label(struct node *tree, const char *label,
 				       struct node **node);
 struct marker *get_marker_label(struct node *tree, const char *label,
