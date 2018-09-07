@@ -53,24 +53,24 @@ struct check {
 	struct check **prereq;
 };
 
-#define CHECK_ENTRY(_nm, _fn, _d, _w, _e, ...)	       \
-	static struct check *_nm##_prereqs[] = { __VA_ARGS__ }; \
-	static struct check _nm = { \
-		.name = #_nm, \
-		.fn = (_fn), \
-		.data = (_d), \
-		.warn = (_w), \
-		.error = (_e), \
+#define CHECK_ENTRY(nm_, fn_, d_, w_, e_, ...)	       \
+	static struct check *nm_##_prereqs[] = { __VA_ARGS__ }; \
+	static struct check nm_ = { \
+		.name = #nm_, \
+		.fn = (fn_), \
+		.data = (d_), \
+		.warn = (w_), \
+		.error = (e_), \
 		.status = UNCHECKED, \
-		.num_prereqs = ARRAY_SIZE(_nm##_prereqs), \
-		.prereq = _nm##_prereqs, \
+		.num_prereqs = ARRAY_SIZE(nm_##_prereqs), \
+		.prereq = nm_##_prereqs, \
 	};
-#define WARNING(_nm, _fn, _d, ...) \
-	CHECK_ENTRY(_nm, _fn, _d, true, false, __VA_ARGS__)
-#define ERROR(_nm, _fn, _d, ...) \
-	CHECK_ENTRY(_nm, _fn, _d, false, true, __VA_ARGS__)
-#define CHECK(_nm, _fn, _d, ...) \
-	CHECK_ENTRY(_nm, _fn, _d, false, false, __VA_ARGS__)
+#define WARNING(nm_, fn_, d_, ...) \
+	CHECK_ENTRY(nm_, fn_, d_, true, false, __VA_ARGS__)
+#define ERROR(nm_, fn_, d_, ...) \
+	CHECK_ENTRY(nm_, fn_, d_, false, true, __VA_ARGS__)
+#define CHECK(nm_, fn_, d_, ...) \
+	CHECK_ENTRY(nm_, fn_, d_, false, false, __VA_ARGS__)
 
 static inline void  PRINTF(3, 4) check_msg(struct check *c, struct dt_info *dti,
 					   const char *fmt, ...)
@@ -178,6 +178,36 @@ static void check_is_string(struct check *c, struct dt_info *dti,
 	WARNING(nm, check_is_string, (propname))
 #define ERROR_IF_NOT_STRING(nm, propname) \
 	ERROR(nm, check_is_string, (propname))
+
+static void check_is_string_list(struct check *c, struct dt_info *dti,
+				 struct node *node)
+{
+	int rem, l;
+	struct property *prop;
+	char *propname = c->data;
+	char *str;
+
+	prop = get_property(node, propname);
+	if (!prop)
+		return; /* Not present, assumed ok */
+
+	str = prop->val.val;
+	rem = prop->val.len;
+	while (rem > 0) {
+		l = strnlen(str, rem);
+		if (l == rem) {
+			FAIL(c, dti, "\"%s\" property in %s is not a string list",
+			     propname, node->fullpath);
+			break;
+		}
+		rem -= l + 1;
+		str += l + 1;
+	}
+}
+#define WARNING_IF_NOT_STRING_LIST(nm, propname) \
+	WARNING(nm, check_is_string_list, (propname))
+#define ERROR_IF_NOT_STRING_LIST(nm, propname) \
+	ERROR(nm, check_is_string_list, (propname))
 
 static void check_is_cell(struct check *c, struct dt_info *dti,
 			  struct node *node)
@@ -586,6 +616,47 @@ WARNING_IF_NOT_CELL(interrupt_cells_is_cell, "#interrupt-cells");
 WARNING_IF_NOT_STRING(device_type_is_string, "device_type");
 WARNING_IF_NOT_STRING(model_is_string, "model");
 WARNING_IF_NOT_STRING(status_is_string, "status");
+WARNING_IF_NOT_STRING(label_is_string, "label");
+
+WARNING_IF_NOT_STRING_LIST(compatible_is_string_list, "compatible");
+
+static void check_names_is_string_list(struct check *c, struct dt_info *dti,
+				       struct node *node)
+{
+	struct property *prop;
+
+	for_each_property(node, prop) {
+		const char *s = strrchr(prop->name, '-');
+		if (!s || !streq(s, "-names"))
+			continue;
+
+		c->data = prop->name;
+		check_is_string_list(c, dti, node);
+	}
+}
+WARNING(names_is_string_list, check_names_is_string_list, NULL);
+
+static void check_alias_paths(struct check *c, struct dt_info *dti,
+				    struct node *node)
+{
+	struct property *prop;
+
+	if (!streq(node->name, "aliases"))
+		return;
+
+	for_each_property(node, prop) {
+		if (!prop->val.val || !get_node_by_path(dti->dt, prop->val.val)) {
+			FAIL(c, dti, "aliases property '%s' is not a valid node (%s)",
+			     prop->name, prop->val.val);
+			continue;
+		}
+		if (strspn(prop->name, LOWERCASE DIGITS "-") != strlen(prop->name))
+			FAIL(c, dti, "aliases property name '%s' is not valid",
+			     prop->name);
+
+	}
+}
+WARNING(alias_paths, check_alias_paths, NULL);
 
 static void fixup_addr_size_cells(struct check *c, struct dt_info *dti,
 				  struct node *node)
@@ -696,8 +767,8 @@ static void check_pci_bridge(struct check *c, struct dt_info *dti, struct node *
 
 	node->bus = &pci_bus;
 
-	if (!strneq(node->name, "pci", node->basenamelen) &&
-	    !strneq(node->name, "pcie", node->basenamelen))
+	if (!strprefixeq(node->name, node->basenamelen, "pci") &&
+	    !strprefixeq(node->name, node->basenamelen, "pcie"))
 		FAIL(c, dti, "Node %s node name is not \"pci\" or \"pcie\"",
 			     node->fullpath);
 
@@ -828,7 +899,7 @@ static bool node_is_compatible(struct node *node, const char *compat)
 
 	for (str = prop->val.val, end = str + prop->val.len; str < end;
 	     str += strnlen(str, end - str) + 1) {
-		if (strneq(str, compat, end - str))
+		if (strprefixeq(str, end - str, compat))
 			return true;
 	}
 	return false;
@@ -932,6 +1003,31 @@ static void check_avoid_default_addr_size(struct check *c, struct dt_info *dti,
 WARNING(avoid_default_addr_size, check_avoid_default_addr_size, NULL,
 	&addr_size_cells);
 
+static void check_avoid_unnecessary_addr_size(struct check *c, struct dt_info *dti,
+					      struct node *node)
+{
+	struct property *prop;
+	struct node *child;
+	bool has_reg = false;
+
+	if (!node->parent || node->addr_cells < 0 || node->size_cells < 0)
+		return;
+
+	if (get_property(node, "ranges") || !node->children)
+		return;
+
+	for_each_child(node, child) {
+		prop = get_property(child, "reg");
+		if (prop)
+			has_reg = true;
+	}
+
+	if (!has_reg)
+		FAIL(c, dti, "unnecessary #address-cells/#size-cells without \"ranges\" or child \"reg\" property in %s",
+		     node->fullpath);
+}
+WARNING(avoid_unnecessary_addr_size, check_avoid_unnecessary_addr_size, NULL, &avoid_default_addr_size);
+
 static void check_obsolete_chosen_interrupt_controller(struct check *c,
 						       struct dt_info *dti,
 						       struct node *node)
@@ -956,6 +1052,56 @@ static void check_obsolete_chosen_interrupt_controller(struct check *c,
 WARNING(obsolete_chosen_interrupt_controller,
 	check_obsolete_chosen_interrupt_controller, NULL);
 
+static void check_chosen_node_is_root(struct check *c, struct dt_info *dti,
+				      struct node *node)
+{
+	if (!streq(node->name, "chosen"))
+		return;
+
+	if (node->parent != dti->dt)
+		FAIL(c, dti, "chosen node '%s' must be at root node",
+		     node->fullpath);
+}
+WARNING(chosen_node_is_root, check_chosen_node_is_root, NULL);
+
+static void check_chosen_node_bootargs(struct check *c, struct dt_info *dti,
+				       struct node *node)
+{
+	struct property *prop;
+
+	if (!streq(node->name, "chosen"))
+		return;
+
+	prop = get_property(node, "bootargs");
+	if (!prop)
+		return;
+
+	c->data = prop->name;
+	check_is_string(c, dti, node);
+}
+WARNING(chosen_node_bootargs, check_chosen_node_bootargs, NULL);
+
+static void check_chosen_node_stdout_path(struct check *c, struct dt_info *dti,
+					  struct node *node)
+{
+	struct property *prop;
+
+	if (!streq(node->name, "chosen"))
+		return;
+
+	prop = get_property(node, "stdout-path");
+	if (!prop) {
+		prop = get_property(node, "linux,stdout-path");
+		if (!prop)
+			return;
+		FAIL(c, dti, "Use 'stdout-path' instead of 'linux,stdout-path'");
+	}
+
+	c->data = prop->name;
+	check_is_string(c, dti, node);
+}
+WARNING(chosen_node_stdout_path, check_chosen_node_stdout_path, NULL);
+
 struct provider {
 	const char *prop_name;
 	const char *cell_name;
@@ -972,7 +1118,7 @@ static void check_property_phandle_args(struct check *c,
 	int cell, cellsize = 0;
 
 	if (prop->val.len % sizeof(cell_t)) {
-		FAIL(c, dti, "property '%s' size (%d) is invalid, expected multiple of %ld in node %s",
+		FAIL(c, dti, "property '%s' size (%d) is invalid, expected multiple of %zu in node %s",
 		     prop->name, prop->val.len, sizeof(cell_t), node->fullpath);
 		return;
 	}
@@ -988,6 +1134,10 @@ static void check_property_phandle_args(struct check *c,
 		 * entries when each index position has a specific definition.
 		 */
 		if (phandle == 0 || phandle == -1) {
+			/* Give up if this is an overlay with external references */
+			if (dti->dtsflags & DTSF_PLUGIN)
+				break;
+
 			cellsize = 0;
 			continue;
 		}
@@ -1062,7 +1212,7 @@ WARNING_PROPERTY_PHANDLE_CELLS(phys, "phys", "#phy-cells");
 WARNING_PROPERTY_PHANDLE_CELLS(power_domains, "power-domains", "#power-domain-cells");
 WARNING_PROPERTY_PHANDLE_CELLS(pwms, "pwms", "#pwm-cells");
 WARNING_PROPERTY_PHANDLE_CELLS(resets, "resets", "#reset-cells");
-WARNING_PROPERTY_PHANDLE_CELLS(sound_dais, "sound-dais", "#sound-dai-cells");
+WARNING_PROPERTY_PHANDLE_CELLS(sound_dai, "sound-dai", "#sound-dai-cells");
 WARNING_PROPERTY_PHANDLE_CELLS(thermal_sensors, "thermal-sensors", "#thermal-sensor-cells");
 
 static bool prop_is_gpio(struct property *prop)
@@ -1163,7 +1313,7 @@ static void check_interrupts_property(struct check *c,
 		return;
 
 	if (irq_prop->val.len % sizeof(cell_t))
-		FAIL(c, dti, "property '%s' size (%d) is invalid, expected multiple of %ld in node %s",
+		FAIL(c, dti, "property '%s' size (%d) is invalid, expected multiple of %zu in node %s",
 		     irq_prop->name, irq_prop->val.len, sizeof(cell_t),
 		     node->fullpath);
 
@@ -1176,6 +1326,11 @@ static void check_interrupts_property(struct check *c,
 		prop = get_property(parent, "interrupt-parent");
 		if (prop) {
 			phandle = propval_cell(prop);
+			/* Give up if this is an overlay with external references */
+			if ((phandle == 0 || phandle == -1) &&
+			    (dti->dtsflags & DTSF_PLUGIN))
+					return;
+
 			irq_node = get_node_by_phandle(root, phandle);
 			if (!irq_node) {
 				FAIL(c, dti, "Bad interrupt-parent phandle for %s",
@@ -1227,6 +1382,9 @@ static struct check *check_table[] = {
 
 	&address_cells_is_cell, &size_cells_is_cell, &interrupt_cells_is_cell,
 	&device_type_is_string, &model_is_string, &status_is_string,
+	&label_is_string,
+
+	&compatible_is_string_list, &names_is_string_list,
 
 	&property_name_chars_strict,
 	&node_name_chars_strict,
@@ -1244,7 +1402,9 @@ static struct check *check_table[] = {
 	&simple_bus_reg,
 
 	&avoid_default_addr_size,
+	&avoid_unnecessary_addr_size,
 	&obsolete_chosen_interrupt_controller,
+	&chosen_node_is_root, &chosen_node_bootargs, &chosen_node_stdout_path,
 
 	&clocks_property,
 	&cooling_device_property,
@@ -1260,12 +1420,14 @@ static struct check *check_table[] = {
 	&power_domains_property,
 	&pwms_property,
 	&resets_property,
-	&sound_dais_property,
+	&sound_dai_property,
 	&thermal_sensors_property,
 
 	&deprecated_gpio_property,
 	&gpios_property,
 	&interrupts_property,
+
+	&alias_paths,
 
 	&always_fail,
 };
