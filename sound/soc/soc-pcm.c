@@ -537,10 +537,15 @@ static int soc_pcm_open(struct snd_pcm_substream *substream)
 			}
 		}
 
+		/* TX/RX masks calculation is based on DTB info.
+		 * It's not clear why we should clear it here.
+		 */
+		/*
 		if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
 			codec_dai->tx_mask = 0;
 		else
 			codec_dai->rx_mask = 0;
+		*/
 	}
 
 	if (rtd->dai_link->ops->startup) {
