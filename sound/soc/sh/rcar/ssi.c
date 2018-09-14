@@ -497,6 +497,11 @@ static int rsnd_ssi_hw_params(struct rsnd_mod *mod,
 	struct rsnd_ssi *ssi = rsnd_mod_to_ssi(mod);
 	int chan = params_channels(params);
 
+	/* TDM Extend Mode needs 8ch */
+	if (chan == 6) {
+		chan = 8;
+	}
+
 	/*
 	 * snd_pcm_ops::hw_params will be called *before*
 	 * snd_soc_dai_ops::trigger. Thus, ssi->usrcnt is 0
