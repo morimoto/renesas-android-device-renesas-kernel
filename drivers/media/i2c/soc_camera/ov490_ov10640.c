@@ -36,6 +36,27 @@
 #define OV490_ISP_VSIZE_LOW	0x62
 #define OV490_ISP_VSIZE_HIGH	0x63
 
+#define OV10640_MIN_WIDTH	320
+#define OV10640_MIN_HEIGHT	240
+#define OV10640_MAX_WIDTH	1280
+#define OV10640_MAX_HEIGHT	1080
+#define OV490_MIN_WIDTH	320
+#define OV490_MIN_HEIGHT	240
+#define OV490_MAX_WIDTH	1280
+#define OV490_MAX_HEIGHT	966
+
+// According to the datasheet the maximum image transfer rate for
+// full resolution is 60 fps. But is used 30 fps according to the
+// comment in the header file: "1280x1080@30/UYVY/BT601/8bit".
+enum ov10640_frame_rate {
+	OV10640_30_FPS = 0,
+	OV10640_NUM_FRAMERATES,
+};
+
+static const int ov10640_framerates[] = {
+	[OV10640_30_FPS] = 30,
+};
+
 struct ov490_priv {
 	struct v4l2_subdev		sd;
 	struct v4l2_ctrl_handler	hdl;
@@ -233,6 +254,43 @@ static int ov490_enum_mbus_code(struct v4l2_subdev *sd,
 		return -EINVAL;
 
 	code->code = MEDIA_BUS_FMT_YUYV8_2X8;
+
+	return 0;
+}
+
+static int ov10640_enum_frame_size(struct v4l2_subdev *sd,
+				  struct v4l2_subdev_pad_config *cfg,
+				  struct v4l2_subdev_frame_size_enum *fse)
+{
+	if (fse->index)
+		return -EINVAL;
+	if (fse->code != MEDIA_BUS_FMT_YUYV8_2X8)
+		return -EINVAL;
+
+	fse->min_width  = OV10640_MIN_WIDTH;
+	fse->min_height = OV10640_MIN_HEIGHT;
+	fse->max_width  = OV10640_MAX_WIDTH;
+	fse->max_height = OV10640_MAX_HEIGHT;
+
+	return 0;
+}
+
+static int ov10640_enum_frame_interval(struct v4l2_subdev *sd,
+				  struct v4l2_subdev_pad_config *cfg,
+				  struct v4l2_subdev_frame_interval_enum *fie)
+{
+	if (fie->pad)
+		return -EINVAL;
+	if (fie->width < OV10640_MIN_WIDTH || fie->width > OV10640_MAX_WIDTH ||
+		fie->height < OV10640_MIN_HEIGHT || fie->height > OV10640_MAX_HEIGHT)
+		return -EINVAL;
+	if (fie->code != MEDIA_BUS_FMT_YUYV8_2X8)
+		return -EINVAL;
+	if (fie->index >= OV10640_NUM_FRAMERATES)
+		return -EINVAL;
+
+	fie->interval.numerator = 1;
+	fie->interval.denominator = ov10640_framerates[fie->index];
 
 	return 0;
 }
@@ -716,6 +774,8 @@ static struct v4l2_subdev_video_ops ov490_video_ops = {
 static const struct v4l2_subdev_pad_ops ov490_subdev_pad_ops = {
 	.get_edid	= ov490_get_edid,
 	.enum_mbus_code	= ov490_enum_mbus_code,
+	.enum_frame_size	= ov10640_enum_frame_size,
+	.enum_frame_interval	= ov10640_enum_frame_interval,
 	.get_selection	= ov490_get_selection,
 	.set_selection	= ov490_set_selection,
 	.get_fmt	= ov490_get_fmt,
@@ -964,10 +1024,10 @@ static int ov490_parse_dt(struct device_node *np, struct ov490_priv *priv)
 	if (!of_property_read_string(np, "maxim,fixed-sensor", &fixed_sensor) &&
 	    strcmp(fixed_sensor, "ov490") == 0) {
 		if (of_property_read_u32(np, "maxim,width", &priv->max_width))
-			priv->max_width = 1280;
+			priv->max_width = OV490_MAX_WIDTH;
 
 		if (of_property_read_u32(np, "maxim,height", &priv->max_height))
-			priv->max_height = 966;
+			priv->max_height = OV490_MAX_HEIGHT;
 
 		priv->is_fixed_sensor = true;
 	}
