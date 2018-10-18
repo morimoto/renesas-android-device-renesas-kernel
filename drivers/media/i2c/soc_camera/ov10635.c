@@ -213,8 +213,8 @@ static int ov10635_enum_frame_size(struct v4l2_subdev *sd,
 	if (fse->code != MEDIA_BUS_FMT_YUYV8_2X8)
 		return -EINVAL;
 
-	fse->min_width  = OV10635_MAX_WIDTH;
-	fse->min_height = OV10635_MAX_HEIGHT;
+	fse->min_width  = OV10635_MIN_WIDTH;
+	fse->min_height = OV10635_MIN_HEIGHT;
 	fse->max_width  = OV10635_MAX_WIDTH;
 	fse->max_height = OV10635_MAX_HEIGHT;
 
@@ -227,7 +227,8 @@ static int ov10635_enum_frame_interval(struct v4l2_subdev *sd,
 {
 	if (fie->pad)
 		return -EINVAL;
-	if (fie->width != OV10635_MAX_WIDTH || fie->height != OV10635_MAX_HEIGHT)
+	if (fie->width < OV10635_MIN_WIDTH || fie->width > OV10635_MAX_WIDTH ||
+		fie->height < OV10635_MIN_HEIGHT || fie->height > OV10635_MAX_HEIGHT)
 		return -EINVAL;
 	if (fie->code != MEDIA_BUS_FMT_YUYV8_2X8)
 		return -EINVAL;
