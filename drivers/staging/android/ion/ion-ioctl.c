@@ -20,6 +20,10 @@
 
 #include "ion.h"
 
+#if defined(CONFIG_ION_RCAR)
+long rcar_ion_get_phys_addr(unsigned long);
+#endif // CONFIG_ION_RCAR
+
 union ion_ioctl_arg {
 	struct ion_allocation_data allocation;
 	struct ion_heap_query query;
@@ -56,6 +60,12 @@ long ion_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 	int ret = 0;
 	unsigned int dir;
 	union ion_ioctl_arg data;
+
+#if defined(CONFIG_ION_RCAR)
+	if (cmd == ION_IOC_CUSTOM_GETPHYADDR) {
+		return rcar_ion_get_phys_addr(arg);
+	}
+#endif
 
 	dir = ion_ioctl_dir(cmd);
 
