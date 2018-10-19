@@ -42,3 +42,9 @@ config ION_CMA_HEAP
 	  Choose this option to enable CMA heaps with Ion. This heap is backed
 	  by the Contiguous Memory Allocator (CMA). If your system has these
 	  regions, you should say Y here.
+
+config ION_RCAR
+	bool "ION for rcar"
+	depends on (ARCH_R8A7790 || ARCH_R8A7791 || ARCH_R8A7793 || ARCH_R8A7794 || ARCH_R8A7795) && ION
+	help
+	  RCar specific ION extensions
