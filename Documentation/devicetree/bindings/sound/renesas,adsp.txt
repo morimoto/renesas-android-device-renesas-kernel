@@ -1,0 +1,11 @@
+Renesas ADSP sound driver
+
+Required properties:
+- compatible			: "renesas,rcar_adsp_sound_gen3"
+
+Example:
+
+rcar_adsp_sound: adsp_sound@0 {
+     compatible =  "renesas,rcar_adsp_sound_gen3";
+     status = "disabled";
+};
