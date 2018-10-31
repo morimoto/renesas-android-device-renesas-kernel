@@ -798,6 +798,11 @@
 		method = "smc";
 	};
 
+	rcar_adsp_sound: adsp_sound {
+		compatible =  "renesas,rcar_adsp_sound_gen3";
+		status = "disabled";
+	};
+
 	/* External SCIF clock - to be overridden by boards that provide it */
 	scif_clk: scif {
 		compatible = "fixed-clock";
