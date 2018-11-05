@@ -35,7 +35,7 @@ KERNEL_MODULES_OUT   := $(abspath $(PRODUCT_OUT)/obj/KERNEL_MODULES)
 KERNEL_CONFIG        := $(KERNEL_OUT)/.config
 KERNEL_DTS_DIR       := $(KERNEL_OUT)/arch/$(TARGET_ARCH)/boot/dts/renesas
 KERNEL_TARGET_BINARY := $(KERNEL_OUT)/arch/$(TARGET_ARCH)/boot/Image.lz4
-KERNEL_CROSS_COMPILE := $(abspath ./prebuilts/gcc/linux-x86/aarch64/aarch64-linux-gnu/bin/aarch64-linux-gnu-)
+KERNEL_CROSS_COMPILE := $(BSP_CROSS_COMPILE)
 DTB_IMG_OUT          := $(PRODUCT_OUT)/dtb.img
 
 ifeq ($(TARGET_KERNEL_MODULES_OUT),)
