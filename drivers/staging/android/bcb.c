@@ -44,7 +44,9 @@ static char *bootdev = "mmcblk0";
 module_param(bootdev, charp, S_IRUGO);
 MODULE_PARM_DESC(bootdev, "Block device for bootloader communication");
 
-static int partno = 3;
+/* NOTE: This partition number MUST be synchronized with struct
+ * oem_part_info oem_partition_table[FASTBOOT_OEM_PARTITIONS] in U-Boot! */
+static int partno = 1;
 module_param(partno, int, S_IRUGO);
 MODULE_PARM_DESC(partno, "Partition number for bootloader communication");
 
