@@ -62,7 +62,7 @@ long ion_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 	union ion_ioctl_arg data;
 
 #if defined(CONFIG_ION_RCAR)
-	if (cmd == ION_IOC_CUSTOM_GETPHYADDR) {
+	if (cmd == ION_IOC_CUSTOM) {
 		return rcar_ion_get_phys_addr(arg);
 	}
 #endif

@@ -114,9 +114,9 @@ struct ion_heap_query {
 };
 
 #if defined(CONFIG_ION_RCAR)
-struct ion_getphys_data {
-	int fd;
-	uint64_t paddr;
+struct ion_custom_data {
+	unsigned int cmd;
+	unsigned long arg;
 };
 #endif // CONFIG_ION_RCAR
 
@@ -141,8 +141,7 @@ struct ion_getphys_data {
 					struct ion_heap_query)
 
 #if defined(CONFIG_ION_RCAR)
-#define ION_IOC_CUSTOM_GETPHYADDR	_IOWR(ION_IOC_MAGIC, 9, \
-		struct ion_getphys_data)
+#define ION_IOC_CUSTOM          _IOWR(ION_IOC_MAGIC, 6, struct ion_custom_data)
 #endif // CONFIG_ION_RCAR
 
 #endif /* _UAPI_LINUX_ION_H */
