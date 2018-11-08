@@ -8,3 +8,54 @@
  * version 2.  This program is licensed "as is" without any warranty of any
  * kind, whether express or implied.
  */
+
+#include <dt-bindings/input/linux-event-codes.h>
+
+/ {
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		power {
+			label = "SW-TACT-22";
+			gpios = <&gpio6 13 GPIO_ACTIVE_LOW>;
+			linux,code = <116>;
+			gpio-key,wakeup;
+		};
+
+		volume-up {
+			label = "SW-TACT-20";
+			gpios = <&gpio6 11 GPIO_ACTIVE_LOW>;
+			linux,code = <115>;
+		};
+
+		volume-down {
+			label = "SW-TACT-21";
+			gpios = <&gpio6 12 GPIO_ACTIVE_LOW>;
+			linux,code = <114>;
+		};
+
+		soft_sw0 {
+			label = "SW-4-1";
+			gpios = <&gpio5 17 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_CAMERA>;
+		};
+
+		soft_sw1 {
+			label = "SW-4-2";
+			gpios = <&gpio5 20 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_SOUND>;
+		};
+
+		soft_sw2 {
+			label = "SW-4-3";
+			gpios = <&gpio5 22 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_MEDIA>;
+		};
+
+		soft_sw3 {
+			label = "SW-4-4";
+			gpios = <&gpio5 23 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_CANCEL>;
+		};
+	};
+};
