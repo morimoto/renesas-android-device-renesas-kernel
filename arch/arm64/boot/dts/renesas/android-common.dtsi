@@ -12,4 +12,9 @@
 	chosen {
 		bootargs = "";
 	};
+
+	keylongpress {
+		compatible = "key-long-press";
+		key_down_delay = <10000>;
+	};
 };
