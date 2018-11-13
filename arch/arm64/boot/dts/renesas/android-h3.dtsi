@@ -10,3 +10,92 @@
 
 #include "android-fstab.dtsi"
 #include "android-common.dtsi"
+
+/ {
+    energy-costs {
+            CPU_COST_0: core-cost0 {
+                    busy-cost-data = <
+                            308   315
+                            596   618
+                            898   934
+                            965   1044
+                            1024  1286
+                    >;
+                    idle-cost-data = <
+                            71
+                            71
+                            0
+                            0
+                    >;
+            };
+            CPU_COST_1: core-cost1 {
+                    busy-cost-data = <
+                            379   131
+                    >;
+                    idle-cost-data = <
+                            17
+                            17
+                            0
+                            0
+                    >;
+            };
+            CLUSTER_COST_0: cluster-cost0 {
+                    busy-cost-data = <
+                            308   33
+                            596   71
+                            898   112
+                            965   126
+                            1024  154
+                    >;
+                    idle-cost-data = <
+                            112
+                            112
+                            0
+                            0
+                    >;
+            };
+            CLUSTER_COST_1: cluster-cost1 {
+                    busy-cost-data = <
+                            379   16
+                    >;
+                    idle-cost-data = <
+                            17
+                            17
+                            0
+                            0
+                    >;
+            };
+	};
+};
+
+&a57_0 {
+	sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
+};
+
+&a57_1 {
+	sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
+};
+
+&a57_2 {
+	sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
+};
+
+&a57_3 {
+	sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
+};
+
+&a53_0 {
+	sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
+};
+
+&a53_1 {
+	sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
+};
+
+&a53_2 {
+	sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
+};
+
+&a53_3 {
+	sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
+};
