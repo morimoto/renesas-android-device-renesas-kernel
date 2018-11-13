@@ -58,6 +58,10 @@
 			linux,code = <KEY_CANCEL>;
 		};
 	};
+
+	vga-encoder {
+		adi,clock-max-rate = <100000>;
+	};
 };
 
 &du {
