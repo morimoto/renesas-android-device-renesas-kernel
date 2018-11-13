@@ -787,3 +787,8 @@
 	status = "okay";
 	memory-region = <&adsp_reserved>;
 };
+
+&adsp {
+	status = "okay";
+	memory-region = <&adsp_reserved>;
+};
