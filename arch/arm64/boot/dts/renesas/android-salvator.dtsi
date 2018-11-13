@@ -59,3 +59,13 @@
 		};
 	};
 };
+
+&du {
+	ports {
+		port@3 {
+			lvds_connector: endpoint {
+				remote-endpoint = <&lvds_in>;
+			};
+		};
+	};
+};
