@@ -1,0 +1,47 @@
+/*
+ * Device Tree Overlay for the Salvator boards with enabled ADSP
+ *
+ * Copyright (C) 2018 GlobalLogic
+ *
+ * This file is licensed under the terms of the GNU General Public License
+ * version 2.  This program is licensed "as is" without any warranty of any
+ * kind, whether express or implied.
+ */
+
+/dts-v1/;
+/plugin/;
+
+&rsnd_ak4613 {
+	simple-audio-card,routing = "ak4613 Playback", "Playback0",
+						"ak4613 Playback", "Playback1",
+						"ak4613 Playback", "Playback2",
+						"ak4613 Playback", "Playback3",
+						"Capture0", "ak4613 Capture",
+						"Capture1", "ak4613 Capture",
+						"Capture2", "ak4613 Capture",
+						"Capture3", "ak4613 Capture",
+						"ak4613 Playback", "DAI0 Playback",
+						"DAI0 Capture", "ak4613 Capture";
+
+	simple-audio-card,cpu@0 {
+		sound-dai = <&rcar_adsp_sound 0>;
+	};
+
+	simple-audio-card,cpu@1 {
+		sound-dai = <&rcar_adsp_sound 1>;
+	};
+
+	simple-audio-card,cpu@2 {
+		sound-dai = <&rcar_adsp_sound 2>;
+	};
+
+	simple-audio-card,cpu@3 {
+		sound-dai = <&rcar_adsp_sound 3>;
+	};
+};
+
+&rcar_adsp_sound {
+	status = "okay";
+	/* Multiple DAI */
+	#sound-dai-cells = <1>;
+};
