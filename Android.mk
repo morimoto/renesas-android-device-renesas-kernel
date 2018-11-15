@@ -59,10 +59,10 @@ DTB_BLOBS := \
 	$(KERNEL_DTS_DIR)/android-m3n-salvator-xs.dtb --id=0x04779650
 ifeq ($(H3_OPTION),4GB2x2)
 DTB_BLOBS += \
-	$(KERNEL_DTS_DIR)/r8a7795-salvator-xs-2x2g.dtb --id=0x04779530
+	$(KERNEL_DTS_DIR)/android-h3-salvator-xs-2x2g.dtb --id=0x04779530
 else
 DTB_BLOBS += \
-	$(KERNEL_DTS_DIR)/r8a7795-salvator-xs.dtb --id=0x04779530
+	$(KERNEL_DTS_DIR)/android-h3-salvator-xs.dtb --id=0x04779530
 endif
 endif
 
