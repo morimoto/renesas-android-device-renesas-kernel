@@ -104,32 +104,92 @@
 
 &a57_0 {
 	sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
+	i-cache-size = <0xC000>;
+	i-cache-line-size = <64>;
+	i-cache-sets = <256>;
+	d-cache-size = <0x8000>;
+	d-cache-line-size = <64>;
+	d-cache-sets = <256>;
 };
 
 &a57_1 {
 	sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
+	i-cache-size = <0xC000>;
+	i-cache-line-size = <64>;
+	i-cache-sets = <256>;
+	d-cache-size = <0x8000>;
+	d-cache-line-size = <64>;
+	d-cache-sets = <256>;
 };
 
 &a57_2 {
 	sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
+	i-cache-size = <0xC000>;
+	i-cache-line-size = <64>;
+	i-cache-sets = <256>;
+	d-cache-size = <0x8000>;
+	d-cache-line-size = <64>;
+	d-cache-sets = <256>;
 };
 
 &a57_3 {
 	sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
+	i-cache-size = <0xC000>;
+	i-cache-line-size = <64>;
+	i-cache-sets = <256>;
+	d-cache-size = <0x8000>;
+	d-cache-line-size = <64>;
+	d-cache-sets = <256>;
 };
 
 &a53_0 {
 	sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
+	i-cache-size = <0x8000>;
+	i-cache-line-size = <64>;
+	i-cache-sets = <256>;
+	d-cache-size = <0x8000>;
+	d-cache-line-size = <64>;
+	d-cache-sets = <128>;
 };
 
 &a53_1 {
 	sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
+	i-cache-size = <0x8000>;
+	i-cache-line-size = <64>;
+	i-cache-sets = <256>;
+	d-cache-size = <0x8000>;
+	d-cache-line-size = <64>;
+	d-cache-sets = <128>;
 };
 
 &a53_2 {
 	sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
+	i-cache-size = <0x8000>;
+	i-cache-line-size = <64>;
+	i-cache-sets = <256>;
+	d-cache-size = <0x8000>;
+	d-cache-line-size = <64>;
+	d-cache-sets = <128>;
 };
 
 &a53_3 {
 	sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
+	i-cache-size = <0x8000>;
+	i-cache-line-size = <64>;
+	i-cache-sets = <256>;
+	d-cache-size = <0x8000>;
+	d-cache-line-size = <64>;
+	d-cache-sets = <128>;
+};
+
+&L2_CA57 {
+	cache-size = <0x200000>;
+	cache-line-size = <64>;
+	cache-sets = <2048>;
+};
+
+&L2_CA53 {
+	cache-size = <0x80000>;
+	cache-line-size = <64>;
+	cache-sets = <512>;
 };
