@@ -9,8 +9,6 @@
  * kind, whether express or implied.
  */
 
-#ifndef __H3_SALVATOR_XS_OVERRIDE__
-#include "r8a7795-salvator-xs.dts"
-#endif // __H3_SALVATOR_XS_OVERRIDE__
-#include "android-h3.dtsi"
-#include "android-salvator.dtsi"
+#include "r8a7795-salvator-xs-2x2g.dts"
+#define __H3_SALVATOR_XS_OVERRIDE__
+#include "android-h3-salvator-xs.dts"
