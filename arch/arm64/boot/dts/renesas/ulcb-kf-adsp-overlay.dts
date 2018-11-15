@@ -1,0 +1,45 @@
+/*
+ * Device Tree Overlay for the Kingfisher boards with enabled ADSP
+ *
+ * Copyright (C) 2018 GlobalLogic
+ *
+ * This file is licensed under the terms of the GNU General Public License
+ * version 2.  This program is licensed "as is" without any warranty of any
+ * kind, whether express or implied.
+ */
+
+/dts-v1/;
+/plugin/;
+
+&sound_ext {
+	simple-audio-card,dai-link@1 {
+		format = "left_j";
+		cpu@0 {
+			sound-dai = <&rcar_adsp_sound 4>;
+		};
+		codec@0 {
+			sound-dai = <&pcm3168a>;
+			dai-tdm-slot-num = <8>;
+			dai-tdm-slot-width = <24>;
+			system-clock-frequency = <24576000>;
+		};
+	};
+};
+
+&rsnd_ak4613 {
+	simple-audio-card,dai-link@1 {
+		format = "left_j";
+		cpu@1 {
+			sound-dai = <&rcar_adsp_sound 0>;
+		};
+		codec@1 {
+			sound-dai = <&ak4613>;
+		};
+	};
+};
+
+&rcar_adsp_sound {
+	status = "okay";
+	/* Multiple DAI */
+	#sound-dai-cells = <1>;
+};
