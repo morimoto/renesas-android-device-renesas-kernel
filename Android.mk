@@ -64,6 +64,14 @@ else
 DTB_BLOBS += \
 	$(KERNEL_DTS_DIR)/android-h3-salvator-xs.dtb --id=0x04779530
 endif
+
+DTBO_BLOBS += $(KERNEL_DTS_DIR)/r8a7795-salvator-4x2g-overlay.dtb --id=0x04779530 \
+	$(KERNEL_DTS_DIR)/r8a7795-salvator-4x2g-overlay.dtb --id=0x04779520 \
+	$(KERNEL_DTS_DIR)/r8a7795v3-salvator-overlay.dtb --id=0x04779530 \
+	$(KERNEL_DTS_DIR)/r8a7795v2-salvator-overlay.dtb --id=0x04779520
+ifeq ($(ENABLE_ADSP),true)
+DTBO_BLOBS += $(KERNEL_DTS_DIR)/salvator-adsp-overlay.dtb --id=0x00779000
+endif
 endif
 
 ifeq ($(TARGET_PRODUCT),ulcb)
@@ -74,6 +82,13 @@ endif
 ifeq ($(TARGET_PRODUCT),kingfisher)
 DTB_BLOBS := $(KERNEL_DTS_DIR)/android-h3-kingfisher.dtb --id=0x0b779520 \
 	$(KERNEL_DTS_DIR)/android-h3-kingfisher.dtb --id=0x0b779530
+DTBO_BLOBS := $(KERNEL_DTS_DIR)/r8a7795-h3ulcb-4x2g-overlay.dtb --id=0x0b779530 \
+	$(KERNEL_DTS_DIR)/r8a7795-h3ulcb-4x2g-overlay.dtb --id=0x0b779520 \
+	$(KERNEL_DTS_DIR)/r8a7795v3-h3ulcb-kf-overlay.dtb --id=0x0b779530 \
+	$(KERNEL_DTS_DIR)/r8a7795v2-h3ulcb-kf-overlay.dtb --id=0x0b779520
+ifeq ($(ENABLE_ADSP),true)
+DTBO_BLOBS += $(KERNEL_DTS_DIR)/ulcb-kf-adsp-overlay.dtb --id=0x00779000
+endif
 endif
 
 # Include only for Renesas ones.
@@ -109,6 +124,21 @@ TARGET_KERNEL_MODULES: $(KERNEL_TARGET_BINARY)
 
 $(TARGET_KERNEL_EXT_MODULES) : TARGET_KERNEL_MODULES
 
+DTBO_OUT := $(TARGET_OUT_INTERMEDIATES)/DTBO
+BOARD_PREBUILT_DTBOIMAGE := $(DTBO_OUT)/dtbo.img
+
+$(DTBO_OUT):
+	$(hide) mkdir -p $(DTBO_OUT)
+
+$(BOARD_PREBUILT_DTBOIMAGE): $(TARGET_KERNEL_EXT_MODULES) $(DTBO_OUT) mkdtimg
+	mkdtimg create $(BOARD_PREBUILT_DTBOIMAGE) --page_size=4096 $(DTBO_BLOBS)
+	# Add padding to image for avb singing. Avbtool needs file more then 64 bytes.
+ifeq ($(BOARD_AVB_ENABLE),true)
+ifeq ($(DTBO_BLOBS),)
+	$(hide) dd if=/dev/zero bs=1 count=64 >> $(BOARD_PREBUILT_DTBOIMAGE)
+endif # DTBO_BLOBS
+endif # BOARD_AVB_ENABLE
+	cp -v $(BOARD_PREBUILT_DTBOIMAGE) $(PRODUCT_OUT)/dtbo.img
 
 $(DTB_IMG_OUT): $(TARGET_KERNEL_EXT_MODULES) mkdtimg
 	mkdtimg create $(PRODUCT_OUT)/dtb.img --page_size=4096 $(DTB_BLOBS)
