@@ -17,6 +17,11 @@ dtb-$(CONFIG_ARCH_R8A7795) += r8a7795v2-salvator-overlay.dtb
 dtb-$(CONFIG_ARCH_R8A7795) += r8a7795v3-h3ulcb-kf-overlay.dtb
 dtb-$(CONFIG_ARCH_R8A7795) += r8a7795v3-salvator-overlay.dtb
 
+ifeq ($(ENABLE_ADSP),true)
+dtb-y += ulcb-kf-adsp-overlay.dtb
+dtb-y += salvator-adsp-overlay.dtb
+endif
+
 DTC_FLAGS	+= -@
 always		:= $(dtb-y)
 clean-files	:= *.dtb
