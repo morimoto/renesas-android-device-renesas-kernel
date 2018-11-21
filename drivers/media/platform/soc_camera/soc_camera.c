@@ -29,6 +29,7 @@
 #include <linux/regulator/consumer.h>
 #include <linux/slab.h>
 #include <linux/vmalloc.h>
+#include <linux/sys_soc.h>
 
 #include <media/soc_camera.h>
 #include <media/drv-intf/soc_mediabus.h>
