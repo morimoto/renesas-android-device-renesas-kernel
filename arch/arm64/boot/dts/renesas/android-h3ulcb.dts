@@ -10,6 +10,6 @@
  */
 
 #ifndef __H3ULCB_OVERWRITE__
-#include "r8a7795-h3ulcb.dts"
+#include "android-r8a7795-h3ulcb.dts"
 #endif // __H3ULCB_OVERWRITE__
 #include "android-h3.dtsi"
