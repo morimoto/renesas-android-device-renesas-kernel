@@ -17,6 +17,9 @@
 #include <linux/smp.h>
 #include <linux/sys_soc.h>
 #include <linux/watchdog.h>
+#include <linux/times.h>
+#include <linux/sysrq.h>
+
 
 #define RWTCNT		0
 #define RWTCSRA		4
@@ -48,9 +51,13 @@ MODULE_PARM_DESC(nowayout, "Watchdog cannot be stopped once started (default="
 struct rwdt_priv {
 	void __iomem *base;
 	struct watchdog_device wdev;
+	struct timer_list pretimeout_timer;
 	unsigned long clk_rate;
 	u8 cks;
 };
+
+static int rwdt_pretimeout = 2;
+module_param(rwdt_pretimeout, int, 0);
 
 static void rwdt_write(struct rwdt_priv *priv, u32 val, unsigned int reg)
 {
@@ -68,6 +75,20 @@ static int rwdt_init_timeout(struct watchdog_device *wdev)
 
 	rwdt_write(priv, 65536 - MUL_BY_CLKS_PER_SEC(priv, wdev->timeout), RWTCNT);
 
+	return 0;
+}
+
+static unsigned int rwdt_get_timeleft(struct watchdog_device *wdev);
+
+static int rwdt_set_pretimeout(struct watchdog_device *wdog, unsigned int timeout)
+{
+	struct rwdt_priv *priv = container_of(wdog, struct rwdt_priv, wdev);
+	unsigned int curr_timeleft = rwdt_get_timeleft(wdog);
+	unsigned int msec_to_trigger = (curr_timeleft - timeout) * 1000;
+
+	wdog->pretimeout = timeout;
+
+	mod_timer(&priv->pretimeout_timer, jiffies + msecs_to_jiffies(msec_to_trigger));
 	return 0;
 }
 
@@ -101,6 +122,7 @@ static int rwdt_start(struct watchdog_device *wdev)
 		cpu_relax();
 
 	rwdt_write(priv, priv->cks | RWTCSRA_TME, RWTCSRA);
+	rwdt_set_pretimeout(wdev, rwdt_pretimeout);
 
 	return 0;
 }
@@ -137,7 +159,7 @@ static int rwdt_restart(struct watchdog_device *wdev, unsigned long action,
 
 static const struct watchdog_info rwdt_ident = {
 	.options = WDIOF_MAGICCLOSE | WDIOF_KEEPALIVEPING | WDIOF_SETTIMEOUT |
-		WDIOF_CARDRESET,
+		WDIOF_CARDRESET | WDIOF_PRETIMEOUT,
 	.identity = "Renesas WDT Watchdog",
 };
 
@@ -146,6 +168,7 @@ static const struct watchdog_ops rwdt_ops = {
 	.start = rwdt_start,
 	.stop = rwdt_stop,
 	.ping = rwdt_init_timeout,
+	.set_pretimeout = rwdt_set_pretimeout,
 	.get_timeleft = rwdt_get_timeleft,
 	.restart = rwdt_restart,
 };
@@ -186,6 +209,22 @@ static bool rwdt_blacklisted(struct device *dev)
 #else /* !CONFIG_ARCH_RCAR_GEN2 || !CONFIG_SMP */
 static inline bool rwdt_blacklisted(struct device *dev) { return false; }
 #endif /* !CONFIG_ARCH_RCAR_GEN2 || !CONFIG_SMP */
+
+static void pretimeot_dump(struct timer_list *t)
+{
+	struct rwdt_priv *priv = from_timer(priv, t, pretimeout_timer);
+	struct watchdog_device *wdog = &priv->wdev;
+	unsigned int curr_timeleft = rwdt_get_timeleft(wdog);
+	unsigned int msec_to_trigger = 0;
+
+	if (curr_timeleft < wdog->pretimeout) {
+		__handle_sysrq('l', 0);
+		return;
+	}
+
+	msec_to_trigger = (curr_timeleft - wdog->pretimeout) * 1000;
+	mod_timer(&priv->pretimeout_timer, jiffies + msecs_to_jiffies(msec_to_trigger));
+}
 
 static int rwdt_probe(struct platform_device *pdev)
 {
@@ -249,6 +288,8 @@ static int rwdt_probe(struct platform_device *pdev)
 	watchdog_set_restart_priority(&priv->wdev, 0);
 	watchdog_stop_on_unregister(&priv->wdev);
 
+	timer_setup(&priv->pretimeout_timer, pretimeot_dump, 0);
+
 	/* This overrides the default timeout only if DT configuration was found */
 	watchdog_init_timeout(&priv->wdev, 0, dev);
 
@@ -260,6 +301,7 @@ static int rwdt_probe(struct platform_device *pdev)
 
  out_pm_disable:
 	pm_runtime_disable(dev);
+	del_timer(&priv->pretimeout_timer);
 	return ret;
 }
 
@@ -267,6 +309,7 @@ static int rwdt_remove(struct platform_device *pdev)
 {
 	struct rwdt_priv *priv = platform_get_drvdata(pdev);
 
+	del_timer(&priv->pretimeout_timer);
 	watchdog_unregister_device(&priv->wdev);
 	pm_runtime_disable(&pdev->dev);
 
