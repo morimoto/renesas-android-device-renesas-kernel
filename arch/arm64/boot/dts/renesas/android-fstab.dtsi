@@ -19,12 +19,12 @@
         android {
             compatible = "android,firmware";
 
-            vbmeta {
+            vbmeta: vbmeta {
                 compatible = "android,vbmeta";
                 parts = "vbmeta,boot,system,vendor,dtb";
             };
 
-            fstab {
+            fstab: fstab {
                 compatible = "android,fstab";
 
                 vendor {

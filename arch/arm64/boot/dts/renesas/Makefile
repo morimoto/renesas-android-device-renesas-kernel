@@ -16,11 +16,9 @@ dtb-$(CONFIG_ARCH_R8A7795) += r8a7795v2-h3ulcb-kf-overlay.dtb
 dtb-$(CONFIG_ARCH_R8A7795) += r8a7795v2-salvator-overlay.dtb
 dtb-$(CONFIG_ARCH_R8A7795) += r8a7795v3-h3ulcb-kf-overlay.dtb
 dtb-$(CONFIG_ARCH_R8A7795) += r8a7795v3-salvator-overlay.dtb
-
-ifeq ($(ENABLE_ADSP),true)
-dtb-y += ulcb-kf-adsp-overlay.dtb
-dtb-y += salvator-adsp-overlay.dtb
-endif
+dtb-$(CONFIG_ARCH_R8A7795) += ulcb-kf-adsp-overlay.dtb
+dtb-$(CONFIG_ARCH_R8A7795) += salvator-adsp-overlay.dtb
+dtb-$(CONFIG_ARCH_R8A7795) += partitions-overlay.dtb
 
 DTC_FLAGS	+= -@
 always		:= $(dtb-y)

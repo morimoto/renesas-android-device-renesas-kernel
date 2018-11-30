@@ -1,0 +1,26 @@
+/*
+ * Device Tree Overlay for the R-Car boards with 'product' partition
+ *
+ * Copyright (C) 2018 GlobalLogic
+ *
+ * This file is licensed under the terms of the GNU General Public License
+ * version 2.  This program is licensed "as is" without any warranty of any
+ * kind, whether express or implied.
+ */
+
+/dts-v1/;
+/plugin/;
+
+&vbmeta {
+	parts = "vbmeta,boot,system,vendor,dtb,product";
+};
+
+&fstab {
+	product {
+		compatible = "android,product";
+		dev = "/dev/block/platform/soc/ee140000.sd/by-name/product";
+		type = "ext4";
+		mnt_flags = "ro,barrier=1";
+		fsmgr_flags = "wait,slotselect,avb";
+	};
+};
