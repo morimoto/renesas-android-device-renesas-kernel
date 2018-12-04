@@ -272,7 +272,7 @@
 
 	kim {
 		compatible = "kim";
-		nshutdown_gpio = <343>;  /* gpio_exp_74 pin 3 */
+		shutdown-gpios = <&gpio_exp_74 3 GPIO_ACTIVE_HIGH>; /* (U11) P03 */
 		/* serial1 */
 		dev_name = "/dev/ttySC1";
 		flow_cntrl = <1>;
