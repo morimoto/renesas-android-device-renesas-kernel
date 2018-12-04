@@ -16,6 +16,7 @@
 #include <linux/pm_runtime.h>
 #include <linux/regulator/consumer.h>
 #include <linux/gpio.h>
+#include <linux/of_gpio.h>
 
 #include <sound/pcm_params.h>
 #include <sound/soc.h>
@@ -455,7 +456,7 @@ static int pcm3168a_hw_params(struct snd_pcm_substream *substream,
 	bits = params->msbits;
 
 	/*KF U102 SND_Clk_SEL*/
-	if (pcm3168a->snd_clk_sel_gpio) {
+	if (gpio_is_valid(pcm3168a->snd_clk_sel_gpio)) {
 		if (rate == 44100) {
 			/*Switch to ClkSND 44.1 kHz*/
 			gpio_set_value_cansleep(pcm3168a->snd_clk_sel_gpio, 1);
@@ -781,27 +782,26 @@ int pcm3168a_probe(struct device *dev, struct regmap *regmap)
 		else if (of_get_property(dev->of_node, "tdmhs", NULL))
 			pcm3168a->tdm = TDM_MODE_HS;
 
-		ret = of_property_read_u32(dev->of_node, "snd_clk_sel_gpio",
-				(u32 *)&pcm3168a->snd_clk_sel_gpio);
-		if (unlikely(ret)) {
-			dev_err(dev, "read clock select gpio failed");
-			goto err_regulator;
-		}
+		pcm3168a->snd_clk_sel_gpio = of_get_named_gpio(dev->of_node,
+				"snd_clk_sel_gpio", 0);
 	}
 
-	if (pcm3168a->snd_clk_sel_gpio) {
+	if (gpio_is_valid(pcm3168a->snd_clk_sel_gpio)) {
 		ret = gpio_request(pcm3168a->snd_clk_sel_gpio, "pcm3168a_clk_sel");
 		if (unlikely(ret)) {
-			dev_err(dev, "gpio %d request failed", pcm3168a->snd_clk_sel_gpio);
+			dev_err(dev, "gpio %d request failed\n", pcm3168a->snd_clk_sel_gpio);
 			goto err_regulator;
 		}
 
 		ret = gpio_direction_output(pcm3168a->snd_clk_sel_gpio, 0);
 		if (unlikely(ret)) {
-			dev_err(dev, "unable to configure gpio %d",
+			dev_err(dev, "unable to configure gpio %d\n",
 					pcm3168a->snd_clk_sel_gpio);
-			goto err_regulator;
+			goto err_gpio;
 		}
+	} else {
+		dev_warn(dev, "failed to get clock select gpio,"
+				"only 48 kHz is available\n");
 	}
 
 	pm_runtime_set_active(dev);
@@ -817,13 +817,14 @@ int pcm3168a_probe(struct device *dev, struct regmap *regmap)
 					&pcm3168a_dai, 1);
 	if (ret) {
 		dev_err(dev, "failed to register codec: %d\n", ret);
-		goto err_regulator;
+		goto err_gpio;
 	}
 
 	return 0;
 
-err_regulator:
+err_gpio:
 	gpio_free(pcm3168a->snd_clk_sel_gpio);
+err_regulator:
 	regulator_bulk_disable(ARRAY_SIZE(pcm3168a->supplies),
 			pcm3168a->supplies);
 err_clk:
