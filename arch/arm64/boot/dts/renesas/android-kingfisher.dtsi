@@ -724,7 +724,7 @@
 			clocks = <&snd_clk>;
 			clock-names = "scki";
 			tdm;
-			snd_clk_sel_gpio = <337>; /* (U5) gpio_exp_75 P15 */
+			snd_clk_sel_gpio = <&gpio_exp_75 13 GPIO_ACTIVE_HIGH>; /* (U5) P15 */
 			VDD1-supply = <&codec_en_reg>;
 			VDD2-supply = <&codec_en_reg>;
 			VCCAD1-supply = <&codec_en_reg>;
