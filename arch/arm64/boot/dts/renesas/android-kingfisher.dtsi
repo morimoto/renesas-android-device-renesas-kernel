@@ -638,7 +638,7 @@
 		si4689: radio-si4689@65 {
 			compatible = "si4689";
 			reg = <0x65>;
-			reset_gpio = <331>;  /* (U5) gpio_exp_75 pin 7 */
+			reset_gpio = <&gpio_exp_75 7 GPIO_ACTIVE_HIGH>; /* (U5) P07 */
 			interrupt-parent = <&gpio_exp_74>;
 			interrupts = <12 IRQ_TYPE_EDGE_FALLING>;
 		};
