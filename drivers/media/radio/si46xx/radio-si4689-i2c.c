@@ -31,6 +31,7 @@
 #include <linux/firmware.h>
 #include <linux/uaccess.h>
 #include <linux/jiffies.h>
+#include <linux/of_gpio.h>
 
 #include <media/v4l2-common.h>
 #include <media/v4l2-ioctl.h>
@@ -1321,7 +1322,11 @@ static int si4689_i2c_probe(struct i2c_client *client,
         goto err_radio;
     }
 
-    of_property_read_u32(np, "reset_gpio", (u32 *)&rdev->reset_gpio);
+    rdev->reset_gpio = of_get_named_gpio(np, "reset_gpio", 0);
+    if (!gpio_is_valid(rdev->reset_gpio)) {
+        dev_err(&client->dev, "failed to get reset gpio\n");
+        goto err_gpio_req;
+    }
 
     ret = gpio_request(rdev->reset_gpio, "si4689_reset");
     if (unlikely(ret)) {
