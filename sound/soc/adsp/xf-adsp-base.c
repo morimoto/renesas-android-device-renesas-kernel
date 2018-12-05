@@ -84,6 +84,8 @@ static int xf_adsp_register(char *name, int *comp_id);
 
 /** ***********************************************************
  *  \brief get buffer from given pool
+ *  \internal
+ *  \covers: DD_DRV_CMN_01_042
  *
  *  \param[in]  pool	Data pool address
  *  \retval	b	Pointer to buffer address in pool
@@ -102,6 +104,8 @@ static struct xf_buffer *xf_buffer_get(struct xf_pool *pool)
 
 /***********************************************************
  *\brief return buffer back to pool
+ *\internal
+ *\covers: DD_DRV_CMN_01_043
  *
  *\param[in]  buffer  Pointer to the buffer data
  ************************************************************/
@@ -115,6 +119,8 @@ static void xf_buffer_put(struct xf_buffer *buffer)
 
 /***********************************************************
  *\brief get the address of the given buffer data
+ *\internal
+ *\covers: DD_DRV_CMN_01_044
  *
  *\param[in]	b		Pointer to the buffer data
  *\retval	address		Address of buffer data
@@ -126,6 +132,8 @@ static void *xf_buffer_data(struct xf_buffer *b)
 
 /************************************************************
  *\brief get the length of the given buffer data
+ *\internal
+ *\covers: DD_DRV_CMN_01_045
  *
  *\param[in]	b		Pointer to the buffer data
  *\retval	length		Size of buffer data
@@ -137,6 +145,8 @@ static u32 xf_buffer_length(struct xf_buffer *b)  /* PRQA S 3673 */
 
 /************************************************************
  *\brief set data to the given command message
+ *\internal
+ *\covers: DD_DRV_CMN_01_046
  *
  *\param[out] m		Pointer to the command message
  *\param[in]  id	Message ID
@@ -163,6 +173,8 @@ xf_create_msg(struct xf_message *m, u32 id, u32 opcode, u32 length, void *buf,
 
 /*****************************************************************
  *\brief synchronous send and wait for response message from proxy
+ *\internal
+ *\covers: DD_DRV_CMN_01_038
  *
  *\param[in]	msg		Pointer to the command message
  *\retval	0		Success
@@ -208,6 +220,8 @@ static int xf_send_and_receive(struct xf_message *msg)
 
 /*************************************************************
  *\brief send a message to proxy
+ *\internal
+ *\covers: DD_DRV_CMN_01_036
  *
  *\param[in]	msg		Pointer to the command message
  *\retval	0		Success
@@ -220,6 +234,8 @@ static inline int xf_send(struct xf_message *msg)
 
 /** ***********************************************************
  *\brief receive message from proxy
+ *\internal
+ *\covers: DD_DRV_CMN_01_037
  *
  *\param[in]	msg		Pointer to store the response message
  *\retval	0		Success
@@ -233,6 +249,8 @@ static inline int xf_receive(struct xf_message *msg)
 
 /** ***********************************************************
  *\brief thread for receive response data
+ *\internal
+ *\covers: DD_DRV_CMN_01_039
  **************************************************************/
 static int xf_response_thread(void *data)
 {
@@ -326,6 +344,8 @@ static int xf_response_thread(void *data)
 
 /*************************************************************
  *	\brief register component to ADSP
+ *	\internal
+ *	\covers: DD_DRV_CMN_01_040
  *
  *	\param[in]    name      Name string of component
  *	\param[out]   comp_id   Store the registered component ID
@@ -365,6 +385,8 @@ exit:
 
 /** ***********************************************************
  * \brief unregister component from ADSP
+ * \internal
+ * \covers: DD_DRV_CMN_01_041
  * \param[in]	comp_id		Registered component ID
  * \retval	0		Success
  * \retval	-EINVAL		Failed
@@ -384,6 +406,8 @@ static int xf_adsp_unregister(int comp_id)
  * ************************************************************/
 /** ***********************************************************
  * \brief allocate memory pool from shared memory
+ * \internal
+ * \covers: DD_DRV_CMN_01_005
  * \param[in]   pool_size	Number of buffer need to allocate
  * \param[in]   buf_length	Size of each buffer in bytes
  * \retval	pool		Pointer to allocated pool
@@ -443,6 +467,8 @@ struct xf_pool *xf_adsp_allocate_mem_pool(int pool_size, int buf_length)
 
 /** ***********************************************************
  *\brief return memory to shared memory
+ *\internal
+ *\covers: DD_DRV_CMN_01_006
  *\param[in]	pool	Data pool address
  *\retval	0	Success
  *\retval	-EINVAL Invalid base or pool data
@@ -468,6 +494,8 @@ int xf_adsp_free_mem_pool(struct xf_pool *pool)
 
 /** ***********************************************************
  *\brief get buffer from given pool
+ *\internal
+ *\covers: DD_DRV_CMN_01_007
  *
  *\param[in]	pool	Data pool address
  *\param[in]	index   Buffer index
@@ -504,6 +532,8 @@ char *xf_adsp_get_data_from_pool(struct xf_pool *pool, int index)
 
 /** ***********************************************************
  *\brief  send empty this buffer command to ADSP framework
+ *\internal
+ *\covers: DD_DRV_CMN_01_003
  *
  *\param[in]	handle_id	ID of the registered handle
  *\param[in]	buffer		Pointer to data buffer
@@ -538,6 +568,8 @@ int xf_adsp_empty_this_buffer(int handle_id, char *buffer, int length)
 
 /** ***********************************************************
  *\brief  send fill this buffer command to ADSP framework
+ *\internal
+ *\covers: DD_DRV_CMN_01_004
  *
  *\param[in]	handle_id	ID of the registered handle
  *\param[in]	buffer		Pointer to data buffer
@@ -572,6 +604,8 @@ int xf_adsp_fill_this_buffer(int handle_id, char *buffer, int length)
 
 /** ***********************************************************
  *\brief route data between two registered ADSP plugins
+ *\internal
+ *\covers: DD_DRV_CMN_01_010
  *
  *\param[in]	src_handle_id	Handle ID of source plugin
  *\param[in]	dst_handle_id	Handle ID of sink plugin
@@ -624,6 +658,8 @@ xf_adsp_route(int src_handle_id, int dst_handle_id, int buf_cnt, int buf_size)
 
 /** ***********************************************************
  *\brief set a single parameter
+ *\internal
+ *\covers: DD_DRV_CMN_01_008
  *
  *\param[in]	handle_id	ID of registered handle
  *\param[in]	index		Sub-command index of parameter
@@ -669,6 +705,8 @@ int xf_adsp_set_param(int handle_id, int index, int value)
 
 /** ***********************************************************
  *\brief get a single parameter
+ *\internal
+ *\covers: DD_DRV_CMN_01_009
  *
  *\param[in]	handle_id	ID of registered handle
  *\param[in]	index		Sub-command index of parameter
@@ -723,6 +761,8 @@ exit:
 
 /** ***********************************************************
  *\brief initialize ADSP base's instance
+ *\internal
+ *\covers: DD_DRV_CMN_01_001
  *
  *\retval 0	  Success
  *\retval -EINVAL ADSP base's instance has been initialized
@@ -807,6 +847,8 @@ EXPORT_SYMBOL(xf_adsp_base_create);		/* PRQA S 0651 */
 
 /** ***********************************************************
  *\brief deinitialize ADSP base's instance
+ *\internal
+ *\covers: DD_DRV_CMN_01_002
  *
  *\retval	 0	   Success
  *\retval	 -EINVAL Invalid ADSP base's instance
@@ -841,6 +883,8 @@ EXPORT_SYMBOL(xf_adsp_base_destroy);		/* PRQA S 0651 */
 
 /** ***********************************************************
  *	\brief initialize handle instance
+ *	\internal
+ *	\covers: DD_DRV_CMN_01_031
  **************************************************************/
 static inline void xf_adsp_base_init_handle(void)
 {
@@ -852,6 +896,8 @@ static inline void xf_adsp_base_init_handle(void)
 
 /** ***********************************************************
  *\brief get the next available handle ID for register
+ *\internal
+ *\covers: DD_DRV_CMN_01_032
  *
  *\retval -1		Unavailable handle ID
  *\retval 0 to 255	Available handle ID
@@ -874,6 +920,8 @@ static inline int xf_adsp_base_get_valid_handle(void)
 
 /** ***********************************************************
  *\brief register a handle instance for component usage
+ *\internal
+ *\covers: DD_DRV_CMN_01_033
  *
  *\param[in]	 private_data	Private data of this component
  *\param[in]	 cb		Callback function
@@ -915,6 +963,8 @@ static int xf_adsp_base_register_handle(void *private_data,
 
 /** ***********************************************************
  *\brief  get handle instance from handle ID
+ *\internal
+ *\covers: DD_DRV_CMN_01_034
  *
  *\param[in]	 handle_id	ID of registered handle
  *\retval	 handle		Pointer to handle instance
@@ -926,6 +976,8 @@ static inline struct xf_handle *xf_adsp_base_get_handle(int handle_id)
 
 /** ***********************************************************
  *\brief free the registered handle instance
+ *\internal
+ *\covers: DD_DRV_CMN_01_035
  *
  *\param[in]	handle_id	ID of registered handle
  *\retval	0		Success
@@ -948,6 +1000,8 @@ static int xf_adsp_base_free_handle(int handle_id)
 
 /** ***********************************************************
  *\brief  set ADSP Renderer parameters
+ *\internal
+ *\covers: DD_DRV_CMN_01_013
  *
  *\param[in]	renderer	Pointer to Renderer component
  *\retval	0		Success
@@ -1034,6 +1088,8 @@ int xf_adsp_renderer_set_params(struct xf_adsp_renderer *renderer)
 
 /** ***********************************************************
  *\brief  get ADSP Renderer parameters
+ *\internal
+ *\covers: DD_DRV_CMN_01_014
  *
  *\param[in]	renderer	Pointer to Renderer component
  *\retval	0		Success
@@ -1115,6 +1171,8 @@ exit:
 
 /** **************************************************************************
  *\brief  create Renderer component
+ *\internal
+ *\covers: DD_DRV_CMN_01_011
  *
  *\param[in,out]  renderer	Pointer to the registered component
  *\param[in]	  cb		Callback function
@@ -1175,6 +1233,8 @@ err2:
 
 /** ***********************************************************
  *\brief  deinitialize ADSP Renderer component
+ *\internal
+ *\covers: DD_DRV_CMN_01_012
  *
  *\param[in]	 renderer	Pointer to Renderer component
  *\retval	 0		Success
@@ -1214,6 +1274,8 @@ exit:
 
 /** ***********************************************************
  *\brief  set ADSP Capture parameters
+ *\internal
+ *\covers: DD_DRV_CMN_01_017
  *
  *\param[in]	 capture	 Pointer to Capture component
  *\retval	 0		 Success
@@ -1294,6 +1356,8 @@ int xf_adsp_capture_set_params(struct xf_adsp_capture *capture)
 
 /** ***********************************************************
  *\brief  get ADSP Capture parameters
+ *\internal
+ *\covers: DD_DRV_CMN_01_018
  *
  *\param[in]	 capture	 Pointer to Capture component
  *\retval	 0		 Success
@@ -1371,6 +1435,8 @@ exit:
 
 /** **************************************************************************
  *\brief  create Capture component
+ *\internal
+ *\covers: DD_DRV_CMN_01_015
  *
  *\param[in,out]  capture	 Pointer to the registered component
  *\param[in]	  cb		 Callback function
@@ -1431,6 +1497,8 @@ err2:
 
 /** ***********************************************************
  *\brief  deinitialize ADSP Capture component
+ *\internal
+ *\covers: DD_DRV_CMN_01_016
  *
  *\param[in]	 capture	 Pointer to Capture component
  *\retval	 0		 Success
@@ -1469,6 +1537,8 @@ exit:
 
 /** ***********************************************************
  *\brief  set ADSP Equalizer parameters
+ *\internal
+ *\covers: DD_DRV_CMN_01_021
  *
  *\param[in]	 equalizer	 Pointer to Equalizer component
  *\retval	 0		 Success
@@ -1562,6 +1632,8 @@ int xf_adsp_equalizer_set_params(struct xf_adsp_equalizer *equalizer)
 
 /** ***********************************************************
  *\brief  get ADSP Equalizer parameters
+ *\internal
+ *\covers: DD_DRV_CMN_01_022
  *
  *\param[in]	 equalizer	 Pointer to Equalizer component
  *\retval	 0		 Success
@@ -1660,6 +1732,8 @@ exit:
 
 /** **************************************************************************
  *\brief  create Equalizer component
+ *\internal
+ *\covers: DD_DRV_CMN_01_019
  *
  *\param[in,out]  equalizer	 Pointer to the registered component
  *\param[in]	  cb		 Callback function
@@ -1720,6 +1794,8 @@ err2:
 
 /** ***********************************************************
  *\brief  deinitialize ADSP Equalizer component
+ *\internal
+ *\covers: DD_DRV_CMN_01_020
  *
  *\param[in]	 equalizer	 Pointer to Equalizer component
  *\retval	 0		 Success
@@ -1759,6 +1835,8 @@ exit:
 
 /** ***********************************************************
  *\brief  set ADSP TDM Renderer parameters
+ *\internal
+ *\covers: DD_DRV_CMN_01_025
  *
  *\param[in]	 tdm_renderer	Pointer to TDM Renderer component
  *\retval	 0		Success
@@ -1836,6 +1914,8 @@ int xf_adsp_tdm_renderer_set_params(struct xf_adsp_tdm_renderer *tdm_renderer)
 
 /** ***********************************************************
  *\brief  get ADSP TDM Renderer parameters
+ *\internal
+ *\covers: DD_DRV_CMN_01_026
  *
  *\param[in]	 tdm_renderer	Pointer to TDM Renderer component
  *\retval	 0		Success
@@ -1911,6 +1991,8 @@ exit:
 
 /** **************************************************************************
  *\brief  create TDM Renderer component
+ *\internal
+ *\covers: DD_DRV_CMN_01_023
  *
  *\param[in,out]  tdm_renderer	 Pointer to the registered component
  *\param[in]	  cb		 Callback function
@@ -1973,6 +2055,8 @@ err2:
 
 /** ***********************************************************
  *\brief  deinitialize ADSP TDM Renderer component
+ *\internal
+ *\covers: DD_DRV_CMN_01_024
  *
  *\param[in]	 tdm_renderer	Pointer to TDM Renderer component
  *\retval	 0		Success
@@ -2012,6 +2096,8 @@ exit:
 
 /** ***********************************************************
  *\brief  set ADSP TDM Capture parameters
+ *\internal
+ *\covers: DD_DRV_CMN_01_029
  *
  *\param[in]	 tdm_capture	Pointer to TDM Capture component
  *\retval	 0		Success
@@ -2089,6 +2175,8 @@ int xf_adsp_tdm_capture_set_params(struct xf_adsp_tdm_capture *tdm_capture)
 
 /** ***********************************************************
  *\brief  get ADSP TDM Capture parameters
+ *\internal
+ *\covers: DD_DRV_CMN_01_030
  *
  *\param[in]	 tdm_capture	Pointer to TDM Capture component
  *\retval	 0		Success
@@ -2164,6 +2252,8 @@ exit:
 
 /** **************************************************************************
  *\brief  create TDM Capture component
+ *\internal
+ *\covers: DD_DRV_CMN_01_027
  *
  *\param[in,out]  tdm_capture	 Pointer to the registered component
  *\param[in]	  cb		 Callback function
@@ -2225,6 +2315,8 @@ err2:
 
 /** ***********************************************************
  *\brief  deinitialize ADSP TDM Capture component
+ *\internal
+ *\covers: DD_DRV_CMN_01_028
  *
  *\param[in]	 tdm_capture	 Pointer to TDM Capture component
  *\retval	 0		 Success

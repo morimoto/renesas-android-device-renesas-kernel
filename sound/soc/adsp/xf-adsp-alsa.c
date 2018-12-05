@@ -574,6 +574,8 @@ static int snd_adsp_remove(struct platform_device *pdev);
  * ****************************************************************/
 /** **************************************************************************
  *  \brief	event handler callback to notify error from ADSP
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_004
  *
  *  \param[in]	data		Pointer to ADSP ALSA sound card
  *  \retval	0		Success
@@ -590,6 +592,8 @@ static int snd_adsp_event_handler(void *data)
 
 /** **************************************************************************
  *  \brief	 empty buf done callback for playback/TDM playback functions
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_001
  *
  *  \param[in]	  data		Pointer to ADSP ALSA sound card
  *  \param[in]	  opcode	Opcode of message
@@ -616,6 +620,8 @@ snd_adsp_rdr_empty_buf_done(void *data, int opcode, int length, char *buffer)
 
 /** **************************************************************************
  *  \brief	 fill buf done callback for playback/TDM playback functions
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_002
  *
  *  \param[in]	  data		Pointer to ADSP ALSA sound card
  *  \param[in]	  opcode	Opcode of message
@@ -631,6 +637,8 @@ snd_adsp_rdr_fill_buf_done(void *data, int opcode, int length, char *buffer)
 
 /** **************************************************************************
  *  \brief	 empty buf done callback for record/TDM record functions
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_003
  *
  *  \param[in]	  data		Pointer to ADSP ALSA sound card
  *  \param[in]	  opcode	Opcode of message
@@ -646,6 +654,8 @@ snd_adsp_cap_empty_buf_done(void *data, int opcode, int length, char *buffer)
 
 /** **************************************************************************
  *  \brief	 fill buf done callback for record/TDM record functions
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_051
  *
  *  \param[in]	  data		Pointer to ADSP ALSA sound card
  *  \param[in]	  opcode	Opcode of message
@@ -692,6 +702,8 @@ static struct xf_callback_func cap_callbacks =	/* PRQA S 3218 */
 
 /** **************************************************************************
  *  \brief	Get current index of CPU DAI from runtime data of substream
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_011
  *
  *  \param[in]	  substream	Pointer to PCM stream data
  *  \retval	  id		Index of current CPU DAI
@@ -707,6 +719,8 @@ snd_adsp_get_dai_id_from_substream(struct snd_pcm_substream *substream)
 
 /** **************************************************************************
  *  \brief	Get ADSP ALSA driver's data from runtime data of substream
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_008
  *
  *  \param[in]	substream	Pointer to PCM stream data
  *  \retval	pointer		Pointer to driver's data
@@ -722,6 +736,8 @@ snd_adsp_get_drvdata_from_substream(struct snd_pcm_substream *substream)
 
 /** **************************************************************************
  *  \brief   Get base's data of playback/record from runtime data of substream
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_010
  *
  *  \param[in]	substream	Pointer to PCM stream data
  *  \retval	pointer		Pointer to playback/record's base data
@@ -763,6 +779,8 @@ snd_adsp_get_base_from_substream(struct snd_pcm_substream *substream)
 
 /** ***************************************************************************
  *  \brief    Get playback/record/TDM playback/TDM record's base data
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_009
  *	      from hr timer data
  *
  *  \param[in]	hrt		Pointer to hr timer data
@@ -780,6 +798,8 @@ snd_adsp_get_base_from_hrt(struct hrtimer *hrt)
 
 /** **************************************************************************
  *  \brief	Interrupt function of high resolution timer
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_012
  *
  *  \param[in]	hrt		Pointer to hr timer data
  *  \retval	HRTIMER_RESTART Restart the timer after expire time
@@ -808,6 +828,8 @@ static enum hrtimer_restart snd_adsp_hrtimer_func(struct hrtimer *hrt)
 
 /** **************************************************************************
  *  \brief	Initialize playback data
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_013
  *
  *  \param[out]	  playback_data		Pointer to store playback data
  *  \param[in]	  eqz_flag		Flag to indicate equalizer usage
@@ -884,6 +906,8 @@ static int snd_adsp_playback_init(struct snd_adsp_playback **playback_data,
 
 /** **************************************************************************
  *  \brief	Initialize record data
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_014
  *
  *  \param[out]	 record_data	Pointer to store record data
  *  \param[in]	 eqz_flag	Flag to indicate equalizer usage
@@ -958,6 +982,8 @@ static int snd_adsp_record_init(struct snd_adsp_record **record_data,
 
 /** **************************************************************************
  *  \brief	Prepare playback function
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_017
  *
  *  \param[out]	  playback		Pointer to playback data
  *  \param[in]	  substream		Pointer to substream data
@@ -1152,6 +1178,8 @@ static int snd_adsp_playback_prepare(struct snd_adsp_playback *playback,
 
 /** **************************************************************************
  *  \brief	Prepare record function
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_018
  *
  *  \param[out]	  record		Pointer to record data
  *  \param[in]	  substream		Pointer to substream data
@@ -1337,6 +1365,8 @@ static int snd_adsp_record_prepare(struct snd_adsp_record *record,
 
 /** **************************************************************************
  *  \brief	Deinitialize playback function
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_021
  *
  *  \param[out]	playback	Pointer to playback data
  *  \retval	-EINVAL		Failed to deinitialize playback function
@@ -1386,6 +1416,8 @@ static int snd_adsp_playback_deinit(struct snd_adsp_playback *playback)
 
 /** **************************************************************************
  *  \brief	Deinitialize record function
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_022
  *
  *  \param[out]	 record		Pointer to record data
  *  \retval	 -EINVAL	Failed to deinitialize record function
@@ -1438,6 +1470,8 @@ static int snd_adsp_record_deinit(struct snd_adsp_record *record)
 
 /** **************************************************************************
  *  \brief	Initialize TDM playback data
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_015
  *
  *  \param[out]	tdm_playback_data	Pointer to store TDM playback data
  *  \param[in]	  substream		Pointer to substream data
@@ -1498,6 +1532,8 @@ snd_adsp_tdm_playback_init(struct snd_adsp_tdm_playback **tdm_playback_data,
 
 /** **************************************************************************
  *  \brief	Initialize TDM record data
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_016
  *
  *  \param[out]	  tdm_record_data	Pointer to store TDM record data
  *  \param[in]	  substream		Pointer to substream data
@@ -1558,6 +1594,8 @@ snd_adsp_tdm_record_init(struct snd_adsp_tdm_record **tdm_record_data,
 
 /** **************************************************************************
  *  \brief	Prepare TDM playback function
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_019
  *
  *  \param[out]	  tdm_playback		Pointer to TDM playback data
  *  \param[in]	  substream		Pointer to substream data
@@ -1689,6 +1727,8 @@ snd_adsp_tdm_playback_prepare(struct snd_adsp_tdm_playback *tdm_playback,
 
 /** **************************************************************************
  *  \brief	Prepare TDM record function
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_020
  *
  *  \param[out]	  tdm_record		Pointer to TDM record data
  *  \param[in]	  substream		Pointer to substream data
@@ -1809,6 +1849,8 @@ static int snd_adsp_tdm_record_prepare(struct snd_adsp_tdm_record *tdm_record,
 
 /** **************************************************************************
  *  \brief	Deinitialize TDM playback function
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_023
  *
  *  \param[out]	  tdm_playback	Pointer to TDM playback data
  *  \retval	  -EINVAL	Failed to deinitialize TDM playback function
@@ -1854,6 +1896,8 @@ snd_adsp_tdm_playback_deinit(struct snd_adsp_tdm_playback *tdm_playback)
 
 /** **************************************************************************
  *  \brief	Deinitialize TDM record function
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_024
  *
  *  \param[out]	 tdm_record	Pointer to TDM record data
  *  \retval	 -EINVAL	Failed to deinitialize TDM record function
@@ -1900,6 +1944,8 @@ static int snd_adsp_tdm_record_deinit(struct snd_adsp_tdm_record *tdm_record)
 
 /** **************************************************************************
  *  \brief	 Open a playback/TDM playback or record/TDM record stream
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_028
  *
  *  \param[in]	substream		Pointer to substream object
  *  \retval	0			Success
@@ -2001,6 +2047,8 @@ static int snd_adsp_pcm_open(struct snd_pcm_substream *substream)
 
 /** **************************************************************************
  *  \brief	 Close a playback/TDM playback or record/TDM record stream
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_029
  *
  *  \param[in]	substream		Pointer to substream object
  *  \retval	0			Success
@@ -2052,6 +2100,8 @@ static int snd_adsp_pcm_close(struct snd_pcm_substream *substream)
 
 /** **************************************************************************
  *  \brief	Allocate ALSA buffer and calculate expire time of hr timer
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_031
  *
  *  \param[in]	substream		Pointer to substream object
  *  \retval	0			Success
@@ -2081,6 +2131,8 @@ static int snd_adsp_pcm_hw_params(struct snd_pcm_substream *substream,
 
 /** **************************************************************************
  *  \brief	 Free the allocated ALSA buffer
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_032
  *
  *  \param[in]	substream		Pointer to substream object
  *  \retval	0			Success
@@ -2093,6 +2145,8 @@ static int snd_adsp_pcm_hw_free(struct snd_pcm_substream *substream)
 
 /** **************************************************************************
  *  \brief	 Prepare playback/TDM playback or record/TDM record function
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_030
  *		   before transferring data
  *
  *  \param[in]	substream		Pointer to substream object
@@ -2133,6 +2187,8 @@ static int snd_adsp_pcm_prepare(struct snd_pcm_substream *substream)
 
 /** **************************************************************************
  *  \brief	 Trigger playback/TDM playback or record/TDM record stream
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_033
  *		   to go to next phase
  *
  *  \param[in]	substream		Pointer to substream object
@@ -2189,6 +2245,8 @@ static int snd_adsp_pcm_trigger(struct snd_pcm_substream *substream, int idx)
 
 /** **************************************************************************
  *  \brief	 Return HW data position
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_034
  *
  *  \param[in]	  substream		Pointer to substream object
  *  \retval	  position		HW data position
@@ -2231,6 +2289,8 @@ snd_adsp_pcm_pointer(struct snd_pcm_substream *substream)
 
 /** **************************************************************************
  *  \brief	  Call read/write process to transfer data
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_035
  *
  *  \param[in]	substream		Pointer to substream object
  *  \retval	0			Success
@@ -2258,6 +2318,8 @@ static int snd_adsp_pcm_ack(struct snd_pcm_substream *substream)
 
 /** ***************************************************************************
  *  \brief	  Copy data from source buffer to destination buffer
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_025
  *
  *  \params[in]	 dst		Destination buffer pointer
  *  \params[out] src		Source buffer pointer
@@ -2312,6 +2374,8 @@ snd_adsp_copy_data(void *dst, void *src, int dst_size, int src_size)
 
 /** **************************************************************************
  *  \brief	  Transfer data process between ALSA buffer and ADSP buffer
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_026
  *
  *  \param[in]	  substream		Pointer to substream object
  *  \param[in]	  rec			Pointer to indirect PCM data
@@ -2382,6 +2446,8 @@ static void snd_adsp_pcm_transfer(struct snd_pcm_substream *substream,
 
 /** **************************************************************************
  *  \brief	 Get info of Volume control
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_036
  *
  *  \param[in]	  kcontrol	Pointer to control instance
  *  \param[in]	  uinfo		Pointer to info structure of volume control
@@ -2399,6 +2465,8 @@ static int snd_adsp_control_volume_info(struct snd_kcontrol *kcontrol,
 
 /** **************************************************************************
  *  \brief	 Get volume value
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_037
  *
  *  \param[in]	kcontrol		Pointer to control instance
  *  \param[in]	ucontrol		Pointer to volume value
@@ -2491,6 +2559,8 @@ static int snd_adsp_control_volume_get(struct snd_kcontrol *kcontrol,
 
 /** **************************************************************************
  *  \brief	 Set volume value
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_038
  *
  *  \param[in]	  kcontrol	Pointer to control instance
  *  \param[in]	  ucontrol	Pointer to volume value
@@ -2606,6 +2676,8 @@ snd_adsp_control_volume_put(struct snd_kcontrol *kcontrol,
 
 /** **************************************************************************
  *  \brief	 Get info of Sample Rate Converter control
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_039
  *
  *  \param[in]	kcontrol	Pointer to control instance
  *  \param[in]	uinfo		Pointer to info structure of sample rate
@@ -2624,6 +2696,8 @@ static int snd_adsp_control_sample_rate_info(struct snd_kcontrol *kcontrol,
 
 /** **************************************************************************
  *  \brief	 Get sample rate value
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_040
  *
  *  \param[in]	kcontrol	Pointer to control instance
  *  \param[in]	ucontrol	Pointer to sample rate value
@@ -2709,6 +2783,8 @@ static int snd_adsp_control_sample_rate_get(struct snd_kcontrol *kcontrol,
 
 /** **************************************************************************
  *  \brief	 Set sample rate value
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_041
  *
  *  \param[in]	kcontrol	Pointer to control instance
  *  \param[in]	ucontrol	Pointer to sample rate value
@@ -2783,6 +2859,8 @@ snd_adsp_control_sample_rate_put(struct snd_kcontrol *kcontrol,
 
 /** **************************************************************************
  *  \brief	 Get info of Equalizer control
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_045
  *
  *  \param[in]	kcontrol	Pointer to control instance
  *  \param[in]	uinfo		Pointer to info structure of Equalizer control
@@ -2800,6 +2878,8 @@ static int snd_adsp_control_eqz_info(struct snd_kcontrol *kcontrol,
 
 /** **************************************************************************
  *  \brief	 Get equalizer parameters value
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_046
  *
  *  \param[in]	  kcontrol		Pointer to control instance
  *  \param[in]	  ucontrol		Pointer to equalizer parameters value
@@ -2910,6 +2990,8 @@ static int snd_adsp_control_eqz_get(struct snd_kcontrol *kcontrol,
 
 /** **************************************************************************
  *  \brief	 Set equalizer parameters value
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_047
  *
  *  \param[in]	  kcontrol	Pointer to control instance
  *  \param[in]	  ucontrol	Pointer to equalizer parameters value
@@ -3027,6 +3109,8 @@ static int snd_adsp_control_eqz_put(struct snd_kcontrol *kcontrol,
 
 /** **************************************************************************
  *  \brief	 Get info of Equalizer Switch control
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_042
  *
  *  \param[in]	  kcontrol	Pointer to control instance
  *  \param[in]	  uinfo		Pointer to info structure of Equalizer
@@ -3045,6 +3129,8 @@ static int snd_adsp_control_eqz_switch_info(struct snd_kcontrol *kcontrol,
 
 /** **************************************************************************
  *  \brief	 Get equalizer switch value
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_043
  *
  *  \param[in]	  kcontrol	Pointer to control instance
  *  \param[in]	  ucontrol	Pointer to equalizer switch value
@@ -3075,6 +3161,8 @@ snd_adsp_control_eqz_switch_get(struct snd_kcontrol *kcontrol,
 
 /** **************************************************************************
  *  \brief	 Set equalizer switch value
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_044
  *
  *  \param[in]	  kcontrol	Pointer to control instance
  *  \param[in]	  ucontrol	Pointer to equalizer switch value
@@ -3128,6 +3216,8 @@ snd_adsp_control_eqz_switch_put(struct snd_kcontrol *kcontrol,
 
 /** **************************************************************************
  *  \brief	 Get info of Renderer output channel
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_048
  *
  *  \param[in]	  kcontrol Pointer to control instance
  *  \param[in]	  uinfo	   Pointer to info structure of Renderer output channel
@@ -3146,6 +3236,8 @@ snd_adsp_control_rdr_out_channel_info(struct snd_kcontrol *kcontrol,
 
 /** **************************************************************************
  *  \brief	 Get Renderer output channel's value
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_049
  *
  *  \param[in]	  kcontrol	Pointer to control instance
  *  \param[in]	  ucontrol	Pointer to Renderer output channel value
@@ -3193,6 +3285,8 @@ snd_adsp_control_rdr_out_channel_get(struct snd_kcontrol *kcontrol,
 
 /** **************************************************************************
  *  \brief	 Set Renderer output channel's value
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_050
  *
  *  \param[in]	  kcontrol	Pointer to control instance
  *  \param[in]	  ucontrol	Pointer to Renderer output channel value
@@ -3624,6 +3718,8 @@ static struct snd_pcm_ops snd_adsp_pcm_ops = {
 
 /** **************************************************************************
  *  \brief	 Process information get from control structure
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_027
  *
  *  \param[in]	  eqz_params	 Equalizer parameters object
  *  \param[in]	  eqz_ctr_params Equalizer parameters stored in control object
@@ -3678,6 +3774,8 @@ static void snd_adsp_get_eqz_params_from_control(
 
 /** ****************************************************************************
  *  \brief	 Register control interface and preallocate ALSA buffer
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_005
  *
  *  \param[in]	  runtime	Pointer to runtime PCM data
  *  \retval	  0		Success
@@ -3812,6 +3910,8 @@ static struct snd_soc_dai_driver snd_adsp_dai[MAX_DAI_IDX] = {
 
 /** ***************************************************************************
  *  \brief	 Register platform driver and ADSP ALSA sound card
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_006
  *
  *  \param[in]	  pdev		Pointer to platform driver data
  *  \retval	  0		Success
@@ -3892,6 +3992,8 @@ static int snd_adsp_probe(struct platform_device *pdev)
 
 /** **************************************************************************
  *  \brief	 Unregister platform driver and ADSP ALSA sound card
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_007
  *
  *  \param[in]	pdev		Pointer platform driver data
  *  \retval	0		Success
