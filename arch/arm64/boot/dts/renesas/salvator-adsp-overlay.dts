@@ -11,32 +11,42 @@
 /dts-v1/;
 /plugin/;
 
-&rsnd_ak4613 {
-	simple-audio-card,routing = "ak4613 Playback", "Playback0",
-						"ak4613 Playback", "Playback1",
-						"ak4613 Playback", "Playback2",
-						"ak4613 Playback", "Playback3",
-						"Capture0", "ak4613 Capture",
-						"Capture1", "ak4613 Capture",
-						"Capture2", "ak4613 Capture",
-						"Capture3", "ak4613 Capture",
-						"ak4613 Playback", "DAI0 Playback",
-						"DAI0 Capture", "ak4613 Capture";
+&sound_card {
+	routing = "ak4613 Playback", "Playback0",
+			"ak4613 Playback", "Playback1",
+			"ak4613 Playback", "Playback2",
+			"ak4613 Playback", "Playback3",
+			"Capture0", "ak4613 Capture",
+			"Capture1", "ak4613 Capture",
+			"Capture2", "ak4613 Capture",
+			"Capture3", "ak4613 Capture",
+			"ak4613 Playback", "DAI0 Playback",
+			"DAI0 Capture", "ak4613 Capture";
 
-	simple-audio-card,cpu@0 {
-		sound-dai = <&rcar_adsp_sound 0>;
-	};
+	dais = <&adsp_port0
+		&adsp_port1
+		&adsp_port2
+		&adsp_port3
+		&rsnd_port0>;
+};
 
-	simple-audio-card,cpu@1 {
-		sound-dai = <&rcar_adsp_sound 1>;
-	};
-
-	simple-audio-card,cpu@2 {
-		sound-dai = <&rcar_adsp_sound 2>;
-	};
-
-	simple-audio-card,cpu@3 {
-		sound-dai = <&rcar_adsp_sound 3>;
+&ak4613 {
+	port {
+		/* In case of ADSP overlay these EPs appear in reverse order,
+		so asoc-audio-graph-scu-card fails to parse DT. Avoid this by
+		placing EPs in such below order. */
+		ak4613_endpoint3: endpoint@3 {
+			remote-endpoint = <&adsp_endpoint3>;
+		};
+		ak4613_endpoint2: endpoint@2 {
+			remote-endpoint = <&adsp_endpoint2>;
+		};
+		ak4613_endpoint1: endpoint@1 {
+			remote-endpoint = <&adsp_endpoint1>;
+		};
+		ak4613_endpoint0: endpoint@0 {
+			remote-endpoint = <&adsp_endpoint0>;
+		};
 	};
 };
 
@@ -44,4 +54,31 @@
 	status = "okay";
 	/* Multiple DAI */
 	#sound-dai-cells = <1>;
+
+	ports {
+		adsp_port0: port@0 {
+			adsp_endpoint0: endpoint@0 {
+				remote-endpoint = <&ak4613_endpoint0>;
+				dai-format = "left_j";
+			};
+		};
+		adsp_port1: port@1 {
+			adsp_endpoint1: endpoint@1 {
+				remote-endpoint = <&ak4613_endpoint1>;
+				dai-format = "left_j";
+			};
+		};
+		adsp_port2: port@2 {
+			adsp_endpoint2: endpoint@2 {
+				remote-endpoint = <&ak4613_endpoint2>;
+				dai-format = "left_j";
+			};
+		};
+		adsp_port3: port@3 {
+			adsp_endpoint3: endpoint@3 {
+				remote-endpoint = <&ak4613_endpoint3>;
+				dai-format = "left_j";
+			};
+		};
+	};
 };
