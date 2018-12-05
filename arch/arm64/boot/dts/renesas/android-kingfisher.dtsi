@@ -343,18 +343,11 @@
 
 &du {
 	pinctrl-0 = <&du_pins>;
-	clock-names = "du.0", "du.1", "du.2", "du.3", "lvds.0",
-		      "dclkin.0", "dclkin.1", "dclkin.2", "dclkin.3";
+
 	ports {
 		port@0 {
 			endpoint {
 				remote-endpoint = <&adv7513_in>;
-			};
-		};
-
-		port@3 {
-			lvds_connector: endpoint {
-				remote-endpoint = <&lvds_in>;
 			};
 		};
 	};
@@ -608,26 +601,26 @@
 		reg = <0>;
 		/* BCM node(s) */
 	};
-	
+
 	i2c@1 {
 		#address-cells = <1>;
 		#size-cells = <0>;
 		reg = <1>;
 		/* USB3.0 HUB node(s) */
 	};
-	
+
 	i2c@2 {
 		#address-cells = <1>;
 		#size-cells = <0>;
 		reg = <2>;
 		/* Power amp node(s) */
 	};
-	
+
 	i2c@3 {
 		#address-cells = <1>;
 		#size-cells = <0>;
 		reg = <3>;
-	
+
 		/* Radio node(s) */
 		si4689: radio-si4689@65 {
 			compatible = "si4689";
@@ -637,19 +630,19 @@
 			interrupts = <12 IRQ_TYPE_EDGE_FALLING>;
 		};
 	};
-	
+
 	i2c@4 {
 		#address-cells = <1>;
 		#size-cells = <0>;
 		reg = <4>;
-	
+
 		hdmi@3d {
 			compatible = "adi,adv7511w";
 			reg = <0x3d>;
 			interrupt-parent = <&gpio2>;
 			interrupts = <14 IRQ_TYPE_EDGE_BOTH>;
 			pd-gpios = <&gpio_exp_75 5 GPIO_ACTIVE_LOW>;
-	
+
 			interlace-allowed;
 			adi,input-depth = <8>;
 			adi,input-colorspace = "rgb";
@@ -658,18 +651,18 @@
 			adi,input-justification = "evenly";
 			adi,clock-delay = <1200>;
 			adi,clock-max-rate = <100000>;
-	
+
 			ports {
 				#address-cells = <1>;
 				#size-cells = <0>;
-	
+
 				port@0 {
 					reg = <0>;
 					adv7513_in: endpoint {
 						remote-endpoint = <&du_out_rgb>;
 					};
 				};
-	
+
 				port@1 {
 					reg = <1>;
 					adv7513_out: endpoint {
@@ -679,27 +672,27 @@
 			};
 		};
 	};
-	
+
 	i2c@5 {
 		#address-cells = <1>;
 		#size-cells = <0>;
 		reg = <5>;
 		/* PCIe node(s) */
 	};
-	
+
 	i2c@6 {
 		#address-cells = <1>;
 		#size-cells = <0>;
 		reg = <6>;
 		/* LVDS display node(s) */
 	};
-	
+
 	i2c@7 {
 		#address-cells = <1>;
 		#size-cells = <0>;
 		reg = <7>;
 		/* Audio, GPS and Gyro node(s) */
-	
+
 		pcm3168a: audio-codec@44 {
 			#sound-dai-cells = <0>;
 			compatible = "ti,pcm3168a";
@@ -714,12 +707,12 @@
 			VCCAD2-supply = <&codec_en_reg>;
 			AMP-supply = <&amp_en_reg>;
 		};
-	
+
 		lsm9ds0_acc_mag@1d {
 			compatible = "st,lsm9ds0_accel_magn";
 			reg = <0x1d>;
 		};
-	
+
 		lsm9ds0_gyr@6b {
 			compatible = "st,lsm9ds0_gyro";
 			reg = <0x6b>;
