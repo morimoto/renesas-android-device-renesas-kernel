@@ -709,12 +709,12 @@
 		};
 
 		lsm9ds0_acc_mag@1d {
-			compatible = "st,lsm9ds0_accel_magn";
+			compatible = "lsm9ds0_accel_magn";
 			reg = <0x1d>;
 		};
 
 		lsm9ds0_gyr@6b {
-			compatible = "st,lsm9ds0_gyro";
+			compatible = "lsm9ds0_gyro";
 			reg = <0x6b>;
 		};
 	};
