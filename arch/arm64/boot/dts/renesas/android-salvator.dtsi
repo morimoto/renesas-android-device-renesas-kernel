@@ -12,6 +12,18 @@
 #include <dt-bindings/input/linux-event-codes.h>
 
 / {
+	memory_ch1: memory@48000000 {
+	};
+
+	memory_ch2: memory@500000000 {
+	};
+
+	memory_ch3: memory@600000000 {
+	};
+
+	memory_ch4: memory@700000000 {
+	};
+
 	gpio_keys {
 		compatible = "gpio-keys";
 

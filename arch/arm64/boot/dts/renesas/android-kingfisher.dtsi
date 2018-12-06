@@ -16,6 +16,19 @@
 		serial3 = &scif1;
 		ethernet0 = &avb;
 	};
+
+	memory_ch1: memory@48000000 {
+	};
+
+	memory_ch2: memory@500000000 {
+	};
+
+	memory_ch3: memory@600000000 {
+	};
+
+	memory_ch4: memory@700000000 {
+	};
+
 	reserved-memory {
 		#address-cells = <2>;
 		#size-cells = <2>;
