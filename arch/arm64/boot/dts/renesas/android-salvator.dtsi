@@ -74,6 +74,26 @@
 	vga-encoder {
 		adi,clock-max-rate = <100000>;
 	};
+
+};
+
+/delete-node/ &adsp_port0;
+/delete-node/ &adsp_port1;
+/delete-node/ &adsp_port2;
+/delete-node/ &adsp_port3;
+/delete-node/ &ak4613_endpoint0;
+/delete-node/ &ak4613_endpoint1;
+/delete-node/ &ak4613_endpoint2;
+/delete-node/ &ak4613_endpoint3;
+
+&rcar_adsp_sound {
+	status = "disabled";
+};
+
+&sound_card {
+        routing = "ak4613 Playback", "DAI0 Playback",
+				"DAI0 Capture", "ak4613 Capture";
+        dais = <&rsnd_port0>;
 };
 
 &du {
