@@ -356,6 +356,7 @@
 
 &du {
 	pinctrl-0 = <&du_pins>;
+	pinctrl-names = "default";
 
 	ports {
 		port@0 {
