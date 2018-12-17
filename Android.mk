@@ -140,6 +140,13 @@ endif # BOARD_AVB_ENABLE
 
 $(DTB_IMG_OUT): $(TARGET_KERNEL_EXT_MODULES) mkdtimg
 	mkdtimg create $(PRODUCT_OUT)/dtb.img --page_size=4096 $(DTB_BLOBS)
+ifeq ($(BOARD_AVB_ENABLE),true)
+	$(hide) $(AVBTOOL) add_hash_footer \
+	--image $(PRODUCT_OUT)/dtb.img \
+	--partition_size $(BOARD_DTBIMAGE_PARTITION_SIZE) \
+	--partition_name dtb $(INTERNAL_AVB_SIGNING_ARGS) \
+	$(BOARD_AVB_DTB_ADD_HASH_FOOTER_ARGS)
+endif # BOARD_AVB_ENABLE
 
 $(PRODUCT_OUT)/kernel: $(BOARD_PREBUILT_DTBOIMAGE) $(DTB_IMG_OUT)
 	cp -v $(KERNEL_OUT)/arch/$(TARGET_ARCH)/boot/Image.lz4 $(PRODUCT_OUT)/kernel
