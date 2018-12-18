@@ -104,7 +104,7 @@
 
 		port {
 			lvds_in: endpoint {
-				remote-endpoint = <&du_out_lvds0>;
+				remote-endpoint = <&lvds0_out>;
 			};
 		};
 	};
@@ -352,6 +352,16 @@
 
 &ssi8 {
 	shared-pin;
+};
+
+&lvds0 {
+        ports {
+                port@1 {
+                        lvds0_out: endpoint {
+                                remote-endpoint = <&lvds_in>;
+                        };
+                };
+        };
 };
 
 &du {
