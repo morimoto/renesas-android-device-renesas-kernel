@@ -95,13 +95,3 @@
 				"DAI0 Capture", "ak4613 Capture";
         dais = <&rsnd_port0>;
 };
-
-&du {
-	ports {
-		port@3 {
-			lvds_connector: endpoint {
-				remote-endpoint = <&lvds_in>;
-			};
-		};
-	};
-};
