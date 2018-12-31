@@ -14,6 +14,7 @@ static time64_t                     rtc_time_sec = 1474903385;
 static unsigned long                init_time;
 static struct rtc_wkalrm            rtc_alarm;
 static struct platform_device *     rtc_fake_dev = NULL;
+static struct timer_list            rtc_timer;
 
 
 static int rtc_fake_set_mmss(struct device *dev, unsigned long secs)
@@ -48,7 +49,20 @@ static int rtc_fake_read_alarm(struct device *dev, struct rtc_wkalrm *alrm)
 
 static int rtc_fake_set_alarm(struct device *dev, struct rtc_wkalrm *alrm)
 {
+    time64_t curr_seconds_time = ktime_get_real_seconds();
+    time64_t alarm_seconds_time = rtc_tm_to_time64(&alrm->time);
+    uint64_t diff = 0;
+
     memcpy(&rtc_alarm, alrm, sizeof(struct rtc_wkalrm));
+
+    if (curr_seconds_time >= alarm_seconds_time)
+        return 0;
+
+    diff = (uint64_t)(rtc_tm_to_time64(&alrm->time) - curr_seconds_time);
+    diff *= 1000;
+
+    mod_timer(&rtc_timer, jiffies + msecs_to_jiffies(diff));
+
     return 0;
 }
 
@@ -95,6 +109,14 @@ static ssize_t rtc_fake_irq_store(struct device *dev,
 
 static DEVICE_ATTR(irq, S_IRUGO | S_IWUSR, rtc_fake_irq_show, rtc_fake_irq_store);
 
+static void rtc_timer_callback(unsigned long data)
+{
+    struct rtc_device *rtc = (struct rtc_device *)data;
+
+    if (rtc_alarm.enabled)
+        rtc_update_irq(rtc, 1, RTC_AF | RTC_IRQF);
+}
+
 static int rtc_fake_probe(struct platform_device *pdev)
 {
     int err;
@@ -128,12 +150,16 @@ static int rtc_fake_probe(struct platform_device *pdev)
             dev_attr_irq.attr.name);
 
     platform_set_drvdata(pdev, rtc);
+
+    setup_timer(&rtc_timer, rtc_timer_callback, (unsigned long)rtc);
+
     return 0;
 }
 
 static int rtc_fake_remove(struct platform_device *pdev)
 {
     device_remove_file(&pdev->dev, &dev_attr_irq);
+    del_timer(&rtc_timer);
     return 0;
 }
 
