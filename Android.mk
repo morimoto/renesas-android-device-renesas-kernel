@@ -138,7 +138,7 @@ endif # DTBO_BLOBS
 endif # BOARD_AVB_ENABLE
 	cp -v $(BOARD_PREBUILT_DTBOIMAGE) $(PRODUCT_OUT)/dtbo.img
 
-$(DTB_IMG_OUT): $(TARGET_KERNEL_EXT_MODULES) mkdtimg
+$(DTB_IMG_OUT): $(TARGET_KERNEL_EXT_MODULES) mkdtimg $(AVBTOOL)
 	mkdtimg create $(PRODUCT_OUT)/dtb.img --page_size=4096 $(DTB_BLOBS)
 ifeq ($(BOARD_AVB_ENABLE),true)
 	$(hide) $(AVBTOOL) add_hash_footer \
