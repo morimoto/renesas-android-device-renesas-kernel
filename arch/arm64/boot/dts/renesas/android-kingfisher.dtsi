@@ -389,7 +389,7 @@
 		};
 
 		dai2 {
-			capture = <&ssi6>;
+			capture = <&ssi6 &src0 &dvc0>;
 		};
 
 		dai3 {
