@@ -75,6 +75,14 @@
 		adi,clock-max-rate = <100000>;
 	};
 
+	lvds: lvds {
+		port {
+			lvds_in: endpoint {
+				remote-endpoint = <&lvds0_out>;
+			};
+		};
+	};
+
 };
 
 /delete-node/ &adsp_port0;
