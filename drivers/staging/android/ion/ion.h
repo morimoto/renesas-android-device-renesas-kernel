@@ -54,6 +54,18 @@ struct ion_platform_heap {
 };
 
 /**
+ * struct ion_platform_data - array of platform heaps passed from board file
+ * @nr:		number of structures in the array
+ * @heaps:	array of platform_heap structions
+ *
+ * Provided by the board file in the form of platform data to a platform device.
+ */
+struct ion_platform_data {
+	int nr;
+	struct ion_platform_heap *heaps;
+};
+
+/**
  * struct ion_buffer - metadata for a particular buffer
  * @ref:		reference count
  * @node:		node in the ion_device buffers tree
