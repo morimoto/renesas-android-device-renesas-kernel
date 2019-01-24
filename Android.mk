@@ -69,8 +69,7 @@ DTBO_BLOBS += $(KERNEL_DTS_DIR)/r8a7795-salvator-4x2g-overlay.dtb --id=0x0477953
 	$(KERNEL_DTS_DIR)/r8a7795-salvator-4x2g-overlay.dtb --id=0x04779520 \
 	$(KERNEL_DTS_DIR)/r8a7795v3-salvator-overlay.dtb --id=0x04779530 \
 	$(KERNEL_DTS_DIR)/r8a7795v2-salvator-overlay.dtb --id=0x04779520 \
-	$(KERNEL_DTS_DIR)/salvator-adsp-overlay.dtb --id=0x00779000 \
-	$(KERNEL_DTS_DIR)/partitions-overlay.dtb --id=0x00779000
+	$(KERNEL_DTS_DIR)/salvator-adsp-overlay.dtb --id=0x00779000
 endif
 
 ifeq ($(TARGET_PRODUCT),ulcb)
@@ -85,8 +84,19 @@ DTBO_BLOBS := $(KERNEL_DTS_DIR)/r8a7795-h3ulcb-4x2g-overlay.dtb --id=0x0b779530 
 	$(KERNEL_DTS_DIR)/r8a7795-h3ulcb-4x2g-overlay.dtb --id=0x0b779520 \
 	$(KERNEL_DTS_DIR)/r8a7795v3-h3ulcb-kf-overlay.dtb --id=0x0b779530 \
 	$(KERNEL_DTS_DIR)/r8a7795v2-h3ulcb-kf-overlay.dtb --id=0x0b779520 \
-	$(KERNEL_DTS_DIR)/ulcb-kf-adsp-overlay.dtb --id=0x00779000 \
-	$(KERNEL_DTS_DIR)/partitions-overlay.dtb --id=0x00779000
+	$(KERNEL_DTS_DIR)/ulcb-kf-adsp-overlay.dtb --id=0x00779000
+endif
+
+DTBO_BLOBS += $(KERNEL_DTS_DIR)/partitions-overlay.dtb --id=0x00779000
+
+ifeq ($(LVDS_PANEL_MODEL),TX31D200VM0BAA)
+DTBO_BLOBS += $(KERNEL_DTS_DIR)/lvds-TX31D200VM0BAA-overlay.dtb --id=0x00779000
+else
+ifeq ($(LVDS_PANEL_MODEL),AA104XD12)
+DTBO_BLOBS += $(KERNEL_DTS_DIR)/lvds-AA104XD12-overlay.dtb --id=0x00779000
+else
+DTBO_BLOBS += $(KERNEL_DTS_DIR)/lvds-AA121TD01-overlay.dtb --id=0x00779000
+endif
 endif
 
 # Include only for Renesas ones.

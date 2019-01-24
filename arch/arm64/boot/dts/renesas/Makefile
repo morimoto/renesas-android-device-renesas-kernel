@@ -19,6 +19,15 @@ dtb-$(CONFIG_ARCH_R8A7795) += r8a7795v3-salvator-overlay.dtb
 dtb-$(CONFIG_ARCH_R8A7795) += ulcb-kf-adsp-overlay.dtb
 dtb-$(CONFIG_ARCH_R8A7795) += salvator-adsp-overlay.dtb
 dtb-$(CONFIG_ARCH_R8A7795) += partitions-overlay.dtb
+dtb-$(CONFIG_ARCH_R8A7795) += lvds-AA104XD12-overlay.dtb
+dtb-$(CONFIG_ARCH_R8A7795) += lvds-AA121TD01-overlay.dtb
+dtb-$(CONFIG_ARCH_R8A7795) += lvds-TX31D200VM0BAA-overlay.dtb
+dtb-$(CONFIG_ARCH_R8A7796) += lvds-AA104XD12-overlay.dtb
+dtb-$(CONFIG_ARCH_R8A7796) += lvds-AA121TD01-overlay.dtb
+dtb-$(CONFIG_ARCH_R8A7796) += lvds-TX31D200VM0BAA-overlay.dtb
+dtb-$(CONFIG_ARCH_R8A77965) += lvds-AA104XD12-overlay.dtb
+dtb-$(CONFIG_ARCH_R8A77965) += lvds-AA121TD01-overlay.dtb
+dtb-$(CONFIG_ARCH_R8A77965) += lvds-TX31D200VM0BAA-overlay.dtb
 
 DTC_FLAGS	+= -@
 always		:= $(dtb-y)
