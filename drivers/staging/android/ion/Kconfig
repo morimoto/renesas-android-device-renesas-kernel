@@ -43,8 +43,18 @@ config ION_CMA_HEAP
 	  by the Contiguous Memory Allocator (CMA). If your system has these
 	  regions, you should say Y here.
 
+config ION_OF
+	bool "Devicetree support for Ion"
+	depends on ION && OF_ADDRESS
+	help
+	  Provides base support for defining Ion heaps in devicetree
+	  and setting them up. Also includes functions for platforms
+	  to parse the devicetree and expand for their own custom
+	  extensions.
+	  If using Ion and devicetree, you should say Y here
+
 config ION_RCAR
-	bool "ION for rcar"
-	depends on (ARCH_R8A7790 || ARCH_R8A7791 || ARCH_R8A7793 || ARCH_R8A7794 || ARCH_R8A7795) && ION
+	tristate "ION for rcar"
+	depends on (ARCH_R8A7790 || ARCH_R8A7791 || ARCH_R8A7793 || ARCH_R8A7794 || ARCH_R8A7795) && ION_OF
 	help
 	  RCar specific ION extensions
