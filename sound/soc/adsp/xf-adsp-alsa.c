@@ -2568,7 +2568,6 @@ static int snd_adsp_control_volume_get(struct snd_kcontrol *kcontrol,
  *  \retval	  0		Volume does not change
  *  \retval	  -EINVAL	Error
  *****************************************************************************/
-/* PRQA S 3673 1*/
 static int
 snd_adsp_control_volume_put(struct snd_kcontrol *kcontrol,
 			    struct snd_ctl_elem_value *ucontrol)
@@ -2792,7 +2791,6 @@ static int snd_adsp_control_sample_rate_get(struct snd_kcontrol *kcontrol,
  *  \retval	0		Sample rate does not change
  *  \retval	-EINVAL		Error
  *****************************************************************************/
-/* PRQA S 3673 1 */
 static int
 snd_adsp_control_sample_rate_put(struct snd_kcontrol *kcontrol,
 				 struct snd_ctl_elem_value *ucontrol)
@@ -2999,7 +2997,6 @@ static int snd_adsp_control_eqz_get(struct snd_kcontrol *kcontrol,
  *  \retval	  0		Equalizer parameters does not change
  *  \retval	 -EINVAL	Error
  *****************************************************************************/
-/* PRQA S 3673 1*/
 static int snd_adsp_control_eqz_put(struct snd_kcontrol *kcontrol,
 				    struct snd_ctl_elem_value *ucontrol)
 {
@@ -3170,7 +3167,6 @@ snd_adsp_control_eqz_switch_get(struct snd_kcontrol *kcontrol,
  *  \retval	  0		Equalizer switch does not change
  *  \retval	 -EINVAL	Error
  *****************************************************************************/
-/* PRQA S 3673 1 */
 static int
 snd_adsp_control_eqz_switch_put(struct snd_kcontrol *kcontrol,
 				struct snd_ctl_elem_value *ucontrol)
