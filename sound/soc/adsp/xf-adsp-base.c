@@ -1095,7 +1095,6 @@ int xf_adsp_renderer_set_params(struct xf_adsp_renderer *renderer)
  *\retval	0		Success
  *\retval	-EINVAL		Failed
  **************************************************************/
-/* PRQA S 1505 */
 int xf_adsp_renderer_get_params(struct xf_adsp_renderer *renderer)
 {
 	struct xf_adsp_renderer_params *rdr_params;
@@ -1240,7 +1239,6 @@ err2:
  *\retval	 0		Success
  *\retval	 -EINVAL	Invalid base or Renderer data
  **************************************************************/
-/* PRQA S 3673 */
 int xf_adsp_renderer_destroy(struct xf_adsp_renderer *renderer)
 {
 	struct xf_handle *handle;
@@ -1363,7 +1361,6 @@ int xf_adsp_capture_set_params(struct xf_adsp_capture *capture)
  *\retval	 0		 Success
  *\retval	 -EINVAL	 Failed
  **************************************************************/
-/* PRQA S 1505 */
 int xf_adsp_capture_get_params(struct xf_adsp_capture *capture)
 {
 	struct xf_adsp_capture_params *cap_params;
@@ -1639,7 +1636,6 @@ int xf_adsp_equalizer_set_params(struct xf_adsp_equalizer *equalizer)
  *\retval	 0		 Success
  *\retval	 -EINVAL	 Failed
  **************************************************************/
-/* PRQA S 1505 1*/
 int xf_adsp_equalizer_get_params(struct xf_adsp_equalizer *equalizer)
 {
 	struct xf_adsp_equalizer_params *eqz_params;
@@ -1801,7 +1797,6 @@ err2:
  *\retval	 0		 Success
  *\retval	 -EINVAL	 Invalid base or Equalizer data
  **************************************************************/
-/* PRQA S 3673 */
 int xf_adsp_equalizer_destroy(struct xf_adsp_equalizer *equalizer)
 {
 	struct xf_handle *handle;
@@ -1921,7 +1916,6 @@ int xf_adsp_tdm_renderer_set_params(struct xf_adsp_tdm_renderer *tdm_renderer)
  *\retval	 0		Success
  *\retval	 -EINVAL	Failed
  **************************************************************/
-/* PRQA S 1505 1*/
 int xf_adsp_tdm_renderer_get_params(struct xf_adsp_tdm_renderer *tdm_renderer)
 {
 	struct xf_adsp_tdm_renderer_params *params;
@@ -2062,7 +2056,6 @@ err2:
  *\retval	 0		Success
  *\retval	 -EINVAL	Invalid base or Renderer data
  **************************************************************/
-/* PRQA S 3673 1*/
 int xf_adsp_tdm_renderer_destroy(struct xf_adsp_tdm_renderer *tdm_renderer)
 {
 	struct xf_handle *handle;
@@ -2182,7 +2175,6 @@ int xf_adsp_tdm_capture_set_params(struct xf_adsp_tdm_capture *tdm_capture)
  *\retval	 0		Success
  *\retval	 -EINVAL	Failed
  **************************************************************/
-/* PRQA S 1505 1*/
 int xf_adsp_tdm_capture_get_params(struct xf_adsp_tdm_capture *tdm_capture)
 {
 	struct xf_adsp_tdm_capture_params *params;
@@ -2322,7 +2314,6 @@ err2:
  *\retval	 0		 Success
  *\retval	 -EINVAL	 Invalid base or Renderer data
  **************************************************************/
-/* PRQA S 3673 */
 int xf_adsp_tdm_capture_destroy(struct xf_adsp_tdm_capture *tdm_capture)
 {
 	struct xf_handle *handle;
