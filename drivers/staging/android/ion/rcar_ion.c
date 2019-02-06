@@ -28,7 +28,7 @@
 
 static struct ion_of_heap rcar_ion_heaps[] = {
 	PLATFORM_HEAP("renesas,ion-rcar-heap", ION_HEAP_TYPE_DMA,
-		ION_HEAP_TYPE_CARVEOUT, "rcar-ion"),
+		ION_HEAP_TYPE_CARVEOUT, "ion_heap"),
 };
 
 struct ion_rcar_heap {
@@ -149,6 +149,7 @@ int rcar_ion_probe(struct platform_device *pdev)
 	pdata = ion_parse_dt(pdev, rcar_ion_heaps);
 	if (IS_ERR(pdata)) {
 		ret = PTR_ERR(pdata);
+		dev_err(&pdev->dev, "ion_parse_dt failed, err=%d\n", ret);
 		goto err_parse_dt;
 	}
 
@@ -181,12 +182,12 @@ int rcar_ion_probe(struct platform_device *pdev)
 	rheap->heap.ops = &rcar_ion_heap_ops;
 	rheap->heap.type = ION_HEAP_TYPE_DMA;
 	rheap->heap.flags = ION_HEAP_FLAG_DEFER_FREE;
-	rheap->heap.name = pheap->name;
+	rheap->heap.name = "rcar-ion";
 
 	ion_device_add_heap(&rheap->heap);
 
 	dev_info(&pdev->dev, "heap '%s' base 0x%pa size %luKB id %d type %d\n",
-		pheap->name, &pheap->base, pheap->size/1024, pheap->id, pheap->type);
+		rheap->heap.name, &pheap->base, pheap->size/1024, pheap->id, pheap->type);
 
 	return 0;
 
