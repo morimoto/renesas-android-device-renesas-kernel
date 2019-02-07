@@ -52,3 +52,13 @@
 		line-name = "BL PWM 100%";
 	};
 };
+
+&lvds0 {
+	ports {
+		port@1 {
+			lvds0_out: endpoint {
+				remote-endpoint = <&lvds_in>;
+			};
+		};
+	};
+};
