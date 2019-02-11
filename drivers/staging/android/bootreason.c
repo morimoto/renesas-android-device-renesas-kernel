@@ -54,7 +54,7 @@ static int reboot_notifier_call(
 	char *cmd = (char *)data;
 	struct bootreason_message msg;
 
-	if (what != SYS_RESTART)
+	if (what != SYS_RESTART && what != SYS_WATCHDOG)
 		goto out;
 
 	memset(&msg, 0, sizeof(struct bootreason_message));
@@ -78,6 +78,11 @@ static int reboot_notifier_call(
 				memset(msg.reason, 0, sizeof(msg.reason));
 				snprintf(msg.reason, sizeof(msg.reason), "%s",
 						"reboot,userrequested");
+			} else if (strncmp(cmd, "watchdog",
+					strlen("watchdog")) == 0) {
+				memset(msg.reason, 0, sizeof(msg.reason));
+				snprintf(msg.reason, sizeof(msg.reason), "%s",
+						"watchdog");
 			} else if (strncmp(cmd, "adb",
 					strlen("adb")) == 0) {
 				memset(msg.reason, 0, sizeof(msg.reason));
