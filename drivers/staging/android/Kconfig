@@ -38,6 +38,14 @@ config BOOTLOADER_CONTROL
 	  defined in its configuration, it will boot once into that label. The
 	  device and partition number are specified on the kernel command line.
 
+config BOOT_REASON
+	tristate "Reboot reason stored in RAM and shutdown reason stored in BCB"
+	default n
+	depends on ARCH_RENESAS
+	help
+	  This driver installs a reboot and shutdown hooks, such that if it is
+	  invoked, "reason" is copied to the RAM and BCB corresponding.
+
 endif # if ANDROID
 
 endmenu
