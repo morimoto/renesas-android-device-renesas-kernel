@@ -11,6 +11,8 @@
 #define SYS_HALT	0x0002	/* Notify of system halt */
 #define SYS_POWER_OFF	0x0003	/* Notify of system power off */
 
+#define SYS_WATCHDOG	0x0010 /* Notify of trigger watchdog */
+
 enum reboot_mode {
 	REBOOT_COLD = 0,
 	REBOOT_WARM,

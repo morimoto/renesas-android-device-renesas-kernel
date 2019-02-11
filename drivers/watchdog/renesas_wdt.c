@@ -21,6 +21,7 @@
 #include <linux/watchdog.h>
 #include <linux/times.h>
 #include <linux/sysrq.h>
+#include <linux/reboot.h>
 
 #define RWTCNT		0
 #define RWTCSRA		4
@@ -207,6 +208,13 @@ static void pretimeot_dump(unsigned long data)
 	unsigned int msec_to_trigger = 0;
 
 	if (curr_timeleft < wdog->pretimeout) {
+#ifdef CONFIG_BOOT_REASON
+		/* Watchdog doesn't provide properly reboot, it's H/W reset.
+		 * So we need to call notifier list right here.
+		 */
+		blocking_notifier_call_chain(&reboot_notifier_list,
+			SYS_WATCHDOG, "watchdog");
+#endif
 		__handle_sysrq('l', 0);
 		return;
 	}
