@@ -78,6 +78,16 @@ static int reboot_notifier_call(
 				memset(msg.reason, 0, sizeof(msg.reason));
 				snprintf(msg.reason, sizeof(msg.reason), "%s",
 						"reboot,userrequested");
+			} else if (strncmp(cmd, "adb",
+					strlen("adb")) == 0) {
+				memset(msg.reason, 0, sizeof(msg.reason));
+				snprintf(msg.reason, sizeof(msg.reason), "%s",
+						"reboot,adb");
+			} else if (strncmp(cmd, "shell",
+					strlen("shell")) == 0) {
+				memset(msg.reason, 0, sizeof(msg.reason));
+				snprintf(msg.reason, sizeof(msg.reason), "%s",
+						"reboot,shell");
 			}
 			/* Add some mapping here... */
 		}
@@ -194,23 +204,24 @@ static int __init bootreason_init(void)
 
 	if (register_reboot_notifier(&bootreason_reboot_notifier)) {
 		pr_err("bootreason: unable to register reboot notifier\n");
-
-		vunmap(bootreason_mem_vaddr);
-		bootreason_mem_vaddr = NULL;
-		return -EPERM;
+		goto err;
 	}
 
 	if (atomic_notifier_chain_register(&panic_notifier_list,
 			&bootreason_panic_notifier)) {
 		pr_err("bootreason: unable to register panic notifier\n");
-
-		unregister_reboot_notifier(&bootreason_reboot_notifier);
-		vunmap(bootreason_mem_vaddr);
-		bootreason_mem_vaddr = NULL;
-		return -EPERM;
+		goto failed_panic;
 	}
 
 	return 0;
+
+failed_panic:
+	unregister_reboot_notifier(&bootreason_reboot_notifier);
+err:
+	vunmap(bootreason_mem_vaddr);
+	bootreason_mem_vaddr = NULL;
+	return -EPERM;
+
 }
 module_init(bootreason_init);
 
