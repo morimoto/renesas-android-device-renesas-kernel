@@ -25,6 +25,7 @@
 #include <net/netlink.h>
 #include <net/genetlink.h>
 #include <linux/suspend.h>
+#include <linux/bootreason.h>
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/thermal.h>
@@ -398,6 +399,9 @@ static void handle_critical_trips(struct thermal_zone_device *tz,
 			 * Queue a backup emergency shutdown in the event of
 			 * orderly_poweroff failure
 			 */
+#ifdef CONFIG_BOOT_REASON
+			shutdown_reason_setup("shutdown,thermal");
+#endif
 			thermal_emergency_poweroff();
 			orderly_poweroff(true);
 			power_off_triggered = true;
