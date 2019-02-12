@@ -30,6 +30,7 @@
 #include <linux/slab.h>
 #include <asm/page.h>
 #include <linux/crc32.h>
+#include <linux/bootreason.h>
 
 static const char *DEV_NAME = "rambootreason";
 static const size_t REASON_MAX_LEN = 128;
@@ -38,15 +39,12 @@ static phys_addr_t bootreason_mem_start;
 void *bootreason_mem_vaddr;
 static u8 *bootreason_mem_buffer;
 
-/*
- * Message written by Linux bootreason driver.
- * Bootloader must parse it and append to Android bootargs.
- * Note: sync structure with bootloader and bcb driver.
- */
-struct bootreason_message {
-	char reason[128];
-	u32 crc;
-};
+static char *reboot_reason;
+
+void reboot_reason_setup(char *s)
+{
+	reboot_reason = s;
+}
 
 static int reboot_notifier_call(
 		struct notifier_block *notifier,
@@ -83,7 +81,11 @@ static int reboot_notifier_call(
 			}
 			/* Add some mapping here... */
 		}
+	} else if (reboot_reason) {
+		snprintf(msg.reason, sizeof(msg.reason), "%s", reboot_reason);
+		reboot_reason = NULL;
 	}
+
 	/* Calculate crc32 */
 	msg.crc = crc32(0 ^ 0xffffffff, msg.reason,
 			sizeof(msg.reason)) ^ 0xffffffff;
