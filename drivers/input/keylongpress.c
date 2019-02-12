@@ -21,11 +21,15 @@
 #include <linux/keyreset.h>
 #include <linux/reboot.h>
 #include <linux/of.h>
+#include <linux/bootreason.h>
 
 #define DEFAULT_KEY_DOWN_DELAY 10000
 
 int keylongpress_fn(void)
 {
+#ifdef CONFIG_BOOT_REASON
+	shutdown_reason_setup("powerkey");
+#endif
 	orderly_poweroff(true);
 	return 0;
 }
@@ -47,7 +51,6 @@ static struct platform_device keylongpress_device = {
 static int keylongpress_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
-	const char *name;
 
 	device_property_read_u32(dev, "key_down_delay",
 			&keylongpress_pdata.key_down_delay);
