@@ -18,6 +18,7 @@
 #include <linux/blkdev.h>
 #include <linux/reboot.h>
 #include <linux/crc32.h>
+#include <linux/bootreason.h>
 
 /* Persistent area written by Android recovery console and Linux bcb driver
  * reboot hook for communication with the bootloader. Bootloader must
@@ -44,15 +45,12 @@ struct bootloader_message {
 };
 
 #ifdef CONFIG_BOOT_REASON
-/*
- * Message written by Linux bootreason driver.
- * Bootloader must parse it and append to Android bootargs.
- * Note: sync structure with bootloader and bcb driver.
- */
-struct bootreason_message {
-	char reason[128];
-	u32 crc;
-};
+static char *shutdown_reason;
+
+void shutdown_reason_setup(char *s)
+{
+	shutdown_reason = s;
+}
 #endif
 
 /* TODO: device names/partition numbers are unstable. Add support for looking
@@ -262,7 +260,11 @@ static int bcb_shutdown_notifier_call(
 			}
 			/* Add some mapping here... */
 		}
+	} else if (shutdown_reason) {
+		snprintf(msg.reason, sizeof(msg.reason), "%s", shutdown_reason);
+		shutdown_reason = NULL;
 	}
+
 	/* Calculate crc32 */
 	msg.crc = crc32(0 ^ 0xffffffff, msg.reason,
 			sizeof(msg.reason)) ^ 0xffffffff;
