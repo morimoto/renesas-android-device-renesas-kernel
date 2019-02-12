@@ -83,6 +83,16 @@ static int reboot_notifier_call(
 				memset(msg.reason, 0, sizeof(msg.reason));
 				snprintf(msg.reason, sizeof(msg.reason), "%s",
 						"watchdog");
+			} else if (strncmp(cmd, "adb",
+					strlen("adb")) == 0) {
+				memset(msg.reason, 0, sizeof(msg.reason));
+				snprintf(msg.reason, sizeof(msg.reason), "%s",
+						"reboot,adb");
+			} else if (strncmp(cmd, "shell",
+					strlen("shell")) == 0) {
+				memset(msg.reason, 0, sizeof(msg.reason));
+				snprintf(msg.reason, sizeof(msg.reason), "%s",
+						"reboot,shell");
 			}
 			/* Add some mapping here... */
 		}
