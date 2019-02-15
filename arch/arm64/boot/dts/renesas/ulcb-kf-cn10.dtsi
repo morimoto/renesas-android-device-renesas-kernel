@@ -194,9 +194,6 @@
 	status = "okay";
 
 	ports {
-		#address-cells = <1>;
-		#size-cells = <0>;
-
 		port@0 {
 			vin0ep0: endpoint {
 				csi,select = "csi40";
@@ -222,9 +219,6 @@
 	status = "okay";
 
 	ports {
-		#address-cells = <1>;
-		#size-cells = <0>;
-
 		port@0 {
 			vin1ep0: endpoint {
 				csi,select = "csi40";
@@ -250,9 +244,6 @@
 	status = "okay";
 
 	ports {
-		#address-cells = <1>;
-		#size-cells = <0>;
-
 		port@0 {
 			vin2ep0: endpoint {
 				csi,select = "csi40";
@@ -278,9 +269,6 @@
 	status = "okay";
 
 	ports {
-		#address-cells = <1>;
-		#size-cells = <0>;
-
 		port@0 {
 			vin3ep0: endpoint {
 				csi,select = "csi40";
@@ -325,9 +313,6 @@
 	};
 
 	port {
-		#address-cells = <1>;
-		#size-cells = <0>;
-
 		csi40_ep: endpoint {
 			clock-lanes = <0>;
 			data-lanes = <1 2 3 4>;
