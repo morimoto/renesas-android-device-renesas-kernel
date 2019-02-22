@@ -81,11 +81,16 @@
 		<&cpg CPG_MOD 722>,
 		<&cpg CPG_MOD 721>,
 		<&cpg CPG_MOD 727>,
+		<&cpg CPG_MOD 711>,
+		<&cpg CPG_MOD 710>,
+		<&cpg CPG_MOD 709>,
+		<&cpg CPG_MOD 708>,
 		<&versaclock5 1>,
 		<&versaclock5_out3>,
 		<&versaclock5_out4>,
 		<&versaclock5 2>;
 	clock-names = "du.0", "du.1", "du.2", "du.3", "lvds.0",
+		"cmm.0", "cmm.1", "cmm.2", "cmm.3",
 		"dclkin.0", "dclkin.1", "dclkin.2", "dclkin.3";
 
 	ports {

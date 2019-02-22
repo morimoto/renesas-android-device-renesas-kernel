@@ -71,6 +71,7 @@ struct rcar_du_crtc {
 	unsigned int sources_count;
 
 	struct drm_writeback_connector writeback;
+	void *cmm_handle;
 };
 
 #define to_rcar_crtc(c)		container_of(c, struct rcar_du_crtc, crtc)
@@ -108,5 +109,34 @@ int rcar_du_crtc_create(struct rcar_du_group *rgrp, unsigned int swindex,
 void rcar_du_crtc_finish_page_flip(struct rcar_du_crtc *rcrtc);
 
 void rcar_du_crtc_dsysr_clr_set(struct rcar_du_crtc *rcrtc, u32 clr, u32 set);
+/* DU-CMM functions */
+int rcar_du_cmm_init(struct rcar_du_crtc *rcrtc);
+int rcar_du_cmm_driver_open(struct drm_device *dev, struct drm_file *file_priv);
+void rcar_du_cmm_postclose(struct drm_device *dev, struct drm_file *file_priv);
+int rcar_du_cmm_start_stop(struct rcar_du_crtc *rcrtc, bool on);
+void rcar_du_cmm_kick(struct rcar_du_crtc *rcrtc);
+
+int rcar_du_cmm_lut_set(struct drm_device *dev, void *data,
+			struct drm_file *file_priv);
+int rcar_du_cmm_clu_set(struct drm_device *dev, void *data,
+			struct drm_file *file_priv);
+int rcar_du_cmm_hgo_get(struct drm_device *dev, void *data,
+			struct drm_file *file_priv);
+int rcar_du_cmm_hgo_set(struct drm_device *dev, void *data,
+			struct drm_file *file_priv);
+int rcar_du_cmm_hgo_start(struct drm_device *dev, void *data,
+			  struct drm_file *file_priv);
+int rcar_du_cmm_wait_event(struct drm_device *dev, void *data,
+			   struct drm_file *file_priv);
+int rcar_du_cmm_config(struct drm_device *dev, void *data,
+		       struct drm_file *file_priv);
+int rcar_du_cmm_alloc(struct drm_device *dev, void *data,
+		      struct drm_file *file_priv);
+int rcar_du_cmm_free(struct drm_device *dev, void *data,
+		     struct drm_file *file_priv);
+#ifdef CONFIG_PM_SLEEP
+int rcar_du_cmm_pm_suspend(struct rcar_du_crtc *rcrtc);
+int rcar_du_cmm_pm_resume(struct rcar_du_crtc *rcrtc);
+#endif /* CONFIG_PM_SLEEP */
 
 #endif /* __RCAR_DU_CRTC_H__ */

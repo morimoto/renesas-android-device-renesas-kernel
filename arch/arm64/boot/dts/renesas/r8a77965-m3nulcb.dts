@@ -72,10 +72,14 @@
 	clocks = <&cpg CPG_MOD 724>,
 		 <&cpg CPG_MOD 723>,
 		 <&cpg CPG_MOD 721>,
+		 <&cpg CPG_MOD 711>,
+		 <&cpg CPG_MOD 710>,
+		 <&cpg CPG_MOD 708>,
 		 <&versaclock5 1>,
 		 <&versaclock5_out3>,
 		 <&versaclock5 2>;
 	clock-names = "du.0", "du.1", "du.3",
+		      "cmm.0", "cmm.1", "cmm.3",
 		      "dclkin.0", "dclkin.1", "dclkin.3";
 };
 
