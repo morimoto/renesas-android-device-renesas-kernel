@@ -38,6 +38,13 @@ struct rcar_du_device;
 #define RCAR_DU_FEATURE_TVM_SYNC	(1 << 8)	/* Has TV switch/sync modes */
 #define RCAR_DU_FEATURE_R8A7799X	(1 << 9)        /* Use R8A7799X */
 
+/* Has DEF7R register & CMM */
+#define RCAR_DU_FEATURE_CMM		BIT(10)
+/* Has CMM LUT Double buffer */
+#define RCAR_DU_FEATURE_CMM_LUT_DBUF	BIT(11)
+/* Has CMM CLU Double buffer */
+#define RCAR_DU_FEATURE_CMM_CLU_DBUF	BIT(12)
+
 #define RCAR_DU_QUIRK_ALIGN_128B	(1 << 0)	/* Align pitches to 128 bytes */
 
 /*

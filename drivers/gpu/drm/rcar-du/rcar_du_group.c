@@ -234,6 +234,11 @@ static void rcar_du_group_setup(struct rcar_du_group *rgrp)
 	if (rcdu->info->gen >= 3)
 		rcar_du_group_write(rgrp, DEFR10, DEFR10_CODE | DEFR10_DEFE10);
 
+	if (rcar_du_has(rgrp->dev, RCAR_DU_FEATURE_CMM)) {
+		rcar_du_group_write(rgrp, DEF7R, DEF7R_CODE |
+				    DEF7R_CMME1 | DEF7R_CMME0);
+	}
+
 	/*
 	 * Use DS1PR and DS2PR to configure planes priorities and connects the
 	 * superposition 0 to DU0 pins. DU1 pins will be configured dynamically.

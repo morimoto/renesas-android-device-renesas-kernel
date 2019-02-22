@@ -203,7 +203,10 @@ static const struct rcar_du_device_info rcar_du_r8a7795_info = {
 		  | RCAR_DU_FEATURE_EXT_CTRL_REGS
 		  | RCAR_DU_FEATURE_VSP1_SOURCE
 		  | RCAR_DU_FEATURE_R8A7795_REGS
-		  | RCAR_DU_FEATURE_TVM_SYNC,
+		  | RCAR_DU_FEATURE_TVM_SYNC
+		  | RCAR_DU_FEATURE_CMM
+		  | RCAR_DU_FEATURE_CMM_LUT_DBUF
+		  | RCAR_DU_FEATURE_CMM_CLU_DBUF,
 	.channels_mask = BIT(3) | BIT(2) | BIT(1) | BIT(0),
 	.routes = {
 		/*
@@ -237,7 +240,10 @@ static const struct rcar_du_device_info rcar_du_r8a7796_info = {
 		  | RCAR_DU_FEATURE_EXT_CTRL_REGS
 		  | RCAR_DU_FEATURE_VSP1_SOURCE
 		  | RCAR_DU_FEATURE_R8A7796_REGS
-		  | RCAR_DU_FEATURE_TVM_SYNC,
+		  | RCAR_DU_FEATURE_TVM_SYNC
+		  | RCAR_DU_FEATURE_CMM
+		  | RCAR_DU_FEATURE_CMM_LUT_DBUF
+		  | RCAR_DU_FEATURE_CMM_CLU_DBUF,
 	.channels_mask = BIT(2) | BIT(1) | BIT(0),
 	.routes = {
 		/*
@@ -267,7 +273,10 @@ static const struct rcar_du_device_info rcar_du_r8a77965_info = {
 		  | RCAR_DU_FEATURE_EXT_CTRL_REGS
 		  | RCAR_DU_FEATURE_VSP1_SOURCE
 		  | RCAR_DU_FEATURE_R8A77965_REGS
-		  | RCAR_DU_FEATURE_TVM_SYNC,
+		  | RCAR_DU_FEATURE_TVM_SYNC
+		  | RCAR_DU_FEATURE_CMM
+		  | RCAR_DU_FEATURE_CMM_LUT_DBUF
+		  | RCAR_DU_FEATURE_CMM_CLU_DBUF,
 	.channels_mask = BIT(3) | BIT(1) | BIT(0),
 	.routes = {
 		/*
@@ -317,7 +326,10 @@ static const struct rcar_du_device_info rcar_du_r8a7799x_info = {
 	.features = RCAR_DU_FEATURE_CRTC_IRQ_CLOCK
 		  | RCAR_DU_FEATURE_EXT_CTRL_REGS
 		  | RCAR_DU_FEATURE_VSP1_SOURCE
-		  | RCAR_DU_FEATURE_R8A7799X,
+		  | RCAR_DU_FEATURE_R8A7799X
+		  | RCAR_DU_FEATURE_CMM
+		  | RCAR_DU_FEATURE_CMM_LUT_DBUF
+		  | RCAR_DU_FEATURE_CMM_CLU_DBUF,
 	.channels_mask = BIT(1) | BIT(0),
 	.routes = {
 		/*
@@ -377,6 +389,26 @@ static const struct drm_ioctl_desc rcar_du_ioctls[] = {
 			  DRM_UNLOCKED | DRM_CONTROL_ALLOW),
 	DRM_IOCTL_DEF_DRV(RCAR_DU_SCRSHOT, rcar_du_vsp_write_back,
 			  DRM_UNLOCKED | DRM_CONTROL_ALLOW),
+
+	/* DU-CMM function */
+	DRM_IOCTL_DEF_DRV(RCAR_DU_CMM_SET_CLU, rcar_du_cmm_clu_set,
+			  DRM_UNLOCKED | DRM_CONTROL_ALLOW),
+	DRM_IOCTL_DEF_DRV(RCAR_DU_CMM_SET_HGO, rcar_du_cmm_hgo_set,
+			  DRM_UNLOCKED | DRM_CONTROL_ALLOW),
+	DRM_IOCTL_DEF_DRV(RCAR_DU_CMM_GET_HGO, rcar_du_cmm_hgo_get,
+			  DRM_UNLOCKED | DRM_CONTROL_ALLOW),
+	DRM_IOCTL_DEF_DRV(RCAR_DU_CMM_START_HGO, rcar_du_cmm_hgo_start,
+			  DRM_UNLOCKED | DRM_CONTROL_ALLOW),
+	DRM_IOCTL_DEF_DRV(RCAR_DU_CMM_WAIT_EVENT, rcar_du_cmm_wait_event,
+			  DRM_UNLOCKED | DRM_CONTROL_ALLOW),
+	DRM_IOCTL_DEF_DRV(RCAR_DU_CMM_CONFIG, rcar_du_cmm_config,
+			  DRM_UNLOCKED | DRM_CONTROL_ALLOW),
+	DRM_IOCTL_DEF_DRV(RCAR_DU_CMM_SET_LUT, rcar_du_cmm_lut_set,
+			  DRM_UNLOCKED | DRM_CONTROL_ALLOW),
+	DRM_IOCTL_DEF_DRV(RCAR_DU_CMM_ALLOC, rcar_du_cmm_alloc,
+			  DRM_UNLOCKED | DRM_CONTROL_ALLOW),
+	DRM_IOCTL_DEF_DRV(RCAR_DU_CMM_FREE, rcar_du_cmm_free,
+			  DRM_UNLOCKED | DRM_CONTROL_ALLOW),
 };
 
 DEFINE_DRM_GEM_CMA_FOPS(rcar_du_fops);
@@ -384,6 +416,8 @@ DEFINE_DRM_GEM_CMA_FOPS(rcar_du_fops);
 static struct drm_driver rcar_du_driver = {
 	.driver_features	= DRIVER_GEM | DRIVER_MODESET | DRIVER_PRIME
 				| DRIVER_ATOMIC,
+	.open			= rcar_du_cmm_driver_open,
+	.postclose		= rcar_du_cmm_postclose,
 	.lastclose		= rcar_du_lastclose,
 	.gem_free_object_unlocked = drm_gem_cma_free_object,
 	.gem_vm_ops		= &drm_gem_cma_vm_ops,
@@ -419,7 +453,6 @@ static int rcar_du_pm_shutdown(struct device *dev)
 #if IS_ENABLED(CONFIG_DRM_RCAR_DW_HDMI)
 	struct drm_encoder *encoder;
 #endif
-
 	drm_kms_helper_poll_disable(rcdu->ddev);
 	drm_fbdev_cma_set_suspend_unlocked(rcdu->fbdev, true);
 
@@ -451,6 +484,11 @@ static int rcar_du_pm_suspend(struct device *dev)
 	struct rcar_du_device *rcdu = dev_get_drvdata(dev);
 	int i, ret;
 
+	if (rcar_du_has(rcdu, RCAR_DU_FEATURE_CMM)) {
+		for (i = 0; i < rcdu->num_crtcs; ++i)
+			rcar_du_cmm_pm_suspend(&rcdu->crtcs[i]);
+	}
+
 	ret = rcar_du_pm_shutdown(dev);
 	if (ret)
 		return ret;
@@ -464,6 +502,7 @@ static int rcar_du_pm_suspend(struct device *dev)
 static int rcar_du_pm_resume(struct device *dev)
 {
 	struct rcar_du_device *rcdu = dev_get_drvdata(dev);
+	int i;
 #if IS_ENABLED(CONFIG_DRM_RCAR_DW_HDMI)
 	struct drm_encoder *encoder;
 
@@ -477,6 +516,11 @@ static int rcar_du_pm_resume(struct device *dev)
 			dw_hdmi_s2r_ctrl(encoder->bridge, true);
 	}
 #endif
+	if (rcar_du_has(rcdu, RCAR_DU_FEATURE_CMM)) {
+		for (i = 0; i < rcdu->num_crtcs; ++i)
+			rcar_du_cmm_pm_resume(&rcdu->crtcs[i]);
+	}
+
 	drm_atomic_helper_resume(rcdu->ddev, rcdu->suspend_state);
 	drm_fbdev_cma_set_suspend_unlocked(rcdu->fbdev, false);
 	drm_kms_helper_poll_enable(rcdu->ddev);

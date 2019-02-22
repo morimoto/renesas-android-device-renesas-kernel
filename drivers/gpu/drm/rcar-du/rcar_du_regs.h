@@ -200,6 +200,11 @@
 #define DEFR6_MLOS1		(1 << 2)
 #define DEFR6_DEFAULT		(DEFR6_CODE | DEFR6_TCNE1)
 
+#define DEF7R			0x000ec
+#define DEF7R_CODE		(0x7779 << 16)
+#define DEF7R_CMME1		BIT(6)
+#define DEF7R_CMME0		BIT(4)
+
 /* -----------------------------------------------------------------------------
  * R8A7790-only Control Registers
  */
@@ -552,5 +557,90 @@
 #define GCRCR			0x11094
 #define GCBCR			0x11098
 #define BCBCR			0x1109c
+
+/* -----------------------------------------------------------------------------
+ * DU Color Management Module Registers
+ */
+
+#define CM2_LUT_CTRL			0x0000
+#define CM2_LUT_CTRL_EN			BIT(0)
+
+#define CM2_CLU_CTRL			0x0100
+#define CM2_CLU_CTRL_EN			BIT(0)
+#define CM2_CLU_CTRL_MVS		BIT(24)
+#define CM2_CLU_CTRL_AAI		BIT(28)
+
+#define CM2_CTL0			0x0180
+#define CM2_CTL0_CLUDB			BIT(24)
+#define CM2_CTL0_HISTS			BIT(20)
+#define CM2_CTL0_TM1_MASK		(3 << 16)
+#define CM2_CTL0_TM1_BT601_YC240	(0 << 16)
+#define CM2_CTL0_TM1_BT601_YC255	BIT(16)
+#define CM2_CTL0_TM1_BT709_RG255	(2 << 16)
+#define CM2_CTL0_TM1_BT709_RG235	(3 << 16)
+#define CM2_CTL0_TM0_MASK		(3 << 12)
+#define CM2_CTL0_TM0_BT601_YC240	(0 << 12)
+#define CM2_CTL0_TM0_BT601_YC255	BIT(12)
+#define CM2_CTL0_TM0_BT709_RG255	(2 << 12)
+#define CM2_CTL0_TM0_BT709_RG235	(3 << 12)
+#define CM2_CTL0_TM_BT601_YC240		(CM2_CTL0_TM1_BT601_YC240 |\
+					 CM2_CTL0_TM0_BT601_YC240)
+#define CM2_CTL0_TM_BT601_YC255		(CM2_CTL0_TM1_BT601_YC255 |\
+					 CM2_CTL0_TM0_BT601_YC255)
+#define CM2_CTL0_TM_BT709_RG255		(CM2_CTL0_TM1_BT709_RG255 |\
+					 CM2_CTL0_TM0_BT709_RG255)
+#define CM2_CTL0_TM_BT709_RG235		(CM2_CTL0_TM1_BT709_RG235 |\
+					 CM2_CTL0_TM0_BT709_RG235)
+#define CM2_CTL0_YC			BIT(8)
+#define CM2_CTL0_VPOL			BIT(4)
+#define CM2_CTL0_DBUF			BIT(0)
+
+#define CM2_CTL1			0x0184
+#define CM2_CTL1_BFS			BIT(0)
+
+#define CM2_CTL2			0x0188
+#define CM2_HGO_OFFSET			0x0200
+#define CM2_HGO_SIZE			0x0204
+#define CM2_HGO_MODE			0x0208
+#define CM2_HGO_MODE_MASK		(0xFF)
+#define CM2_HGO_MODE_MAXRGB		BIT(7)
+#define CM2_HGO_MODE_OFSB_R		BIT(6)
+#define CM2_HGO_MODE_OFSB_G		BIT(5)
+#define CM2_HGO_MODE_OFSB_B		BIT(4)
+#define CM2_HGO_MODE_HRATIO_NO_SKIPP		(0 << 2)
+#define CM2_HGO_MODE_HRATIO_HALF_SKIPP		BIT(2)
+#define CM2_HGO_MODE_HRATIO_QUARTER_SKIPP	(2 << 2)
+#define CM2_HGO_MODE_VRATIO_NO_SKIPP		(0 << 0)
+#define CM2_HGO_MODE_VRATIO_HALF_SKIPP		BIT(0)
+#define CM2_HGO_MODE_VRATIO_QUARTER_SKIPP	(2 << 0)
+#define CM2_HGO_LB_TH			0x020C
+#define CM2_HGO_LB0_H			0x0210
+#define CM2_HGO_LB0_V			0x0214
+#define CM2_HGO_LB1_H			0x0218
+#define CM2_HGO_LB1_V			0x021C
+#define CM2_HGO_LB2_H			0x0220
+#define CM2_HGO_LB2_V			0x0224
+#define CM2_HGO_LB3_H			0x0228
+#define CM2_HGO_LB3_V			0x022C
+#define CM2_HGO_R_HISTO(n)		(0x0230 + ((n) * 4))
+#define CM2_HGO_R_MAXMIN		0x0330
+#define CM2_HGO_R_SUM			0x0334
+#define CM2_HGO_R_LB_DET		0x0338
+#define CM2_HGO_G_HISTO(n)		(0x0340 + ((n) * 4))
+#define CM2_HGO_G_MAXMIN		0x0440
+#define CM2_HGO_G_SUM			0x0444
+#define CM2_HGO_G_LB_DET		0x0448
+#define CM2_HGO_B_HISTO(n)		(0x0450 + ((n) * 4))
+#define CM2_HGO_B_MAXMIN		0x0550
+#define CM2_HGO_B_SUM			0x0554
+#define CM2_HGO_B_LB_DET		0x0558
+#define CM2_HGO_REGRST			0x05FC
+#define CM2_HGO_REGRST_RCLEA		BIT(0)
+#define CM2_LUT_TBL_A(n)		(0x0600 + ((n) * 4))
+#define CM2_CLU_ADDR			0x0A00
+#define CM2_CLU_DATA			0x0A04
+#define CM2_LUT_TBL2_B(n)		(0x0B00 + ((n) * 4))
+#define CM2_CLU_ADDR2			0x0F00
+#define CM2_CLU_DATA2			0x0F04
 
 #endif /* __RCAR_DU_REGS_H__ */

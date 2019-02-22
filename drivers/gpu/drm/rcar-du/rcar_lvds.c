@@ -26,6 +26,8 @@
 
 #include "rcar_lvds.h"
 #include "rcar_lvds_regs.h"
+#include "rcar_du_crtc.h"
+#include "rcar_du_drv.h"
 
 struct rcar_lvds;
 static struct rcar_lvds *g_lvds[RCAR_LVDS_MAX_NUM];
@@ -451,6 +453,7 @@ static void rcar_lvds_enable(struct drm_bridge *bridge)
 	 * do we get a state pointer?
 	 */
 	struct drm_crtc *crtc = lvds->bridge.encoder->crtc;
+	struct rcar_du_crtc *rcrtc = to_rcar_crtc(crtc);
 	u32 lvdhcr;
 	u32 lvdcr0;
 	int ret;
@@ -553,6 +556,10 @@ static void rcar_lvds_enable(struct drm_bridge *bridge)
 	rcar_lvds_write(lvds, LVDCR0, lvdcr0);
 
 dual_link:
+	if (rcar_du_has(rcrtc->group->dev, RCAR_DU_FEATURE_CMM) &&
+	    (lvds->info->quirks & RCAR_LVDS_QUIRK_EXT_PLL))
+		rcar_du_cmm_start_stop(rcrtc, true);
+
 	if (lvds->panel) {
 		drm_panel_prepare(lvds->panel);
 		drm_panel_enable(lvds->panel);
@@ -564,6 +571,8 @@ dual_link:
 static void __rcar_lvds_disable(struct drm_bridge *bridge)
 {
 	struct rcar_lvds *lvds = bridge_to_rcar_lvds(bridge);
+	struct drm_crtc *crtc = lvds->bridge.encoder->crtc;
+	struct rcar_du_crtc *rcrtc = to_rcar_crtc(crtc);
 	u32 lvdcr0 = 0;
 
 	WARN_ON(!lvds->enabled);
@@ -572,6 +581,10 @@ static void __rcar_lvds_disable(struct drm_bridge *bridge)
 		drm_panel_disable(lvds->panel);
 		drm_panel_unprepare(lvds->panel);
 	}
+
+	if (rcar_du_has(rcrtc->group->dev, RCAR_DU_FEATURE_CMM) &&
+	    (lvds->info->quirks & RCAR_LVDS_QUIRK_EXT_PLL))
+		rcar_du_cmm_start_stop(rcrtc, false);
 
 	if (lvds->info->quirks & RCAR_LVDS_QUIRK_DUAL_LINK &&
 	    lvds->link_mode == RCAR_LVDS_DUAL) {
