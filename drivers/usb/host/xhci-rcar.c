@@ -217,6 +217,8 @@ static bool xhci_rcar_wait_for_pll_active(struct usb_hcd *hcd)
 /* This function needs to initialize a "phy" of usb before */
 int xhci_rcar_init_quirk(struct usb_hcd *hcd)
 {
+	struct xhci_hcd *xhci = hcd_to_xhci(hcd);
+
 	/* If hcd->regs is NULL, we don't just call the following function */
 	if (!hcd->regs)
 		return 0;
@@ -224,6 +226,12 @@ int xhci_rcar_init_quirk(struct usb_hcd *hcd)
 	if (!xhci_rcar_wait_for_pll_active(hcd))
 		return -ETIMEDOUT;
 
+	/*
+	 * Added XHCI_TRUST_TX_LENGTH support bit/option for xhci->quirks to
+	 * trust/accept the untransferred length (not the completion status).
+	 */
+	xhci->quirks |= XHCI_TRUST_TX_LENGTH;
+	xhci->quirks |= XHCI_SLOW_SUSPEND;
 	return xhci_rcar_download_firmware(hcd);
 }
 
