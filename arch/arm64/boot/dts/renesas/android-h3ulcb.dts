@@ -15,8 +15,10 @@
 #include "android-h3.dtsi"
 
 / {
-	keyboard {
-		/delete-node/key-1;
+	/delete-node/keyboard;
+
+	gpio_keys {
+		compatible = "gpio-keys";
 
 		power {
 			label = "SW-3";
