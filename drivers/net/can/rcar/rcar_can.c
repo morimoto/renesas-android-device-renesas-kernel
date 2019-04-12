@@ -371,7 +371,6 @@ static void rcar_can_tx_done(struct net_device *ndev)
 {
 	struct rcar_can_priv *priv = netdev_priv(ndev);
 	struct net_device_stats *stats = &ndev->stats;
-	u8 isr;
 
 	while (1) {
 		u8 unsent = readb(&priv->regs->tfcr);
@@ -388,10 +387,54 @@ static void rcar_can_tx_done(struct net_device *ndev)
 		priv->tx_tail++;
 		netif_wake_queue(ndev);
 	}
-	/* Clear interrupt */
-	isr = readb(&priv->regs->isr);
-	writeb(isr & ~RCAR_CAN_ISR_TXFF, &priv->regs->isr);
 	can_led_event(ndev, CAN_LED_EVENT_TX);
+}
+
+static irqreturn_t rcar_can_threaded_interrupt(int irq, void *dev_id)
+{
+	struct net_device *ndev = dev_id;
+	struct rcar_can_priv *priv = netdev_priv(ndev);
+	u8 isr;
+
+	isr = readb(&priv->regs->isr);
+
+	if (isr & RCAR_CAN_ISR_ERSF) {
+		local_bh_disable();
+		rcar_can_error(ndev);
+		local_bh_enable();
+		/* Clear interrupt */
+		isr = readb(&priv->regs->isr);
+		writeb(isr & ~RCAR_CAN_ISR_ERSF, &priv->regs->isr);
+		/* Enable Error interrupts */
+		priv->ier |= RCAR_CAN_IER_ERSIE;
+		writeb(priv->ier, &priv->regs->ier);
+	}
+
+	if (isr & RCAR_CAN_ISR_TXFF) {
+		local_bh_disable();
+		rcar_can_tx_done(ndev);
+		local_bh_enable();
+		/* Clear interrupt */
+		isr = readb(&priv->regs->isr);
+		writeb(isr & ~RCAR_CAN_ISR_TXFF, &priv->regs->isr);
+		/* Enable Tx FIFO interrupts */
+		priv->ier |= RCAR_CAN_IER_TXFIE;
+		writeb(priv->ier, &priv->regs->ier);
+	}
+
+	if (isr & RCAR_CAN_ISR_RXFF) {
+		local_bh_disable();
+		napi_schedule(&priv->napi);
+		local_bh_enable();
+		/* Clear interrupt */
+		isr = readb(&priv->regs->isr);
+		writeb(isr & ~RCAR_CAN_ISR_RXFF, &priv->regs->isr);
+		/* Enable Rx FIFO interrupts */
+		priv->ier |= RCAR_CAN_IER_RXFIE;
+		writeb(priv->ier, &priv->regs->ier);
+	}
+
+	return IRQ_HANDLED;
 }
 
 static irqreturn_t rcar_can_interrupt(int irq, void *dev_id)
@@ -401,25 +444,27 @@ static irqreturn_t rcar_can_interrupt(int irq, void *dev_id)
 	u8 isr;
 
 	isr = readb(&priv->regs->isr);
+
 	if (!(isr & priv->ier))
 		return IRQ_NONE;
 
-	if (isr & RCAR_CAN_ISR_ERSF)
-		rcar_can_error(ndev);
-
-	if (isr & RCAR_CAN_ISR_TXFF)
-		rcar_can_tx_done(ndev);
-
+	if (isr & RCAR_CAN_ISR_ERSF) {
+		/* Disable Error interrupts */
+		priv->ier &= ~RCAR_CAN_IER_ERSIE;
+		writeb(priv->ier, &priv->regs->ier);
+	}
 	if (isr & RCAR_CAN_ISR_RXFF) {
-		if (napi_schedule_prep(&priv->napi)) {
-			/* Disable Rx FIFO interrupts */
-			priv->ier &= ~RCAR_CAN_IER_RXFIE;
-			writeb(priv->ier, &priv->regs->ier);
-			__napi_schedule(&priv->napi);
-		}
+		/* Disable Rx FIFO interrupts */
+		priv->ier &= ~RCAR_CAN_IER_RXFIE;
+		writeb(priv->ier, &priv->regs->ier);
+	}
+	if (isr & RCAR_CAN_ISR_TXFF) {
+		/* Disable Tx FIFO interrupts */
+		priv->ier &= ~RCAR_CAN_IER_TXFIE;
+		writeb(priv->ier, &priv->regs->ier);
 	}
 
-	return IRQ_HANDLED;
+	return IRQ_WAKE_THREAD;
 }
 
 static void rcar_can_set_bittiming(struct net_device *dev)
@@ -527,7 +572,10 @@ static int rcar_can_open(struct net_device *ndev)
 		goto out_can_clock;
 	}
 	napi_enable(&priv->napi);
-	err = request_irq(ndev->irq, rcar_can_interrupt, 0, ndev->name, ndev);
+	err = request_threaded_irq(ndev->irq,
+			rcar_can_interrupt,
+			rcar_can_threaded_interrupt,
+			0, ndev->name, ndev);
 	if (err) {
 		netdev_err(ndev, "request_irq(%d) failed, error %d\n",
 			   ndev->irq, err);
