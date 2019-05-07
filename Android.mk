@@ -25,18 +25,25 @@
 # Include only for Renesas ones.
 ifneq (,$(filter $(TARGET_PRODUCT), salvator ulcb kingfisher))
 
+XARGS       := /usr/bin/xargs
+MAKE        := /usr/bin/make
+MKDIR       := /bin/mkdir
+CP          := /bin/cp
+
 # Android makefile to build kernel as a part of Android Build
 ifeq ($(TARGET_PREBUILT_KERNEL),)
 
-KERNEL_DEFCONFIG     := $(TARGET_KERNEL_CONFIG)
-KERNEL_SRC           := $(TARGET_KERNEL_SOURCE)
-KERNEL_OUT           := $(abspath $(PRODUCT_OUT)/obj/KERNEL_OBJ)
-KERNEL_MODULES_OUT   := $(abspath $(PRODUCT_OUT)/obj/KERNEL_MODULES)
-KERNEL_CONFIG        := $(KERNEL_OUT)/.config
-KERNEL_DTS_DIR       := $(KERNEL_OUT)/arch/$(TARGET_ARCH)/boot/dts/renesas
-KERNEL_TARGET_BINARY := $(KERNEL_OUT)/arch/$(TARGET_ARCH)/boot/Image.lz4
-KERNEL_CROSS_COMPILE := $(BSP_CROSS_COMPILE)
-DTB_IMG_OUT          := $(PRODUCT_OUT)/dtb.img
+KERNEL_DEFCONFIG            := $(TARGET_KERNEL_CONFIG)
+KERNEL_SRC                  := $(TARGET_KERNEL_SOURCE)
+KERNEL_OUT                  := $(abspath $(PRODUCT_OUT)/obj/KERNEL_OBJ)
+KERNEL_MODULES_OUT          := $(abspath $(PRODUCT_OUT)/obj/KERNEL_MODULES)
+KERNEL_CONFIG               := $(KERNEL_OUT)/.config
+KERNEL_DTS_DIR              := $(KERNEL_OUT)/arch/$(TARGET_ARCH)/boot/dts/renesas
+KERNEL_TARGET_BINARY        := $(KERNEL_OUT)/arch/$(TARGET_ARCH)/boot/Image.lz4
+KERNEL_COMPILE_FLAGS        := HOSTCC=$(ANDROID_CLANG_TOOLCHAIN) CC=$(ANDROID_CLANG_TOOLCHAIN) CLANG_TRIPLE=$(BSP_GCC_CROSS_COMPILE) CROSS_COMPILE=$(BSP_GCC_CROSS_COMPILE) -j64
+
+BOARD_PREBUILT_DTBOIMAGE    := $(KERNEL_OUT)/dtbo.img
+BOARD_PREBUILT_DTBIMAGE     := $(KERNEL_OUT)/dtb.img
 
 ifeq ($(TARGET_KERNEL_MODULES_OUT),)
 $(warning "TARGET_KERNEL_MODULES_OUT is not set, default path '$(KERNEL_MODULES_OUT)' used")
@@ -80,16 +87,11 @@ endif
 # 0x32300000 - '20'
 # 0x33300000 - '30'
 DTBO_BLOBS += \
-	$(KERNEL_DTS_DIR)/r8a7795-salvator-4x2g-overlay.dtb --id=0x04779530 \
-	--custom0=0x73616c76 --custom1=0x34783267 --custom2=0x33300000 \
-	$(KERNEL_DTS_DIR)/r8a7795-salvator-4x2g-overlay.dtb --id=0x04779520 \
-	--custom0=0x73616c76 --custom1=0x34783267 --custom2=0x32300000 \
-	$(KERNEL_DTS_DIR)/r8a7795v3-salvator-overlay.dtb --id=0x04779530 \
-	--custom0=0x73616c76 --custom1=0x76330000 \
-	$(KERNEL_DTS_DIR)/r8a7795v2-salvator-overlay.dtb --id=0x04779520 \
-	--custom0=0x73616c76 --custom1=0x76320000 \
-	$(KERNEL_DTS_DIR)/salvator-adsp-overlay.dtb --id=0x00779000 \
-	--custom0=0x73616c76 --custom1=0x61647370
+	$(KERNEL_DTS_DIR)/r8a7795-salvator-4x2g-overlay.dtb --id=0x04779530 --custom0=0x73616c76 --custom1=0x34783267 --custom2=0x33300000 \
+	$(KERNEL_DTS_DIR)/r8a7795-salvator-4x2g-overlay.dtb --id=0x04779520 --custom0=0x73616c76 --custom1=0x34783267 --custom2=0x32300000 \
+	$(KERNEL_DTS_DIR)/r8a7795v3-salvator-overlay.dtb    --id=0x04779530 --custom0=0x73616c76 --custom1=0x76330000 \
+	$(KERNEL_DTS_DIR)/r8a7795v2-salvator-overlay.dtb    --id=0x04779520 --custom0=0x73616c76 --custom1=0x76320000 \
+	$(KERNEL_DTS_DIR)/salvator-adsp-overlay.dtb         --id=0x00779000 --custom0=0x73616c76 --custom1=0x61647370
 endif
 
 ifeq ($(TARGET_PRODUCT),ulcb)
@@ -98,19 +100,14 @@ DTB_BLOBS := \
 endif
 
 ifeq ($(TARGET_PRODUCT),kingfisher)
-DTB_BLOBS := $(KERNEL_DTS_DIR)/android-h3-kingfisher.dtb --id=0x0b779520 \
-	$(KERNEL_DTS_DIR)/android-h3-kingfisher.dtb --id=0x0b779530
+DTB_BLOBS := $(KERNEL_DTS_DIR)/android-h3-kingfisher.dtb --id=0x0b779520 $(KERNEL_DTS_DIR)/android-h3-kingfisher.dtb --id=0x0b779530
+
 DTBO_BLOBS += \
-	$(KERNEL_DTS_DIR)/r8a7795-h3ulcb-4x2g-overlay.dtb --id=0x0b779530 \
-	--custom0=0x736b6b66 --custom1=0x34783267 --custom2=0x33300000 \
-	$(KERNEL_DTS_DIR)/r8a7795-h3ulcb-4x2g-overlay.dtb --id=0x0b779520 \
-	--custom0=0x736b6b66 --custom1=0x34783267 --custom2=0x32300000 \
-	$(KERNEL_DTS_DIR)/r8a7795v3-h3ulcb-kf-overlay.dtb --id=0x0b779530 \
-	--custom0=0x736b6b66 --custom1=0x76330000 \
-	$(KERNEL_DTS_DIR)/r8a7795v2-h3ulcb-kf-overlay.dtb --id=0x0b779520 \
-	--custom0=0x736b6b66 --custom1=0x76320000 \
-	$(KERNEL_DTS_DIR)/ulcb-kf-adsp-overlay.dtb --id=0x00779000 \
-	--custom0=0x736b6b66 --custom1=0x61647370
+	$(KERNEL_DTS_DIR)/r8a7795-h3ulcb-4x2g-overlay.dtb    --id=0x0b779530 --custom0=0x736b6b66 --custom1=0x34783267 --custom2=0x33300000 \
+	$(KERNEL_DTS_DIR)/r8a7795-h3ulcb-4x2g-overlay.dtb    --id=0x0b779520 --custom0=0x736b6b66 --custom1=0x34783267 --custom2=0x32300000 \
+	$(KERNEL_DTS_DIR)/r8a7795v3-h3ulcb-kf-overlay.dtb    --id=0x0b779530 --custom0=0x736b6b66 --custom1=0x76330000 \
+	$(KERNEL_DTS_DIR)/r8a7795v2-h3ulcb-kf-overlay.dtb    --id=0x0b779520 --custom0=0x736b6b66 --custom1=0x76320000 \
+	$(KERNEL_DTS_DIR)/ulcb-kf-adsp-overlay.dtb           --id=0x00779000 --custom0=0x736b6b66 --custom1=0x61647370
 endif
 
 # 0x6c766473 - 'lvds'
@@ -118,14 +115,10 @@ endif
 # 0x41413130 - 'AA10'
 # 0x41413132 - 'AA12'
 DTBO_BLOBS += \
-	$(KERNEL_DTS_DIR)/partitions-overlay.dtb --id=0x00779000 \
-	--custom0=0x72636172 --custom1=0x70617274 \
-	$(KERNEL_DTS_DIR)/lvds-TX31D200VM0BAA-overlay.dtb --id=0x00779000 \
-	--custom0=0x72636172 --custom1=0x6c766473 --custom2=0x54583331 \
-	$(KERNEL_DTS_DIR)/lvds-AA104XD12-overlay.dtb --id=0x00779000 \
-	--custom0=0x72636172 --custom1=0x6c766473 --custom2=0x41413130 \
-	$(KERNEL_DTS_DIR)/lvds-AA121TD01-overlay.dtb --id=0x00779000 \
-	--custom0=0x72636172 --custom1=0x6c766473 --custom2=0x41413132
+	$(KERNEL_DTS_DIR)/partitions-overlay.dtb              --id=0x00779000 --custom0=0x72636172 --custom1=0x70617274 \
+	$(KERNEL_DTS_DIR)/lvds-TX31D200VM0BAA-overlay.dtb     --id=0x00779000 --custom0=0x72636172 --custom1=0x6c766473 --custom2=0x54583331 \
+	$(KERNEL_DTS_DIR)/lvds-AA104XD12-overlay.dtb          --id=0x00779000 --custom0=0x72636172 --custom1=0x6c766473 --custom2=0x41413130 \
+	$(KERNEL_DTS_DIR)/lvds-AA121TD01-overlay.dtb          --id=0x00779000 --custom0=0x72636172 --custom1=0x6c766473 --custom2=0x41413132
 
 # Include only for Renesas ones.
 ifeq ($(DTB_BLOBS),)
@@ -138,56 +131,47 @@ ifeq ($(TARGET_KERNEL_EXT_MODULES),)
     TARGET_KERNEL_EXT_MODULES := no-external-modules
 endif
 
-$(KERNEL_OUT):
-	mkdir -p $(KERNEL_OUT)
+.PHONY: kernel-out-dir
+kernel-out-dir:
+	$(MKDIR) -p $(KERNEL_OUT)
+	$(MKDIR) -p $(KERNEL_MODULES_OUT)
 
-$(KERNEL_MODULES_OUT):
-	mkdir -p $(KERNEL_MODULES_OUT)
+.PHONY: kernel-config
+kernel-config: kernel-out-dir
+	$(MAKE) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(TARGET_ARCH) $(KERNEL_COMPILE_FLAGS) $(KERNEL_DEFCONFIG)
 
-$(KERNEL_CONFIG): $(KERNEL_OUT)
-	$(MAKE) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(TARGET_ARCH) $(KERNEL_DEFCONFIG)
+.PHONY: kernel-binary
+kernel-binary: kernel-out-dir kernel-config $(DTC) $(AVBTOOL) mkdtimg
+	$(MAKE) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(TARGET_ARCH) $(KERNEL_COMPILE_FLAGS) $(KCFLAGS) Image.lz4 dtbs
 
-$(KERNEL_TARGET_BINARY): $(KERNEL_OUT) $(KERNEL_CONFIG) $(KERNEL_MODULES_OUT) $(DTC)
-	$(MAKE) -C $(KERNEL_SRC) O=$(KERNEL_OUT) ARCH=$(TARGET_ARCH) CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) $(KCFLAGS) Image.lz4 dtbs
-
-TARGET_KERNEL_MODULES: $(KERNEL_TARGET_BINARY)
-	# clearing old kernel modules:
-	find $(KERNEL_MODULES_OUT) -maxdepth 1 -type f -name '*.ko' | xargs -I{} rm -f {}
-	$(MAKE) -C $(KERNEL_SRC) O=$(KERNEL_OUT) INSTALL_MOD_PATH=$(KERNEL_MODULES_OUT) ARCH=$(TARGET_ARCH) $(KCFLAGS) CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) modules
-	$(MAKE) -C $(KERNEL_SRC) O=$(KERNEL_OUT) INSTALL_MOD_PATH=$(KERNEL_MODULES_OUT) ARCH=$(TARGET_ARCH) $(KCFLAGS) CROSS_COMPILE=$(KERNEL_CROSS_COMPILE) modules_install
-	# copying kernel modules with correct vermagic:
-	find $(KERNEL_MODULES_OUT) -mindepth 2 -type f -name '*.ko' | grep "$(shell head -1 $(KERNEL_OUT)/include/config/kernel.release)" | xargs -I{} cp {} $(KERNEL_MODULES_OUT)
-
-$(TARGET_KERNEL_EXT_MODULES) : TARGET_KERNEL_MODULES
-
-DTBO_OUT := $(TARGET_OUT_INTERMEDIATES)/DTBO
-BOARD_PREBUILT_DTBOIMAGE := $(DTBO_OUT)/dtbo.img
-
-$(DTBO_OUT):
-	$(hide) mkdir -p $(DTBO_OUT)
-
-$(BOARD_PREBUILT_DTBOIMAGE): $(TARGET_KERNEL_EXT_MODULES) $(DTBO_OUT) mkdtimg
+.PHONY: kernel-installed-binary
+kernel-installed-binary: kernel-binary
+	$(CP) -v $(KERNEL_OUT)/arch/$(TARGET_ARCH)/boot/Image.lz4 $(PRODUCT_OUT)/kernel
 	mkdtimg create $(BOARD_PREBUILT_DTBOIMAGE) --page_size=4096 $(DTBO_BLOBS)
-	# Add padding to image for avb singing. Avbtool needs file more then 64 bytes.
+	mkdtimg create $(BOARD_PREBUILT_DTBIMAGE) --page_size=4096 $(DTB_BLOBS)
 ifeq ($(BOARD_AVB_ENABLE),true)
-ifeq ($(DTBO_BLOBS),)
-	$(hide) dd if=/dev/zero bs=1 count=64 >> $(BOARD_PREBUILT_DTBOIMAGE)
-endif # DTBO_BLOBS
-endif # BOARD_AVB_ENABLE
-	cp -v $(BOARD_PREBUILT_DTBOIMAGE) $(PRODUCT_OUT)/dtbo.img
-
-$(DTB_IMG_OUT): $(TARGET_KERNEL_EXT_MODULES) mkdtimg $(AVBTOOL)
-	mkdtimg create $(PRODUCT_OUT)/dtb.img --page_size=4096 $(DTB_BLOBS)
-ifeq ($(BOARD_AVB_ENABLE),true)
-	$(hide) $(AVBTOOL) add_hash_footer \
-	--image $(PRODUCT_OUT)/dtb.img \
+	$(AVBTOOL) add_hash_footer \
+	--image $(BOARD_PREBUILT_DTBIMAGE) \
 	--partition_size $(BOARD_DTBIMAGE_PARTITION_SIZE) \
 	--partition_name dtb $(INTERNAL_AVB_SIGNING_ARGS) \
 	$(BOARD_AVB_DTB_ADD_HASH_FOOTER_ARGS)
 endif # BOARD_AVB_ENABLE
+	# $(BOARD_PREBUILT_DTBOIMAGE) will be copied by build system
+	$(CP) -v $(BOARD_PREBUILT_DTBIMAGE) $(PRODUCT_OUT)/dtb.img
 
-$(PRODUCT_OUT)/kernel: $(BOARD_PREBUILT_DTBOIMAGE) $(DTB_IMG_OUT)
-	cp -v $(KERNEL_OUT)/arch/$(TARGET_ARCH)/boot/Image.lz4 $(PRODUCT_OUT)/kernel
+.PHONY: kernel-modules
+kernel-modules: kernel-binary
+	# clearing old kernel modules:
+	find $(KERNEL_MODULES_OUT) -maxdepth 1 -type f -name '*.ko' | $(XARGS) -I{} echo {}
+	$(MAKE) -C $(KERNEL_SRC) O=$(KERNEL_OUT) INSTALL_MOD_PATH=$(KERNEL_MODULES_OUT) ARCH=$(TARGET_ARCH) $(KCFLAGS) $(KERNEL_COMPILE_FLAGS) modules
+	$(MAKE) -C $(KERNEL_SRC) O=$(KERNEL_OUT) INSTALL_MOD_PATH=$(KERNEL_MODULES_OUT) ARCH=$(TARGET_ARCH) $(KCFLAGS) $(KERNEL_COMPILE_FLAGS) modules_install
+	find $(KERNEL_MODULES_OUT) -mindepth 2 -type f -name '*.ko' | grep "$(shell head -1 $(KERNEL_OUT)/include/config/kernel.release)" | $(XARGS) -I{} $(CP) {} $(KERNEL_MODULES_OUT)/
+
+$(TARGET_KERNEL_EXT_MODULES) : kernel-modules
+
+#$(PRODUCT_OUT)/boot.img: kernel-installed-binary
+.PHONY: kernel-ext-modules
+kernel-ext-modules: $(TARGET_KERNEL_EXT_MODULES)
 
 endif # TARGET_PREBUILT_KERNEL
 endif # TARGET_PRODUCT salvator ulcb kingfisher
