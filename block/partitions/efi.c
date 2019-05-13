@@ -709,11 +709,18 @@ int efi_partition(struct parsed_partitions *state)
 		unsigned label_count = 0;
 		unsigned label_max;
 		u64 start = le64_to_cpu(ptes[i].starting_lba);
-		u64 size = le64_to_cpu(ptes[i].ending_lba) -
+		u64 prev_size, size = le64_to_cpu(ptes[i].ending_lba) -
 			   le64_to_cpu(ptes[i].starting_lba) + 1ULL;
 
 		if (!is_pte_valid(&ptes[i], last_lba(state->bdev)))
 			continue;
+
+		prev_size = size;
+		size &= ~(0x7); //Align partition size to 4096 bytes (8 sectors x 512 bytes)
+		if (prev_size != size) {
+			pr_info("Partition #%d was aligned from %lld to %lld sectors\n",
+					i+1, prev_size, size);
+		}
 
 		put_partition(state, i+1, start * ssz, size * ssz);
 
