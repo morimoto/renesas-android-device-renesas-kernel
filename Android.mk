@@ -83,7 +83,6 @@ endif
 # 0x76330000 - 'v3'
 # 0x76320000 - 'v2'
 # 0x61647370 - 'adsp'
-# 0x70617274 - 'part'
 # 0x32300000 - '20'
 # 0x33300000 - '30'
 DTBO_BLOBS += \
@@ -115,7 +114,6 @@ endif
 # 0x41413130 - 'AA10'
 # 0x41413132 - 'AA12'
 DTBO_BLOBS += \
-	$(KERNEL_DTS_DIR)/partitions-overlay.dtb              --id=0x00779000 --custom0=0x72636172 --custom1=0x70617274 \
 	$(KERNEL_DTS_DIR)/lvds-TX31D200VM0BAA-overlay.dtb     --id=0x00779000 --custom0=0x72636172 --custom1=0x6c766473 --custom2=0x54583331 \
 	$(KERNEL_DTS_DIR)/lvds-AA104XD12-overlay.dtb          --id=0x00779000 --custom0=0x72636172 --custom1=0x6c766473 --custom2=0x41413130 \
 	$(KERNEL_DTS_DIR)/lvds-AA121TD01-overlay.dtb          --id=0x00779000 --custom0=0x72636172 --custom1=0x6c766473 --custom2=0x41413132
