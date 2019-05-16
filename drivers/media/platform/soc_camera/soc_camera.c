@@ -1607,7 +1607,7 @@ static void scan_of_host(struct soc_camera_host *ici)
 	unsigned int i;
 
 	for (i = 0; ; i++) {
-		epn = of_graph_get_next_endpoint(np, epn);
+		epn = of_graph_get_endpoint_by_regs(np, i, -1);
 		if (!epn)
 			break;
 
