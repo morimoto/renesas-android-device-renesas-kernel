@@ -194,7 +194,11 @@
 	status = "okay";
 
 	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
 		port@0 {
+			reg = <0>;
 			vin0ep0: endpoint {
 				csi,select = "csi40";
 				virtual,channel = <0>;
@@ -203,11 +207,13 @@
 			};
 		};
 		port@1 {
+			reg = <1>;
 			csi0ep0: endpoint {
 				remote-endpoint = <&csi40_ep>;
 			};
 		};
 		port@2 {
+			reg = <2>;
 			vin0_max9286_des0ep0: endpoint@0 {
 				remote-endpoint = <&max9286_des0ep0>;
 			};
@@ -219,7 +225,11 @@
 	status = "okay";
 
 	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
 		port@0 {
+			reg = <0>;
 			vin1ep0: endpoint {
 				csi,select = "csi40";
 				virtual,channel = <1>;
@@ -228,11 +238,13 @@
 			};
 		};
 		port@1 {
+			reg = <1>;
 			csi0ep1: endpoint {
 				remote-endpoint = <&csi40_ep>;
 			};
 		};
 		port@2 {
+			reg = <2>;
 			vin1_max9286_des0ep1: endpoint@0 {
 				remote-endpoint = <&max9286_des0ep1>;
 			};
@@ -244,7 +256,11 @@
 	status = "okay";
 
 	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
 		port@0 {
+			reg = <0>;
 			vin2ep0: endpoint {
 				csi,select = "csi40";
 				virtual,channel = <2>;
@@ -253,11 +269,13 @@
 			};
 		};
 		port@1 {
+			reg = <1>;
 			csi0ep2: endpoint {
 				remote-endpoint = <&csi40_ep>;
 			};
 		};
 		port@2 {
+			reg = <2>;
 			vin2_max9286_des0ep2: endpoint@0 {
 				remote-endpoint = <&max9286_des0ep2>;
 			};
@@ -269,7 +287,11 @@
 	status = "okay";
 
 	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
 		port@0 {
+			reg = <0>;
 			vin3ep0: endpoint {
 				csi,select = "csi40";
 				virtual,channel = <3>;
@@ -278,11 +300,13 @@
 			};
 		};
 		port@1 {
+			reg = <1>;
 			csi0ep3: endpoint {
 				remote-endpoint = <&csi40_ep>;
 			};
 		};
 		port@2 {
+			reg = <2>;
 			vin3_max9286_des0ep3: endpoint@0 {
 				remote-endpoint = <&max9286_des0ep3>;
 			};
