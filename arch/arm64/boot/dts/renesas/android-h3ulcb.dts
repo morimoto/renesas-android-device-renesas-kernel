@@ -2,7 +2,7 @@
  * Device Tree Source for the H3ULCB (R-Car Starter Kit Premier) board
  * Android specific extensions
  *
- * Copyright (C) 2018 GlobalLogic
+ * Copyright (C) 2019 GlobalLogic
  *
  * This file is licensed under the terms of the GNU General Public License
  * version 2.  This program is licensed "as is" without any warranty of any
@@ -10,7 +10,7 @@
  */
 
 #ifndef __H3ULCB_OVERWRITE__
-#include "android-r8a7795-h3ulcb.dts"
+#include "r8a7795-h3ulcb.dts"
 #endif // __H3ULCB_OVERWRITE__
 #include "android-h3.dtsi"
 
@@ -61,6 +61,16 @@
 			label = "SW-2-4";
 			gpios = <&gpio5 23 GPIO_ACTIVE_LOW>;
 			linux,code = <KEY_F4>;
+		};
+	};
+
+	ion {
+		compatible = "renesas,ion-rcar";
+
+		ion_heap {
+			compatible = "renesas,ion-rcar-heap";
+			memory-region = <&ion_reserved>;
+			heap-name = "rcar-ion";
 		};
 	};
 };

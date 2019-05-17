@@ -737,3 +737,47 @@
 	status = "okay";
 	memory-region = <&adsp_reserved>;
 };
+
+&vin0 {
+	/delete-node/ports;
+};
+
+&vin1 {
+	/delete-node/ports;
+};
+
+&vin2 {
+	/delete-node/ports;
+};
+
+&vin3 {
+	/delete-node/ports;
+};
+
+&vin4 {
+	/delete-node/ports;
+};
+
+&vin5 {
+	/delete-node/ports;
+};
+
+&vin6 {
+	/delete-node/ports;
+};
+
+&vin7 {
+	/delete-node/ports;
+};
+
+&csi20 {
+	/delete-node/ports;
+};
+
+&csi40 {
+	/delete-node/ports;
+};
+
+&csi41 {
+	/delete-node/ports;
+};

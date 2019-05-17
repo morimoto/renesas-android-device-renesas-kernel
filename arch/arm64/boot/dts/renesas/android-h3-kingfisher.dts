@@ -11,7 +11,7 @@
 
 /dts-v1/;
 #define __H3ULCB_OVERWRITE__
-#include "android-r8a7795-h3ulcb-kf.dts"
+#include "r8a7795-h3ulcb-kf.dts"
 #include "android-h3ulcb.dts"
 #include "android-kingfisher.dtsi"
 #include "ulcb-kf-cn10.dtsi"
