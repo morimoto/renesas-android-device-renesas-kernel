@@ -13,6 +13,6 @@ dtb-$(CONFIG_ARCH_R8A77965) += r8a77965-salvator-xs-android.dtb
 dts-dirs	:= overlays
 subdir-y	:= $(dts-dirs)
 
-DTC_FLAGS	+= -@
+DTC_FLAGS	+= -@ -p 1024
 always		:= $(dtb-y)
 clean-files	:= *.dtb
