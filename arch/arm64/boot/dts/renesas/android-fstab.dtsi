@@ -37,6 +37,14 @@
                     mnt_flags = "ro,barrier=1";
                     fsmgr_flags = "wait,slotselect";
                 };
+
+                odm_part: odm {
+                    compatible = "android,odm";
+                    dev = "/dev/block/platform/soc/ee140000.sd/by-name/odm";
+                    type = "ext4";
+                    mnt_flags = "ro,barrier=1";
+                    fsmgr_flags = "wait,slotselect";
+                };
             };
         };
     };
