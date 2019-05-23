@@ -13,7 +13,7 @@
 &android {
     vbmeta {
         compatible = "android,vbmeta";
-        parts = "vbmeta,boot,system,vendor,product";
+        parts = "vbmeta,boot,system,vendor,product,odm";
     };
 };
 
@@ -22,5 +22,9 @@
 };
 
 &product_part {
+    fsmgr_flags = "wait,slotselect,avb";
+};
+
+&odm_part {
     fsmgr_flags = "wait,slotselect,avb";
 };
