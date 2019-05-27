@@ -12,7 +12,7 @@
 #ifndef __H3ULCB_OVERWRITE__
 #include "r8a7795-h3ulcb.dts"
 #endif // __H3ULCB_OVERWRITE__
-#include "android-h3.dtsi"
+#include "android/r8a7795.dtsi"
 
 / {
 	/delete-node/keyboard;

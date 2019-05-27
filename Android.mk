@@ -37,6 +37,7 @@ KERNEL_OUT_ABS              := $(abspath $(KERNEL_OUT))
 KERNEL_CONFIG               := $(KERNEL_OUT)/.config
 KERNEL_IMAGE_BINARY         := $(KERNEL_OUT)/arch/$(TARGET_ARCH)/boot/Image.lz4
 KERNEL_DTB_BLOBS            := $(KERNEL_OUT)/arch/$(TARGET_ARCH)/boot/dts/renesas
+KERNEL_DTBO_BLOBS           := $(KERNEL_DTB_BLOBS)/overlays
 
 KERNEL_COMPILE_FLAGS        := HOSTCC=$(ANDROID_CLANG_TOOLCHAIN) HOSTCFLAGS="-fuse-ld=lld" HOSTLDFLAGS=-fuse-ld=lld ARCH=$(TARGET_ARCH)
 KERNEL_COMPILE_FLAGS        += CC=$(ANDROID_CLANG_TOOLCHAIN) CLANG_TRIPLE=$(BSP_GCC_CROSS_COMPILE) CROSS_COMPILE=$(BSP_GCC_CROSS_COMPILE)
@@ -55,21 +56,23 @@ endif
 
 ifeq ($(TARGET_PRODUCT),salvator)
 DTB_BLOBS := \
-	$(KERNEL_DTB_BLOBS)/android-h3-salvator-x.dtb --id=0x00779520 \
-	$(KERNEL_DTB_BLOBS)/android-m3-salvator-x.dtb --id=0x00779610 \
-	$(KERNEL_DTB_BLOBS)/android-m3-salvator-x.dtb --id=0x00779611 \
-	$(KERNEL_DTB_BLOBS)/android-m3-salvator-x.dtb --id=0x00779620 \
-	$(KERNEL_DTB_BLOBS)/android-h3-salvator-xs.dtb --id=0x04779520 \
-	$(KERNEL_DTB_BLOBS)/android-m3-salvator-xs.dtb --id=0x04779610 \
-	$(KERNEL_DTB_BLOBS)/android-m3-salvator-xs.dtb --id=0x04779611 \
-	$(KERNEL_DTB_BLOBS)/android-m3-salvator-xs.dtb --id=0x04779620 \
-	$(KERNEL_DTB_BLOBS)/android-m3n-salvator-xs.dtb --id=0x04779650
+	$(KERNEL_DTB_BLOBS)/r8a7795-salvator-x-android.dtb --id=0x00779520 \
+	$(KERNEL_DTB_BLOBS)/r8a7796-salvator-x-android.dtb --id=0x00779610 \
+	$(KERNEL_DTB_BLOBS)/r8a7796-salvator-x-android.dtb --id=0x00779611 \
+	$(KERNEL_DTB_BLOBS)/r8a7796-salvator-x-android.dtb --id=0x00779613 \
+	$(KERNEL_DTB_BLOBS)/r8a7796-salvator-x-android.dtb --id=0x00779620 \
+	$(KERNEL_DTB_BLOBS)/r8a7795-salvator-xs-android.dtb --id=0x04779520 \
+	$(KERNEL_DTB_BLOBS)/r8a7796-salvator-xs-android.dtb --id=0x04779610 \
+	$(KERNEL_DTB_BLOBS)/r8a7796-salvator-xs-android.dtb --id=0x04779611 \
+	$(KERNEL_DTB_BLOBS)/r8a7796-salvator-xs-android.dtb --id=0x04779613 \
+	$(KERNEL_DTB_BLOBS)/r8a7796-salvator-xs-android.dtb --id=0x04779620 \
+	$(KERNEL_DTB_BLOBS)/r8a77965-salvator-xs-android.dtb --id=0x04779650
 ifeq ($(H3_OPTION),4GB2x2)
 DTB_BLOBS += \
-	$(KERNEL_DTB_BLOBS)/android-h3-salvator-xs-2x2g.dtb --id=0x04779530
+	$(KERNEL_DTB_BLOBS)/r8a7795-salvator-xs-2x2g-android.dtb --id=0x04779530
 else
 DTB_BLOBS += \
-	$(KERNEL_DTB_BLOBS)/android-h3-salvator-xs.dtb --id=0x04779530
+	$(KERNEL_DTB_BLOBS)/r8a7795-salvator-xs-android.dtb --id=0x04779530
 endif
 
 # Custom fields is used for identification in u-boot
@@ -86,27 +89,27 @@ endif
 # 0x32300000 - '20'
 # 0x33300000 - '30'
 DTBO_BLOBS += \
-	$(KERNEL_DTB_BLOBS)/r8a7795-salvator-4x2g-overlay.dtb --id=0x04779530 --custom0=0x73616c76 --custom1=0x34783267 --custom2=0x33300000 \
-	$(KERNEL_DTB_BLOBS)/r8a7795-salvator-4x2g-overlay.dtb --id=0x04779520 --custom0=0x73616c76 --custom1=0x34783267 --custom2=0x32300000 \
-	$(KERNEL_DTB_BLOBS)/r8a7795v3-salvator-overlay.dtb    --id=0x04779530 --custom0=0x73616c76 --custom1=0x76330000 \
-	$(KERNEL_DTB_BLOBS)/r8a7795v2-salvator-overlay.dtb    --id=0x04779520 --custom0=0x73616c76 --custom1=0x76320000 \
-	$(KERNEL_DTB_BLOBS)/salvator-adsp-overlay.dtb         --id=0x00779000 --custom0=0x73616c76 --custom1=0x61647370
+	$(KERNEL_DTBO_BLOBS)/r8a7795-salvator-4x2g-overlay.dtb --id=0x04779530 --custom0=0x73616c76 --custom1=0x34783267 --custom2=0x33300000 \
+	$(KERNEL_DTBO_BLOBS)/r8a7795-salvator-4x2g-overlay.dtb --id=0x04779520 --custom0=0x73616c76 --custom1=0x34783267 --custom2=0x32300000 \
+	$(KERNEL_DTBO_BLOBS)/r8a7795v3-salvator-overlay.dtb    --id=0x04779530 --custom0=0x73616c76 --custom1=0x76330000 \
+	$(KERNEL_DTBO_BLOBS)/r8a7795v2-salvator-overlay.dtb    --id=0x04779520 --custom0=0x73616c76 --custom1=0x76320000 \
+	$(KERNEL_DTBO_BLOBS)/salvator-adsp-overlay.dtb         --id=0x00779000 --custom0=0x73616c76 --custom1=0x61647370
 endif
 
 ifeq ($(TARGET_PRODUCT),ulcb)
 DTB_BLOBS := \
-    $(KERNEL_DTB_BLOBS)/android-h3ulcb.dtb --id=0x0b779520
+    $(KERNEL_DTB_BLOBS)/r8a7795-ulcb-android.dtb --id=0x0b779520
 endif
 
 ifeq ($(TARGET_PRODUCT),kingfisher)
-DTB_BLOBS := $(KERNEL_DTB_BLOBS)/android-h3-kingfisher.dtb --id=0x0b779520 $(KERNEL_DTB_BLOBS)/android-h3-kingfisher.dtb --id=0x0b779530
-
+DTB_BLOBS := $(KERNEL_DTB_BLOBS)/r8a7795-ulcb-kf-android.dtb --id=0x0b779520 \
+	$(KERNEL_DTB_BLOBS)/r8a7795-ulcb-kf-android.dtb --id=0x0b779530
 DTBO_BLOBS += \
-	$(KERNEL_DTB_BLOBS)/r8a7795-h3ulcb-4x2g-overlay.dtb    --id=0x0b779530 --custom0=0x736b6b66 --custom1=0x34783267 --custom2=0x33300000 \
-	$(KERNEL_DTB_BLOBS)/r8a7795-h3ulcb-4x2g-overlay.dtb    --id=0x0b779520 --custom0=0x736b6b66 --custom1=0x34783267 --custom2=0x32300000 \
-	$(KERNEL_DTB_BLOBS)/r8a7795v3-h3ulcb-kf-overlay.dtb    --id=0x0b779530 --custom0=0x736b6b66 --custom1=0x76330000 \
-	$(KERNEL_DTB_BLOBS)/r8a7795v2-h3ulcb-kf-overlay.dtb    --id=0x0b779520 --custom0=0x736b6b66 --custom1=0x76320000 \
-	$(KERNEL_DTB_BLOBS)/ulcb-kf-adsp-overlay.dtb           --id=0x00779000 --custom0=0x736b6b66 --custom1=0x61647370
+	$(KERNEL_DTBO_BLOBS)/r8a7795-h3ulcb-4x2g-overlay.dtb --id=0x0b779530 --custom0=0x736b6b66 --custom1=0x34783267 --custom2=0x33300000 \
+	$(KERNEL_DTBO_BLOBS)/r8a7795-h3ulcb-4x2g-overlay.dtb --id=0x0b779520 --custom0=0x736b6b66 --custom1=0x34783267 --custom2=0x32300000 \
+	$(KERNEL_DTBO_BLOBS)/r8a7795v3-h3ulcb-kf-overlay.dtb --id=0x0b779530 --custom0=0x736b6b66 --custom1=0x76330000 \
+	$(KERNEL_DTBO_BLOBS)/r8a7795v2-h3ulcb-kf-overlay.dtb --id=0x0b779520 --custom0=0x736b6b66 --custom1=0x76320000 \
+	$(KERNEL_DTBO_BLOBS)/ulcb-kf-adsp-overlay.dtb        --id=0x00779000 --custom0=0x736b6b66 --custom1=0x61647370
 endif
 
 # 0x6c766473 - 'lvds'
@@ -115,10 +118,10 @@ endif
 # 0x41413132 - 'AA12'
 # 0x61766200 - 'avb'
 DTBO_BLOBS += \
-	$(KERNEL_DTB_BLOBS)/lvds-TX31D200VM0BAA-overlay.dtb     --id=0x00779000 --custom0=0x72636172 --custom1=0x6c766473 --custom2=0x54583331 \
-	$(KERNEL_DTB_BLOBS)/lvds-AA104XD12-overlay.dtb          --id=0x00779000 --custom0=0x72636172 --custom1=0x6c766473 --custom2=0x41413130 \
-	$(KERNEL_DTB_BLOBS)/lvds-AA121TD01-overlay.dtb          --id=0x00779000 --custom0=0x72636172 --custom1=0x6c766473 --custom2=0x41413132 \
-	$(KERNEL_DTB_BLOBS)/android-avb-overlay.dtb             --id=0x00779000 --custom0=0x72636172 --custom1=0x61766200
+	$(KERNEL_DTBO_BLOBS)/lvds-TX31D200VM0BAA-overlay.dtb --id=0x00779000 --custom0=0x72636172 --custom1=0x6c766473 --custom2=0x54583331 \
+	$(KERNEL_DTBO_BLOBS)/lvds-AA104XD12-overlay.dtb      --id=0x00779000 --custom0=0x72636172 --custom1=0x6c766473 --custom2=0x41413130 \
+	$(KERNEL_DTBO_BLOBS)/lvds-AA121TD01-overlay.dtb      --id=0x00779000 --custom0=0x72636172 --custom1=0x6c766473 --custom2=0x41413132 \
+	$(KERNEL_DTBO_BLOBS)/android-avb-overlay.dtb         --id=0x00779000 --custom0=0x72636172 --custom1=0x61766200
 
 # Include only for Renesas ones.
 ifeq ($(DTB_BLOBS),)

@@ -8,8 +8,8 @@
  * kind, whether express or implied.
  */
 
-#include "android-fstab.dtsi"
-#include "android-common.dtsi"
+#include "fstab.dtsi"
+#include "common.dtsi"
 
 / {
 	/delete-node/ reserved-memory;
