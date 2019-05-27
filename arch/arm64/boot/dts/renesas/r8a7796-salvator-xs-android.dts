@@ -11,5 +11,5 @@
 
 /dts-v1/;
 #include "r8a7796-salvator-xs.dts"
-#include "android-m3.dtsi"
-#include "android-salvator.dtsi"
+#include "android/r8a7796.dtsi"
+#include "android/salvator.dtsi"

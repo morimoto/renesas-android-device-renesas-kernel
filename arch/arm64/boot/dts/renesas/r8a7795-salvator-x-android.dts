@@ -1,5 +1,5 @@
 /*
- * Device Tree Source for the H3ULCB (R-Car Starter Kit Premier) board
+ * Device Tree Source for the Salvator-X board with R-Car H3 ES2.0
  * Android specific extensions
  *
  * Copyright (C) 2018 GlobalLogic
@@ -10,6 +10,6 @@
  */
 
 /dts-v1/;
-#define __H3ULCB_OVERWRITE__
-#include "r8a7795-h3ulcb-4x2g.dts"
-#include "android-h3ulcb.dts"
+#include "r8a7795-salvator-x.dts"
+#include "android/r8a7795.dtsi"
+#include "android/salvator.dtsi"

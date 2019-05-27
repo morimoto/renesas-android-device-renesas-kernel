@@ -1,5 +1,5 @@
 /*
- * Device Tree Source for the Salvator-X board with R-Car H3 ES2.0
+ * Device Tree Source for the Salvator-XS 2nd version board with R-Car H3 ES2.0
  * Android specific extensions
  *
  * Copyright (C) 2018 GlobalLogic
@@ -9,7 +9,8 @@
  * kind, whether express or implied.
  */
 
-/dts-v1/;
-#include "r8a7795-salvator-x.dts"
-#include "android-h3.dtsi"
-#include "android-salvator.dtsi"
+#ifndef __H3_SALVATOR_XS_OVERRIDE__
+#include "r8a7795-salvator-xs.dts"
+#endif // __H3_SALVATOR_XS_OVERRIDE__
+#include "android/r8a7795.dtsi"
+#include "android/salvator.dtsi"

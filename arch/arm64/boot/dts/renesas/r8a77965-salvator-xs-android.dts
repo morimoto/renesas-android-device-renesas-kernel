@@ -11,9 +11,9 @@
 
 /dts-v1/;
 #include "r8a77965-salvator-xs.dts"
-#include "android-common.dtsi"
-#include "android-fstab.dtsi"
-#include "android-salvator.dtsi"
+#include "android/common.dtsi"
+#include "android/fstab.dtsi"
+#include "android/salvator.dtsi"
 
 / {
 	model = "Renesas Salvator-X 2nd version board based on r8a77965 4GiB (2 x 2 GiB)";

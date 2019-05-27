@@ -10,7 +10,7 @@
  */
 
 /dts-v1/;
-#include "android-h3-kingfisher.dts"
+#include "r8a7795-ulcb-kf-android.dts"
 
 / {
 	model = "Renesas H3ULCB Kingfisher board based on r8a7795 ES2.0 + with 8GiB (4 x 2 GiB)";
