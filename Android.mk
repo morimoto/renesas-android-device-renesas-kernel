@@ -152,7 +152,7 @@ $(KERNEL_MODULES): $(KERNEL_IMAGE_BINARY) $(KERNEL_MODULES_OUT)
 	$(ANDROID_MAKE) -C $(TARGET_KERNEL_SOURCE) O=$(KERNEL_OUT_ABS) INSTALL_MOD_PATH=$(KERNEL_MODULES_OUT_ABS) $(KERNEL_COMPILE_FLAGS) modules_install
 	find $(KERNEL_MODULES_OUT_ABS) -mindepth 2 -type f -name '*.ko' | grep "$(shell head -1 $(KERNEL_OUT_ABS)/include/config/kernel.release)" | $(XARGS) -I{} mv {} $(KERNEL_MODULES_OUT_ABS)/
 
-$(PRODUCT_OUT)/kernel: $(KERNEL_IMAGE_BINARY)
+$(PRODUCT_OUT)/kernel: $(KERNEL_IMAGE_BINARY) $(PRODUCT_OUT)/dtb.img
 	cp -v $< $@
 
 $(KERNEL_EXT_MODULES): $(KERNEL_MODULES)
