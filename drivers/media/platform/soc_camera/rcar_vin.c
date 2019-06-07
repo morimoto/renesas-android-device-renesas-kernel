@@ -2891,15 +2891,15 @@ static int rcar_vin_probe(struct platform_device *pdev)
 
 	match = of_match_device(of_match_ptr(rcar_vin_of_table), &pdev->dev);
 
-	np = of_graph_get_next_endpoint(pdev->dev.of_node, NULL);
+	np = of_graph_get_endpoint_by_regs(pdev->dev.of_node, 0, -1);
 	if (!np) {
 		dev_err(&pdev->dev, "could not find endpoint\n");
 		return -EINVAL;
 	}
 
 	for (i = 0; ; i++) {
-		epn = of_graph_get_next_endpoint(pdev->dev.of_node,
-								epn);
+		epn = of_graph_get_endpoint_by_regs(pdev->dev.of_node,
+								i, -1);
 		if (!epn)
 			break;
 
