@@ -59,13 +59,13 @@
 		soft_sw0 {
 			label = "SW-4-1";
 			gpios = <&gpio5 17 GPIO_ACTIVE_LOW>;
-			linux,code = <KEY_CAMERA>;
+			linux,code = <KEY_F4>;
 		};
 
 		soft_sw1 {
 			label = "SW-4-2";
 			gpios = <&gpio5 20 GPIO_ACTIVE_LOW>;
-			linux,code = <KEY_SOUND>;
+			linux,code = <KEY_F3>;
 		};
 
 		soft_sw2 {
