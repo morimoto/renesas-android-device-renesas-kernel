@@ -235,6 +235,12 @@ static int ov490_set_fmt(struct v4l2_subdev *sd,
 			 struct v4l2_subdev_format *format)
 {
 	struct v4l2_mbus_framefmt *mf = &format->format;
+	struct i2c_client *client = v4l2_get_subdevdata(sd);
+	struct ov490_priv *priv = to_ov490(client);
+
+	if (mf->width > OV10640_MAX_WIDTH || mf->height > OV10640_MAX_HEIGHT ||
+		mf->width < OV10640_MIN_WIDTH || mf->height < OV10640_MIN_HEIGHT)
+		return -EINVAL;
 
 	mf->code = MEDIA_BUS_FMT_YUYV8_2X8;
 	mf->colorspace = V4L2_COLORSPACE_SMPTE170M;
@@ -242,6 +248,9 @@ static int ov490_set_fmt(struct v4l2_subdev *sd,
 
 	if (format->which == V4L2_SUBDEV_FORMAT_TRY)
 		cfg->try_fmt = *mf;
+
+	priv->rect.width = mf->width;
+	priv->rect.height = mf->height;
 
 	return 0;
 }
