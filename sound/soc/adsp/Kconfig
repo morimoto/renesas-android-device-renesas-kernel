@@ -1,0 +1,14 @@
+## SoC for ADSP driver configuration
+menu "ASoC ADSP driver"
+
+config SND_SOC_ADSP
+    tristate "SoC Audio for R-Car ADSP"
+    select SND_SIMPLE_CARD
+    select SND_SIMPLE_SCU_CARD
+    select SND_AUDIO_GRAPH_CARD
+    select SND_AUDIO_GRAPH_SCU_CARD
+    default y
+    help
+      This option enables ALSA ADSP sound supports ADSP module
+
+endmenu
