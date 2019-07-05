@@ -208,20 +208,6 @@
 		clock-frequency = <24576000>;
 		clock-output-names = "scki";
 	};
-
-	kim {
-		compatible = "kim";
-		shutdown-gpios = <&gpio_exp_74 3 GPIO_ACTIVE_HIGH>; /* (U11) P03 */
-		/* serial1 */
-		dev_name = "/dev/ttySC1";
-		flow_cntrl = <1>;
-		/* int div 8 hscif@26.6666656MHz */
-		baud_rate = <3333332>;
-	};
-
-	btwilink {
-		compatible = "btwilink";
-	};
 };
 
 &hscif1 {
