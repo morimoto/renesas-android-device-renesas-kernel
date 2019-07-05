@@ -9,6 +9,8 @@
  * kind, whether express or implied.
  */
 
+#include <dt-bindings/net/rfkill-regulator.h>
+
 / {
 	aliases {
 		serial1 = &hscif0;
@@ -207,6 +209,24 @@
 		#clock-cells = <0>;
 		clock-frequency = <24576000>;
 		clock-output-names = "scki";
+	};
+
+	bt_reg: regulator-bt {
+		compatible = "regulator-fixed";
+
+		regulator-name = "BT_REG";
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+
+		gpio = <&gpio_exp_74 3 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+	};
+
+	bt-rfkill {
+		compatible = "rfkill-regulator";
+		label = "BT";
+		type = <RFKILL_TYPE_BLUETOOTH>;
+		vrfkill-supply = <&bt_reg>;
 	};
 };
 
