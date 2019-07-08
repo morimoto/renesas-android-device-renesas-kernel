@@ -66,6 +66,7 @@ DTB_BLOBS := \
 	$(KERNEL_DTB_BLOBS)/r8a7796-salvator-xs-android.dtb --id=0x04779611 \
 	$(KERNEL_DTB_BLOBS)/r8a7796-salvator-xs-android.dtb --id=0x04779613 \
 	$(KERNEL_DTB_BLOBS)/r8a7796-salvator-xs-android.dtb --id=0x04779620 \
+	$(KERNEL_DTB_BLOBS)/r8a7796-salvator-xs-2x4g-android.dtb --id=0x04779630 \
 	$(KERNEL_DTB_BLOBS)/r8a77965-salvator-xs-android.dtb --id=0x04779650
 ifeq ($(H3_OPTION),4GB2x2)
 DTB_BLOBS += \
