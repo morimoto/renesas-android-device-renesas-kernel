@@ -13,7 +13,7 @@
 #include "salvator-xs.dtsi"
 
 / {
-	model = "Renesas Salvator-X 2nd version board based on r8a7796 ES3.0+ with 8GiB (2 x 4 GiB)";
+	model = "Renesas Salvator-XS 2nd version board based on r8a7796 ES3.0+ with 8GiB (2 x 4 GiB)";
 	compatible = "renesas,salvator-xs", "renesas,r8a7796";
 
 	memory@48000000 {
