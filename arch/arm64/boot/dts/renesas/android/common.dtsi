@@ -17,4 +17,10 @@
 		compatible = "key-long-press";
 		key_down_delay = <10000>;
 	};
+
+	android {
+		partitions {
+			/* Should be filled by U-boot at boottime */
+		};
+	};
 };
