@@ -1395,7 +1395,6 @@ static irqreturn_t rcar_vin_irq(int irq, void *data)
 			if (hw_stopped)
 				priv->state = STOPPED;
 			else if (list_empty(&priv->capture) &&
-				is_queue_buf_empty(priv) &&
 				priv->state == RUNNING)
 				/*
 				 * The continuous capturing requires an
