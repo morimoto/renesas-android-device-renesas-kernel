@@ -370,19 +370,18 @@ static void rsnd_ssi_config_init(struct rsnd_mod *mod,
 
 	if (rdai->bit_clk_inv)
 		cr_own |= SCKP;
-	if (rdai->frm_clk_inv ^ is_tdm)
-		cr_own |= SWSP;
-	if (rdai->data_alignment)
-		cr_own |= SDTA;
-	if (rdai->sys_delay)
-		cr_own |= DEL;
-
 	/*
 	 * We shouldn't exchange SWSP after running.
 	 * This means, parent needs to care it.
 	 */
-	if (rsnd_ssi_is_parent(mod, io))
-		goto init_end;
+	if (!rsnd_ssi_is_parent(mod, io)) {
+		if (rdai->frm_clk_inv ^ is_tdm)
+			cr_own |= SWSP;
+	}
+	if (rdai->data_alignment)
+		cr_own |= SDTA;
+	if (rdai->sys_delay)
+		cr_own |= DEL;
 
 	if (rsnd_io_is_play(io))
 		cr_own |= TRMD;
