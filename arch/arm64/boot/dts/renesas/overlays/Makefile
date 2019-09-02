@@ -11,14 +11,11 @@ dtb-$(CONFIG_ARCH_R8A7795) += salvator-adsp-overlay.dtb
 dtb-$(CONFIG_ARCH_R8A7795) += lvds-AA104XD12-overlay.dtb
 dtb-$(CONFIG_ARCH_R8A7795) += lvds-AA121TD01-overlay.dtb
 dtb-$(CONFIG_ARCH_R8A7795) += lvds-TX31D200VM0BAA-overlay.dtb
-dtb-$(CONFIG_ARCH_R8A7795) += android-avb-overlay.dtb
 dtb-$(CONFIG_ARCH_R8A7796) += lvds-AA104XD12-overlay.dtb
 dtb-$(CONFIG_ARCH_R8A7796) += lvds-AA121TD01-overlay.dtb
 dtb-$(CONFIG_ARCH_R8A7796) += lvds-TX31D200VM0BAA-overlay.dtb
-dtb-$(CONFIG_ARCH_R8A7796) += android-avb-overlay.dtb
 dtb-$(CONFIG_ARCH_R8A77965) += lvds-AA104XD12-overlay.dtb
 dtb-$(CONFIG_ARCH_R8A77965) += lvds-AA121TD01-overlay.dtb
 dtb-$(CONFIG_ARCH_R8A77965) += lvds-TX31D200VM0BAA-overlay.dtb
-dtb-$(CONFIG_ARCH_R8A77965) += android-avb-overlay.dtb
 
 always		:= $(dtb-y)
