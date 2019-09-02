@@ -117,12 +117,10 @@ endif
 # 0x54583331 - 'TX31'
 # 0x41413130 - 'AA10'
 # 0x41413132 - 'AA12'
-# 0x61766200 - 'avb'
 DTBO_BLOBS += \
 	$(KERNEL_DTBO_BLOBS)/lvds-TX31D200VM0BAA-overlay.dtb --id=0x00779000 --custom0=0x72636172 --custom1=0x6c766473 --custom2=0x54583331 \
 	$(KERNEL_DTBO_BLOBS)/lvds-AA104XD12-overlay.dtb      --id=0x00779000 --custom0=0x72636172 --custom1=0x6c766473 --custom2=0x41413130 \
-	$(KERNEL_DTBO_BLOBS)/lvds-AA121TD01-overlay.dtb      --id=0x00779000 --custom0=0x72636172 --custom1=0x6c766473 --custom2=0x41413132 \
-	$(KERNEL_DTBO_BLOBS)/android-avb-overlay.dtb         --id=0x00779000 --custom0=0x72636172 --custom1=0x61766200
+	$(KERNEL_DTBO_BLOBS)/lvds-AA121TD01-overlay.dtb      --id=0x00779000 --custom0=0x72636172 --custom1=0x6c766473 --custom2=0x41413132
 
 # Include only for Renesas ones.
 ifeq ($(DTB_BLOBS),)

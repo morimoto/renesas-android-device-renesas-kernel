@@ -19,6 +19,11 @@
 	};
 
 	android {
+		vbmeta {
+			compatible = "android,vbmeta";
+			parts = "vbmeta,boot,dtbo";
+		};
+
 		partitions {
 			/* Should be filled by U-boot at boottime */
 		};
