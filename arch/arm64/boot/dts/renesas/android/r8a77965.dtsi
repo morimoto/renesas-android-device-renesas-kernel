@@ -24,15 +24,23 @@
 		#size-cells = <2>;
 		ranges;
 
-		ramoops@53e00000 {
+		ramoops@4fe00000 {
 			compatible = "ramoops";
-			reg = <0x00000000 0x53E00000 0x0 0x0100000>; /* 1MB */
+			reg = <0x00000000 0x4FE00000 0x0 0x0100000>; /* 1MB */
 			record-size = <0x40000>;
 			console-size = <0x80000>;
 		};
 
 		rambootreason {
 			reg = <0x00000000 0x4FF00000 0x0 0x00001000>;
+		};
+
+		/* global autoconfigured region for contiguous allocations */
+		cma_reserved: linux,cma@50000000 {
+			compatible = "shared-dma-pool";
+			reusable;
+			reg = <0x00000000 0x50000000 0x0 0x04000000>; /* 64Mb */
+			linux,cma-default;
 		};
 
 		/* device specific region for Lossy Decompression */
@@ -47,24 +55,16 @@
 			reg = <0x00000000 0x57000000 0x0 0x01000000>;
 		};
 
-		/* global autoconfigured region for contiguous allocations */
-		cma_reserved: linux,cma@58000000 {
-			compatible = "shared-dma-pool";
-			reusable;
-			reg = <0x00000000 0x58000000 0x0 0x08000000>; /* 128Mb */
-			linux,cma-default;
-		};
-
 		/* device specific region for contiguous allocations */
-		mmp_reserved: linux,multimedia@60000000 {
+		mmp_reserved: linux,multimedia@58000000 {
 			compatible = "shared-dma-pool";
 			reusable;
-			reg = <0x00000000 0x60000000 0x0 0x10000000>; /* 256Mb */
+			reg = <0x00000000 0x58000000 0x0 0x10000000>; /* 256Mb */
 		};
 
-		ion_reserved: linux,ion@70000000 {
+		ion_reserved: linux,ion@68000000 {
 			compatible = "ion-region";
-			reg = <0x00000000 0x70000000 0x0 0x10000000>; /* 256Mb */
+			reg = <0x00000000 0x68000000 0x0 0x18000000>; /* 384Mb */
 		};
 	};
 };
