@@ -1,0 +1,66 @@
+/*
+ * Device Tree Source for the Android
+ *
+ * Copyright (C) 2018 GlobalLogic
+ *
+ * This file is licensed under the terms of the GNU General Public License
+ * version 2.  This program is licensed "as is" without any warranty of any
+ * kind, whether express or implied.
+ */
+
+#include "fstab.dtsi"
+#include "common.dtsi"
+
+/ {
+	memory@480000000 {
+		device_type = "memory";
+		reg = <0x4 0x80000000 0x0 0x80000000>;
+	};
+
+	/delete-node/ reserved-memory;
+
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		ramoops@53e00000 {
+			compatible = "ramoops";
+			reg = <0x00000000 0x53E00000 0x0 0x0100000>; /* 1MB */
+			record-size = <0x40000>;
+			console-size = <0x80000>;
+		};
+
+		/* device specific region for Lossy Decompression */
+		lossy_decompress: linux,lossy_decompress@54000000 {
+			no-map;
+			reg = <0x00000000 0x54000000 0x0 0x03000000>;
+		};
+
+		adsp_reserved: linux,adsp@57000000 {
+			compatible = "shared-dma-pool";
+			reusable;
+			reg = <0x00000000 0x57000000 0x0 0x01000000>;
+		};
+
+		/* global autoconfigured region for contiguous allocations */
+		cma_reserved: linux,cma@58000000 {
+			compatible = "shared-dma-pool";
+			reusable;
+			reg = <0x00000000 0x58000000 0x0 0x08000000>; /* 128Mb */
+			linux,cma-default;
+		};
+
+		/* device specific region for contiguous allocations */
+		mmp_reserved: linux,multimedia@60000000 {
+			compatible = "shared-dma-pool";
+			reusable;
+			reg = <0x00000000 0x60000000 0x0 0x10000000>; /* 256Mb */
+		};
+
+		ion_reserved: linux,ion@70000000 {
+			compatible = "ion-region";
+			reg = <0x00000000 0x70000000 0x0 0x10000000>; /* 256Mb */
+		};
+	};
+};
