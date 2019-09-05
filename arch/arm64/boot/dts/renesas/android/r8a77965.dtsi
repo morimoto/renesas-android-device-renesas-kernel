@@ -31,6 +31,10 @@
 			console-size = <0x80000>;
 		};
 
+		rambootreason {
+			reg = <0x00000000 0x4FF00000 0x0 0x00001000>;
+		};
+
 		/* device specific region for Lossy Decompression */
 		lossy_decompress: linux,lossy_decompress@54000000 {
 			no-map;
