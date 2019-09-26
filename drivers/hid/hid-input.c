@@ -866,6 +866,17 @@ static void hidinput_configure_usage(struct hid_input *hidinput, struct hid_fiel
 	case HID_UP_CONSUMER:	/* USB HUT v1.12, pages 75-84 */
 		switch (usage->hid & HID_USAGE) {
 		case 0x000: goto ignore;
+
+		case 0x001: map_key_clear(BTN_A);		break;
+		case 0x002: map_key_clear(BTN_B);		break;
+		case 0x004: map_key_clear(BTN_X);		break;
+		case 0x005: map_key_clear(BTN_Y);		break;
+		case 0x007: map_key_clear(BTN_TL);		break;
+		case 0x008: map_key_clear(BTN_TR);		break;
+		case 0x00d: map_key_clear(BTN_MODE);		break;
+		case 0x00e: map_key_clear(BTN_THUMBL);		break;
+		case 0x00f: map_key_clear(BTN_THUMBR);		break;
+
 		case 0x030: map_key_clear(KEY_POWER);		break;
 		case 0x031: map_key_clear(KEY_RESTART);		break;
 		case 0x032: map_key_clear(KEY_SLEEP);		break;
