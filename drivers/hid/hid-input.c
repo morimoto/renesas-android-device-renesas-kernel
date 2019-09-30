@@ -645,6 +645,12 @@ static void hidinput_configure_usage(struct hid_input *hidinput, struct hid_fiel
 
 	case HID_UP_SIMULATION:
 		switch (usage->hid & 0xffff) {
+		case 0x30: map_abs(ABS_X);   break;
+		case 0x31: map_abs(ABS_Y);   break;
+		case 0x32: map_abs(ABS_Z);   break;
+		case 0x33: map_abs(ABS_RX);   break;
+		case 0x34: map_abs(ABS_RY);   break;
+		case 0x35: map_abs(ABS_RZ);   break;
 		case 0xba: map_abs(ABS_RUDDER);   break;
 		case 0xbb: map_abs(ABS_THROTTLE); break;
 		case 0xc4: map_abs(ABS_GAS);      break;
