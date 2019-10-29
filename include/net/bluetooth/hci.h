@@ -1506,6 +1506,25 @@ struct hci_cp_le_set_default_phy {
 	__u8    rx_phys;
 } __packed;
 
+#define HCI_OP_VENDOR_CAP_REQ		0xfd53
+struct hci_rp_le_vendor_cap_reply {
+	__u8	status;
+	__u8	max_advt_insts;
+	__u8	rpa_capability;
+	__u16	results_bytes;
+	__u8	max_irk_list_sz;
+	__u8	filtering_support;
+	__u8	max_filter;
+	__u8	ae_info_support;
+	__u16	version_supported;
+	__u16	advt_tracked_num;
+	__u8	extended_scan_support;
+	__u8	debug_logging_supported;
+	__u8	LE_address_generation_offloading_support;
+	__u32	A2DP_source_offload_capability_mask;
+	__u8	bluetooth_quality_report_support;
+} __packed;
+
 /* ---- HCI Events ---- */
 #define HCI_EV_INQUIRY_COMPLETE		0x01
 

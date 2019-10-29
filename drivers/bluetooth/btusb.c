@@ -70,6 +70,31 @@ static struct usb_driver btusb_driver;
 #define BTUSB_CW6622		0x100000
 #define BTUSB_BCM_NO_PRODID	0x200000
 
+/* W/A: to conform to new Android HCI requirements
+ * (https://source.android.com/devices/bluetooth/hci_requirements)
+ * we need to reply on extended vendor-specific requests from
+ * ANDROID which not supported in the current HCI spec.
+ */
+static const struct {
+	struct hci_event_hdr header;
+	struct hci_ev_cmd_complete descr;
+	struct hci_rp_le_vendor_cap_reply payload;
+} __packed fake_vendor_cap_reply = {
+	{
+		HCI_EV_CMD_COMPLETE,
+		sizeof(fake_vendor_cap_reply) -
+		sizeof(fake_vendor_cap_reply.header)
+	},
+	{
+		0x01,
+		HCI_OP_VENDOR_CAP_REQ,
+	},
+	{
+		/* zeroed data */
+		0x00,
+	}
+};
+
 static const struct usb_device_id btusb_table[] = {
 	/* Generic Bluetooth USB device */
 	{ USB_DEVICE_INFO(0xe0, 0x01, 0x01) },
@@ -1343,11 +1368,18 @@ static int submit_or_queue_tx_urb(struct hci_dev *hdev, struct urb *urb)
 static int btusb_send_frame(struct hci_dev *hdev, struct sk_buff *skb)
 {
 	struct urb *urb;
+	struct btusb_data *data = hci_get_drvdata(hdev);
 
 	BT_DBG("%s", hdev->name);
 
 	switch (hci_skb_pkt_type(skb)) {
 	case HCI_COMMAND_PKT:
+		if (HCI_OP_VENDOR_CAP_REQ == get_unaligned_le16(skb->data)) {
+			hdev->stat.cmd_tx++;
+			return btusb_recv_intr(data, (void*)&fake_vendor_cap_reply,
+					sizeof(fake_vendor_cap_reply));
+		}
+
 		urb = alloc_ctrl_urb(hdev, skb);
 		if (IS_ERR(urb))
 			return PTR_ERR(urb);
