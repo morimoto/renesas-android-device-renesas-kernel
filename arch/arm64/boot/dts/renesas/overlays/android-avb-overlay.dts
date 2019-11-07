@@ -1,26 +1,18 @@
 /*
  * Device Tree Source for the Android
  *
- * Copyright (C) 2018 GlobalLogic
+ * Copyright (C) 2019 GlobalLogic
  *
  * This file is licensed under the terms of the GNU General Public License
  * version 2.  This program is licensed "as is" without any warranty of any
  * kind, whether express or implied.
  */
+/dts-v1/;
+/plugin/;
 
-/ {
-	chosen {
-		bootargs = "";
-	};
-
-	keylongpress {
-		compatible = "key-long-press";
-		key_down_delay = <10000>;
-	};
-
-	android {
-		partitions {
-			/* Should be filled by U-boot at boottime */
-		};
-	};
+&android {
+    vbmeta {
+        compatible = "android,vbmeta";
+        parts = "vbmeta,boot,dtbo";
+    };
 };
