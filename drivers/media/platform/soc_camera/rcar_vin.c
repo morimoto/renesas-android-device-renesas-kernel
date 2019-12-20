@@ -2046,6 +2046,29 @@ static const struct soc_mbus_pixelfmt rcar_vin_formats[] = {
 	},
 };
 
+static bool is_dev_support_fmt(const struct soc_camera_device *icd, const struct soc_mbus_pixelfmt *fmt) {
+	struct soc_camera_host *ici = to_soc_camera_host(icd->parent);
+	struct rcar_vin_priv *priv = ici->priv;
+	bool support = true;	/* Everything which is not explicitly prohibited should be allowed.*/
+	int n;
+
+	/* List of virtual channels which support output in NV12 format.*/
+	enum virtual_ch NV12_channels [] = {
+		RCAR_VIRTUAL_CH0,
+		RCAR_VIRTUAL_CH1
+	};
+
+	/* Validation for NV12 output format. */
+	if (fmt->fourcc == V4L2_PIX_FMT_NV12) {
+		support = false;
+		for (n = 0; n < ARRAY_SIZE(NV12_channels) && !support; ++n)
+			if (priv->vc == NV12_channels [n])
+				support = true;
+	}
+
+	return support;
+}
+
 static int rcar_vin_get_formats(struct soc_camera_device *icd, unsigned int idx,
 				struct soc_camera_format_xlate *xlate)
 {
@@ -2167,11 +2190,16 @@ static int rcar_vin_get_formats(struct soc_camera_device *icd, unsigned int idx,
 
 		n = ARRAY_SIZE(rcar_vin_formats);
 		formats += n;
-		for (k = 0; xlate && k < n; k++, xlate++) {
-			xlate->host_fmt = &rcar_vin_formats[k];
-			xlate->code = code.code;
-			dev_dbg(dev, "Providing format %s using code %d\n",
-				rcar_vin_formats[k].name, code.code);
+		for (k = 0; xlate && k < n; k++) {
+			if (is_dev_support_fmt(icd, &rcar_vin_formats[k])) {
+				xlate->host_fmt = &rcar_vin_formats[k];
+				xlate->code = code.code;
+				xlate++;
+				dev_dbg(dev, "Providing format %s using code %d\n",
+					rcar_vin_formats[k].name, code.code);
+			} else {
+				formats--;
+			}
 		}
 		break;
 	default:
