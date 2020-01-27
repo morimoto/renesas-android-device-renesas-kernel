@@ -190,6 +190,16 @@
 #define LSM9DS0_GYRO_ID									0xD4
 #define LSM9DS0_ACCEL_MAGN_ID						0x49
 
+#define LSM9DS0_GYRO_HPM_NORMAL	(0x20)
+#define LSM9DS0_GYRO_HPCF_LOW	(0x09)
+#define LSM9DS0_GYRO_ENABLE_HPF	(0x10)
+#define LSM9DS0_GYRO_ENABLE_LPF2 (0x03)
+
+#define LSM9DS0_GYRO_HPM_MASK	(0x30)
+#define LSM9DS0_GYRO_HPCF_MASK	(0x0F)
+#define LSM9DS0_GYRO_HP_EN_MASK	(0x10)
+#define LSM9DS0_GYRO_OUT_SEL_MASK	(0x03)
+
 enum { SCAN_INDEX_X, SCAN_INDEX_Y, SCAN_INDEX_Z };
 enum {
 	SCAN_INDEX_ACCEL_X, SCAN_INDEX_ACCEL_Y, SCAN_INDEX_ACCEL_Z,
@@ -884,6 +894,44 @@ static const struct iio_info lsm9ds0_accel_magn_info = {
 	.driver_module = THIS_MODULE,
 };
 
+/* Don't process errors, just throw warnings */
+static void enable_gyro_hpf(struct i2c_client *client)
+{
+	/*
+		Set mode and cutoff frequency configuration
+		HPM1-HPM0:
+			00 - Normal mode (reset reading HP_RESET_FILTER
+			01 - Reference signal for filtering
+			10 - Normal mode
+			11 - Autoreset on interrupt event
+		Selected: NORMAL_MODE - 0x2
+		HPCF[3:0] - cutoff frequency configuration depends on ODR
+		(Output Data Rate) for 1001 configuration:
+			ODR = 95 Hz -  0.009
+			ODR = 190 Hz - 0.018
+			ODR = 380 Hz - 0.045
+			ODR = 760 Hz - 0.09
+	*/
+	if (lsm9ds0_write_config(client, LSM9DS0_CTRL_REG2_G_REG,
+	    LSM9DS0_GYRO_HPM_MASK | LSM9DS0_GYRO_HPCF_MASK,
+	    LSM9DS0_GYRO_HPM_NORMAL | LSM9DS0_GYRO_HPCF_LOW) < 0) {
+		dev_warn(&client->dev, "Failed to set high-pass filter configuration.\n");
+		return;
+	}
+
+	/*
+			4 bit - High-pass filter enable. 1 - enable, 0 - disable
+			Selected: 1
+			Out_Sel[1:0] - Out selection configuration.
+			10 or 11 - path with HFP and LPF2 (see schema on 45 datasheet page)
+	*/
+	if (lsm9ds0_write_config(client, LSM9DS0_CTRL_REG5_G_REG,
+	    LSM9DS0_GYRO_HP_EN_MASK | LSM9DS0_GYRO_OUT_SEL_MASK,
+	    LSM9DS0_GYRO_ENABLE_HPF | LSM9DS0_GYRO_ENABLE_LPF2) < 0) {
+		dev_warn(&client->dev, "Failed to enable high-pass filter .\n");
+	}
+}
+
 static int lsm9ds0_gyro_init(struct i2c_client *client)
 {
 	int ret;
@@ -908,6 +956,8 @@ static int lsm9ds0_gyro_init(struct i2c_client *client)
 
 	data->gyro_scale = LSM9DS0_GYRO_FS_2000DPS_GAIN;
 	data->gyro_sfreq = LSM9DS0_GYRO_ODR_95HZ_VAL;
+
+	enable_gyro_hpf(client);
 
 	return 0;
 }
