@@ -79,6 +79,7 @@ static int rcar_ion_heap_allocate(struct ion_heap *heap,
 	struct sg_table *table;
 	phys_addr_t paddr;
 	int ret;
+	struct page *page;
 
 	table = kmalloc(sizeof(*table), GFP_KERNEL);
 	if (!table)
@@ -96,6 +97,12 @@ static int rcar_ion_heap_allocate(struct ion_heap *heap,
 
 	sg_set_page(table->sgl, pfn_to_page(PFN_DOWN(paddr)), size, 0);
 	buffer->sg_table = table;
+
+	page = sg_page(buffer->sg_table->sgl);
+	if (page) {
+		mod_node_page_state(page_pgdat(page), NR_ION_HEAP, (size/PAGE_SIZE));
+		mod_node_page_state(page_pgdat(page), NR_ION_HEAP_POOL, -(size/PAGE_SIZE));
+	}
 
 	return 0;
 
@@ -122,6 +129,8 @@ static void rcar_ion_heap_free(struct ion_buffer *buffer)
 	gen_pool_free(rheap->pool, paddr, buffer->size);
 	sg_free_table(table);
 	kfree(table);
+	mod_node_page_state(page_pgdat(page), NR_ION_HEAP, -(buffer->size/PAGE_SIZE));
+	mod_node_page_state(page_pgdat(page), NR_ION_HEAP_POOL, buffer->size/PAGE_SIZE);
 }
 
 static struct ion_heap_ops rcar_ion_heap_ops = {
@@ -177,6 +186,9 @@ int rcar_ion_probe(struct platform_device *pdev)
 	}
 
 	gen_pool_add(rheap->pool, pheap->base, pheap->size, -1);
+
+	mod_node_page_state(page_pgdat(page), NR_ION_HEAP_POOL,
+			    pheap->size/PAGE_SIZE);
 
 	rheap->base = pheap->base;
 	rheap->heap.ops = &rcar_ion_heap_ops;
