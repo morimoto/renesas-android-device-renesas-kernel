@@ -372,3 +372,42 @@
 		resets = <&cpg 112>;
 	};
 };
+&ipmmu_ds0 {
+	status = "okay";
+};
+
+&ipmmu_vi0 {
+	status = "okay";
+};
+
+&ipmmu_vi1 {
+	status = "okay";
+};
+
+&fcpvd0 {
+	iommus = <&ipmmu_vi0 8>;
+};
+
+&fcpvd1 {
+	iommus = <&ipmmu_vi0 9>;
+};
+
+&fcpvd2 {
+	iommus = <&ipmmu_vi1 10>;
+};
+
+&ipmmu_vp0 {
+	status = "okay";
+};
+
+&ipmmu_vp1 {
+	status = "okay";
+};
+
+&ipmmu_vc0 {
+	status = "okay";
+};
+
+&ipmmu_vp1 {
+	status = "okay";
+};
