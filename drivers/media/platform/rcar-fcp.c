@@ -169,10 +169,15 @@ int rcar_fcp_reset(struct rcar_fcp_device *fcp)
 }
 EXPORT_SYMBOL_GPL(rcar_fcp_reset);
 
+#include <linux/of.h>
+#include <linux/dma-mapping.h>
 static int rcar_fcp_probe(struct platform_device *pdev)
 {
 	struct rcar_fcp_device *fcp;
 	struct resource *mem;
+	struct device_node *np;
+	u32 dma_mask_bits;
+	int ret;
 
 	fcp = devm_kzalloc(&pdev->dev, sizeof(*fcp), GFP_KERNEL);
 	if (fcp == NULL)
@@ -187,6 +192,16 @@ static int rcar_fcp_probe(struct platform_device *pdev)
 	fcp->base = devm_ioremap_resource(fcp->dev, mem);
 	if (IS_ERR(fcp->base))
 		return PTR_ERR(fcp->base);
+
+	np = pdev->dev.of_node;
+
+	if (!of_property_read_u32(np, "dma-mask-bits", &dma_mask_bits)) {
+		ret = dma_set_mask_and_coherent(&pdev->dev, DMA_BIT_MASK(dma_mask_bits));
+		if (ret) {
+			pr_err("%s: Error (%d) setting DMA mask to %d for device %s \n", __func__,
+				ret, dma_mask_bits, pdev->name);
+		}
+	}
 
 	pm_runtime_enable(&pdev->dev);
 

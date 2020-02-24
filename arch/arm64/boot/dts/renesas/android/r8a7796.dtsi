@@ -292,14 +292,21 @@
 
 &fcpvd0 {
 	iommus = <&ipmmu_vi0 8>;
+	dma-mask-bits = <40>;
 };
 
 &fcpvd1 {
 	iommus = <&ipmmu_vi0 9>;
+	dma-mask-bits = <40>;
 };
 
 &fcpvd2 {
 	iommus = <&ipmmu_vi0 10>;
+	dma-mask-bits = <40>;
+};
+
+&gsx {
+       dma-mask-bits = <40>;
 };
 
 &ipmmu_vc0 {
