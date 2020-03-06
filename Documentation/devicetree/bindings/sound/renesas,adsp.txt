@@ -1,11 +1,106 @@
 Renesas ADSP sound driver
 
 Required properties:
-- compatible			: "renesas,rcar_adsp_sound_gen3"
+- compatible		: "renesas,rcar_adsp_sound_gen3"
+
+Optional subnodes:
+- device_params:	: Node whose content contains parameters of HW and
+			  DMAs for DAIs to set.
+
+Optional subnodes of "device_params":
+- dai-x:		: DAIx’s route info
+			  x = 0, 1, 2, 3: These DAI indexes for playback and capture stream.
+			  x = 4: This DAI index is for TDM playback and TDM Capture streams.
+
+Optional subnodes of "dai-x":
+- playback:		: Playback direction info of a DAI
+- capture:		: Record direction info of a DAI
+
+Optional "playback" and "capture" subnodes properties:
+- dev:			: Audio HW IP indexes which are first device index and
+			  second device indexes for ADSP connection.
+			  "src-n", "ssi-m" (n = 0 to 9, m = 0 to 9).
+			  For dai-4 options, only "src-y" with y = 0, 1, 3, 4 are supported.
+
+- dma:			: Audio DMA indexes which are first and second DMA transfer type.
+			  "dmac-n", "pdma-m" (n = 0 to 31, m = 0 to 28).
+			  If first DMA is "dmac-n", ADSP will transfer data directly from
+			  memory to device. The image in this case is MEM->Audio HW.
+			  If first DMA is "pdma-m", ADSP will transfer data to Audio HW
+			  by using FIFO. The image in this case is Mem->FIFO->Audio HW.
+
+- mix_usage:		: Enable mix function for playback stream
+
 
 Example:
+
+Simple ADSP sound node:
 
 rcar_adsp_sound: adsp_sound@0 {
      compatible =  "renesas,rcar_adsp_sound_gen3";
      status = "disabled";
+};
+
+Adding "device_params" subnode to configure Audio HW connection for each DAIs:
+
+rcar_adsp_sound: adsp_sound@0 {
+	compatible =  "renesas,rcar_adsp_sound_gen3";
+	status = "disabled";
+
+	device_params {
+		dai-0 {
+			playback {
+				dev = "src-0", "ssi-0";
+				dma = "dmac-0", "pdma-0";
+				mix_usage;
+			};
+			capture {
+				dev = "src-1", "ssi-1";
+				dma = "dmac-1", "pdma-1";
+			};
+		};
+		dai-1 {
+			playback {
+				dev = "src-2", "ssi-0";
+				dma = "dmac-2", "pdma-2";
+				mix_usage;
+			};
+			capture {
+				dev = "src-1", "ssi-1";
+				dma = "dmac-1", "pdma-1";
+			};
+		};
+		dai-2 {
+			playback {
+				dev = "src-3", "ssi-0";
+				dma = "dmac-3", "pdma-3";
+				mix_usage;
+			};
+			capture {
+				dev = "src-1", "ssi-1";
+				dma = "dmac-1", "pdma-1";
+			};
+		};
+		dai-3 {
+			playback {
+				dev = "src-4", "ssi-0";
+				dma = "dmac-4", "pdma-4";
+				mix_usage;
+			};
+			capture {
+				dev = "src-1", "ssi-1";
+				dma = "dmac-1", "pdma-1";
+			};
+		};
+		dai-4 {
+			playback {
+				dev = "src-3", "ssi-3";
+				dma = "dmac-2", "pdma-5";
+			};
+			capture {
+				dev = "src-4", "ssi-4";
+				dma = "dmac-3", "pdma-6";
+			};
+		};
+	};
 };
