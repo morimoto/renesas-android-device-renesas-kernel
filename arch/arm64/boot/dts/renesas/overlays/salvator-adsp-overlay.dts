@@ -33,8 +33,9 @@
 &ak4613 {
 	port {
 		/* In case of ADSP overlay these EPs appear in reverse order,
-		so asoc-audio-graph-scu-card fails to parse DT. Avoid this by
-		placing EPs in such below order. */
+		 * so asoc-audio-graph-scu-card fails to parse DT. Avoid this by
+		 * placing EPs in such below order
+		 */
 		ak4613_endpoint3: endpoint@3 {
 			remote-endpoint = <&adsp_endpoint3>;
 		};
@@ -54,6 +55,53 @@
 	status = "okay";
 	/* Multiple DAI */
 	#sound-dai-cells = <1>;
+
+	device_params {
+		dai-0 {
+			playback {
+				dev = "src-0", "ssi-0";
+				dma = "dmac-0", "pdma-0";
+				mix_usage;
+			};
+			capture {
+				dev = "src-1", "ssi-1";
+				dma = "dmac-1", "pdma-1";
+			};
+		};
+		dai-1 {
+			playback {
+				dev = "src-2", "ssi-0";
+				dma = "dmac-2", "pdma-2";
+				mix_usage;
+			};
+			capture {
+				dev = "src-1", "ssi-1";
+				dma = "dmac-1", "pdma-1";
+			};
+		};
+		dai-2 {
+			playback {
+				dev = "src-3", "ssi-0";
+				dma = "dmac-3", "pdma-3";
+				mix_usage;
+			};
+			capture {
+				dev = "src-1", "ssi-1";
+				dma = "dmac-1", "pdma-1";
+			};
+		};
+		dai-3 {
+			playback {
+				dev = "src-4", "ssi-0";
+				dma = "dmac-4", "pdma-4";
+				mix_usage;
+			};
+			capture {
+				dev = "src-1", "ssi-1";
+				dma = "dmac-1", "pdma-1";
+			};
+		};
+	};
 
 	ports {
 		adsp_port0: port@0 {
