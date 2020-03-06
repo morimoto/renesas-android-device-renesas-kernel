@@ -42,4 +42,27 @@
 	status = "okay";
 	/* Multiple DAI */
 	#sound-dai-cells = <1>;
+
+	device_params {
+		dai-0 {
+			playback {
+				dev = "src-0", "ssi-0";
+				dma = "dmac-0", "pdma-0";
+			};
+			capture {
+				dev = "src-1", "ssi-1";
+				dma = "dmac-1", "pdma-1";
+			};
+		};
+		dai-4 {
+			playback {
+				dev = "src-3", "ssi-3";
+				dma = "dmac-2", "pdma-5";
+			};
+			capture {
+				dev = "src-4", "ssi-4";
+				dma = "dmac-3", "pdma-6";
+			};
+		};
+	};
 };
