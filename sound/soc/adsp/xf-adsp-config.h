@@ -172,14 +172,16 @@ struct xf_unroute_port_msg {
 enum xa_capture_state {
 	XA_CAP_STATE_RUN	= 0,
 	XA_CAP_STATE_IDLE	= 1,
-	XA_CAP_STATE_PAUSE	= 2
+	XA_CAP_STATE_PAUSE	= 2,
+	XA_CAP_STATE_RESET	= 3
 };
 
 /* ...Renderer states  */
 enum xa_renderer_state {
 	XA_RDR_STATE_RUN	= 0,
 	XA_RDR_STATE_IDLE	= 1,
-	XA_RDR_STATE_PAUSE	= 2
+	XA_RDR_STATE_PAUSE	= 2,
+	XA_RDR_STATE_RESET	= 3
 };
 
 /*******************************************************************************
@@ -282,8 +284,11 @@ enum xa_renderer_state {
 /* ...resume component operation */
 #define XF_RESUME			__XF_OPCODE(0, 0, 14)
 
+/* ...memory map configuration */
+#define XF_MMAP_THIS_BUFFER             __XF_OPCODE(0, 0, 17)
+
 /* ...total amount of supported decoder commands */
-#define __XF_OP_NUM			(15)
+#define __XF_OP_NUM			(18)
 
 /*************************************************
  * Renderer - specific configuration parameters
@@ -303,7 +308,8 @@ enum xa_config_param_renderer {
 	XA_RDR_CONFIG_PARAM_VOLUME_RATE		= 10,
 	XA_RDR_CONFIG_PARAM_OUT_CHANNELS	= 11,
 	XA_RDR_CONFIG_PARAM_MIX_CONTROL		= 12,
-	XA_RDR_CONFIG_PARAM_NUM			= 13
+	XA_RDR_CONFIG_PARAM_RING_NUM		= 13,
+	XA_RDR_CONFIG_PARAM_NUM			= 14
 };
 
 /*************************************************
@@ -323,7 +329,8 @@ enum xa_config_param_capture {
 	XA_CAP_CONFIG_PARAM_DMACHANNEL2		= 9,
 	XA_CAP_CONFIG_PARAM_OUT_SAMPLE_RATE	= 10,
 	XA_CAP_CONFIG_PARAM_VOLUME_RATE		= 11,
-	XA_CAP_CONFIG_PARAM_NUM			= 12
+	XA_CAP_CONFIG_PARAM_RING_NUM		= 12,
+	XA_CAP_CONFIG_PARAM_NUM			= 13
 };
 
 /*************************************************
@@ -348,10 +355,10 @@ enum xa_rel_eqz_type {
 
 enum xa_add_cmd_type_generic {
 	/* XA_API_CMD_SET_CONFIG_PARAM indices */
-	XA_EQZ_CONFIG_PARAM_COEF_FS			= 0x0000,
-	XA_EQZ_CONFIG_PARAM_PCM_WIDTH			= 0x0001,
-	XA_EQZ_CONFIG_PARAM_CH				= 0x0002,
-	XA_EQZ_CONFIG_PARAM_EQZ_TYPE			= 0x0003,
+	XA_EQZ_CONFIG_PARAM_COEF_FS		= 0x0000,
+	XA_EQZ_CONFIG_PARAM_PCM_WIDTH		= 0x0001,
+	XA_EQZ_CONFIG_PARAM_CH			= 0x0002,
+	XA_EQZ_CONFIG_PARAM_EQZ_TYPE		= 0x0003,
 
 	XA_EQZ_CONFIG_PARAM_FILTER_0_COEF_FC	= 0x0010,
 	XA_EQZ_CONFIG_PARAM_FILTER_1_COEF_FC	= 0x0011,

@@ -75,6 +75,7 @@ struct xf_adsp_renderer_params {
 	int	 out_channel;	/**< output channels		*/
 	int	 mix_ctrl;	/**< mix control flag		*/
 	int	 state;		/**< operation state		*/
+	int  ring_num;
 };
 
 /** \struct xf_adsp_renderer
@@ -101,6 +102,7 @@ struct xf_adsp_capture_params {
 	int	 dma1;		/**< 1st DMA index		*/
 	int	 dma2;		/**< 2nd DMA index		*/
 	int	 state;		/**< operation state		*/
+	int  ring_num;
 };
 
 /** \struct xf_adsp_capture
@@ -233,6 +235,7 @@ char *xf_adsp_get_data_from_pool(struct xf_pool *pool, int index);
 
 int xf_adsp_empty_this_buffer(int handle_id, char *buffer, int length);
 int xf_adsp_fill_this_buffer(int handle_id, char *buffer, int length);
+int xf_adsp_mmap_this_buffer(int handle_id, char *buffer, int length);
 
 int xf_adsp_route(int src_handle_id, int dst_handle_id
 		 , int buf_cnt, int buf_size);
