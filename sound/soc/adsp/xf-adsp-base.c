@@ -311,6 +311,7 @@ static int xf_response_thread(void *data)
 		case XF_GET_PARAM:
 		case XF_ROUTE:
 		case XF_UNROUTE:
+		case XF_MMAP_THIS_BUFFER:
 			/* message is from base control */
 			memcpy(&base->base_msg, &msg,
 			       sizeof(struct xf_message)); /* PRQA S 3200 */
@@ -432,7 +433,7 @@ struct xf_pool *xf_adsp_allocate_mem_pool(int pool_size, int buf_length)
 		      buf_length * pool_size, NULL, NULL); /* PRQA S 3200 */
 
 	err = xf_send_and_receive(&msg);
-	if (err != 0)
+	if (err != 0 || !msg.buffer)
 		return ERR_PTR(-ENOMEM);		/* PRQA S 0306 */
 
 	/* PRQA S 0306 1 */
@@ -600,6 +601,40 @@ int xf_adsp_fill_this_buffer(int handle_id, char *buffer, int length)
 	xf_send(&msg);		/* PRQA S 3200 */
 
 	return 0;
+}
+
+/** ***********************************************************
+ *\brief  send mmap this buffer command to ADSP framework
+ *\internal
+ *\covers: DD_DRV_CMN_01_052
+ *
+ *\param[in]	handle_id	ID of the registered handle
+ *\param[in]	buffer		Pointer to data buffer
+ *\param[in]	length		Size of buffer in bytes
+ *\retval	0		Success
+ *\retval	-EINVAL		Failed
+ **************************************************************/
+int xf_adsp_mmap_this_buffer(int handle_id, char *buffer, int length)
+{
+	struct xf_message msg;
+	struct xf_handle *handle;
+
+	/* check the sane ADSP base data */
+	if (!base)
+		return -EINVAL;
+
+	handle = xf_adsp_base_get_handle(handle_id);
+	if (!handle)
+		return -EINVAL;
+
+	/* submit message to component */
+	xf_create_msg(&msg,
+		      __XF_MSG_ID(__XF_AP_CLIENT(0, handle_id),
+				  __XF_PORT_SPEC2(handle->comp_id, 0)),
+		      XF_MMAP_THIS_BUFFER, length, buffer, NULL);
+
+	/* wait for the successful from ADSP */
+	return xf_send_and_receive(&msg);
 }
 
 /** ***********************************************************
@@ -1072,6 +1107,9 @@ int xf_adsp_renderer_set_params(struct xf_adsp_renderer *renderer)
 	msg_params->item[i].id = XA_RDR_CONFIG_PARAM_STATE;
 	msg_params->item[i++].value = params->state;
 
+	msg_params->item[i].id = XA_RDR_CONFIG_PARAM_RING_NUM;
+	msg_params->item[i++].value = params->ring_num;
+
 	/* PRQA S 3200 2*/
 	xf_create_msg(&msg,
 		      __XF_MSG_ID(__XF_AP_CLIENT(0, renderer->handle_id),
@@ -1134,6 +1172,7 @@ int xf_adsp_renderer_get_params(struct xf_adsp_renderer *renderer)
 	msg_params->c.id[i++] = XA_RDR_CONFIG_PARAM_OUT_CHANNELS;
 	msg_params->c.id[i++] = XA_RDR_CONFIG_PARAM_MIX_CONTROL;
 	msg_params->c.id[i++] = XA_RDR_CONFIG_PARAM_STATE;
+	msg_params->c.id[i++] = XA_RDR_CONFIG_PARAM_RING_NUM;
 
 	/* PRQA S 3200 2*/
 	xf_create_msg(&msg,
@@ -1160,6 +1199,7 @@ int xf_adsp_renderer_get_params(struct xf_adsp_renderer *renderer)
 	rdr_params->out_channel = msg_params->r.value[i++];
 	rdr_params->mix_ctrl = msg_params->r.value[i++];
 	rdr_params->state = msg_params->r.value[i++];
+	rdr_params->ring_num = msg_params->r.value[i++];
 
 exit:
 	/* return msg to pool */
@@ -1338,6 +1378,9 @@ int xf_adsp_capture_set_params(struct xf_adsp_capture *capture)
 	msg_params->item[i].id = XA_CAP_CONFIG_PARAM_STATE;
 	msg_params->item[i++].value = params->state;
 
+	msg_params->item[i].id = XA_CAP_CONFIG_PARAM_RING_NUM;
+	msg_params->item[i++].value = params->ring_num;
+
 	/* PRQA S 3200 2 */
 	xf_create_msg(&msg,
 		      __XF_MSG_ID(__XF_AP_CLIENT(0, capture->handle_id),
@@ -1398,6 +1441,7 @@ int xf_adsp_capture_get_params(struct xf_adsp_capture *capture)
 	msg_params->c.id[i++] = XA_CAP_CONFIG_PARAM_OUT_SAMPLE_RATE;
 	msg_params->c.id[i++] = XA_CAP_CONFIG_PARAM_VOLUME_RATE;
 	msg_params->c.id[i++] = XA_CAP_CONFIG_PARAM_STATE;
+	msg_params->c.id[i++] = XA_CAP_CONFIG_PARAM_RING_NUM;
 
 	/* PRQA S 3200 2 */
 	xf_create_msg(&msg,
@@ -1422,6 +1466,7 @@ int xf_adsp_capture_get_params(struct xf_adsp_capture *capture)
 	cap_params->out_rate = msg_params->r.value[i++];
 	cap_params->vol_rate = msg_params->r.value[i++];
 	cap_params->state = msg_params->r.value[i++];
+	cap_params->ring_num = msg_params->r.value[i++];
 
 exit:
 	/* return msg to pool */

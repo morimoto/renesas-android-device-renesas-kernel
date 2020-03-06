@@ -42,6 +42,7 @@
 #include <sound/soc.h>
 #include <sound/pcm-indirect.h>
 #include <linux/time.h>
+#include <linux/of.h>
 
 #include "xf-adsp-base.h"
 
@@ -114,12 +115,6 @@
 /* Indicate stream number */
 #define DIRECT_NUM		(2)
 
-/* Supported frame size for playback/record function in driver */
-#define FRAME_SIZE		(1024)
-
-/* Supported frame size for TDM playback/record function in driver */
-#define TDM_FRAME_SIZE		(1024)
-
 /* Supported sample rate in driver */
 #define SND_ADSP_SAMPLE_RATES	(SNDRV_PCM_RATE_32000 | \
 				 SNDRV_PCM_RATE_44100 | \
@@ -148,7 +143,20 @@
 /* Maximum number of DAI supported by driver */
 #define MAX_DAI_IDX		(5)
 
-/* Renderer/Capture software information */
+/* ***********************************************************
+ * Equalizer software information
+ * **********************************************************/
+/* Supported frame size for Equalizer plugin */
+#define EQZ_FRAME_SIZE		(1024)
+
+/* ***********************************************************
+ * Renderer, Capture software information
+ * **********************************************************/
+
+/* Supported frame size for playback/record function in driver */
+#define MIN_FRAME_SIZE		(4)
+#define MAX_FRAME_SIZE		(1024)
+
 /* Minimum channel number supported */
 #define MIN_CHANNEL		(1)
 
@@ -156,10 +164,10 @@
 #define MAX_CHANNEL		(2)
 
 /* Minimum buffer size in byte */
-#define MIN_BUF_SIZE		(FRAME_SIZE * MIN_CHANNEL * 2)
+#define MIN_BUF_SIZE		(MIN_FRAME_SIZE * MIN_CHANNEL * 2)
 
 /* Maximum buffer size in byte */
-#define MAX_BUF_SIZE		(FRAME_SIZE * MAX_CHANNEL * 4)
+#define MAX_BUF_SIZE		(MAX_FRAME_SIZE * MAX_CHANNEL * 4)
 
 /* Minimum numbers of period in the buffer */
 #define MIN_PERIOD		(1)
@@ -170,7 +178,13 @@
 /* Maximun numbers of bytes in ALSA buffer */
 #define MAX_BUFFER_BYTES	(MAX_PERIOD * MAX_BUF_SIZE)
 
-/* TDM software information */
+/* ***********************************************************
+ * TDM software information
+ * **********************************************************/
+
+/* Supported frame size for TDM playback/record function in driver */
+#define TDM_FRAME_SIZE		(1024)
+
 /*< Minimum channel number supported in TDM plugin */
 #define TDM_MIN_CHANNEL		(6)
 
@@ -214,6 +228,9 @@
 /* Handle state is READY after finishing handle init */
 #define XF_HANDLE_READY		BIT(1)
 
+/* Handle state is running */
+#define XF_HANDLE_RUNNING	BIT(2)
+
 /* channels */
 /* Mono stream */
 #define MONAURAL		(1)
@@ -237,13 +254,8 @@
 /* check component is ready */
 #define COMPONENT_IS_READY(n)	(((n & XF_HANDLE_READY) != 0) ? TRUE : FALSE)
 
-/* indicator of stream order */
-#define MIX_UNUSED			(0)
-#define FIRST_RUN			(2)
-#define SECOND_RUN			(1)
-
-/* check MIX usage */
-#define MIX_ENABLED(mix_ctl)	((mix_ctl == SECOND_RUN) ? TRUE : FALSE)
+/* check component is running */
+#define COMPONENT_IS_RUNNING(n)	(((n & XF_HANDLE_RUNNING) != 0) ? TRUE : FALSE)
 
 /*******************************************************************
  * base structures for ADSP ALSA driver
@@ -273,38 +285,46 @@ struct snd_adsp_control {
 
 	/* Equalizer switch */
 	int	   eqz_switch[DIRECT_NUM][MAX_DAI_IDX - 1];
+};
 
-	/* Indicator of MIX usage */
-	int	   mix_usage;
+/* maximun number of Audio device which supported from ADSP */
+#define MAX_DEV_NUM	(2)
+
+/** \struct snd_adsp_device_params
+ *  \brief  Structure stores Audio HW configuration for each stream
+ */
+struct snd_adsp_device_params {
+	/* device indexes for ADSP plugins */
+	int dev[MAX_DEV_NUM];
+
+	/* dma indexes for ADSP plugins */
+	int dma[MAX_DEV_NUM];
+
+	/* mix usage flag for ADSP Renderer plugin */
+	int mix_usage;
 };
 
 /** \struct snd_adsp_base_info
  *  \brief  Structure stores some base information of a stream
  */
 struct snd_adsp_base_info {
-	/* high resolution timer data */
-	struct hrtimer			hrtimer;
-
-	/* kernel time value in nanosecond */
-	ktime_t				ktime;
-
-	/* save interrupt state before getting lock */
-	unsigned long			flag;
-
-	/* high resolution timer state */
-	int				hrt_state;
+	/* running state indicator */
+	int				state;
 
 	/* target handle id of ALSA driver */
 	int				handle_id;
 
 	/* data buffer */
-	char				*buffer[XF_BUF_POOL_SIZE];
+	unsigned char			*buffer;
+
+	/* buffer pool for data transfer  */
+	struct xf_pool			*buf_pool;
 
 	/* size of each allocated data buffer */
 	int				buf_bytes;
 
-	/* data index of buffer */
-	int				buf_idx;
+	/* total buffer count of shared memory */
+	int				buf_cnt;
 
 	/* queue index of buffer */
 	int				buf_queue;
@@ -318,14 +338,14 @@ struct snd_adsp_base_info {
 	/* substream runtime object */
 	struct snd_pcm_substream	*substream;
 
-	/* indirect PCM data transfer */
-	struct snd_pcm_indirect		pcm_indirect;
-
 	/* spinlock data */
 	spinlock_t			lock;
 
 	/* runtime error indicator */
 	int				runtime_err;
+
+	/* application pointer of previous transfer calling */
+	int				old_app_ptr;
 };
 
 /** \struct snd_adsp_playback
@@ -414,11 +434,14 @@ struct snd_adsp_card {
 
 	/* Structure contains params information for control */
 	struct snd_adsp_control		ctr_if;
+
+	/* Structure contains params information for ADSP Audio HW config */
+	struct snd_adsp_device_params	dev_params[MAX_DAI_IDX][DIRECT_NUM];
 };
 
 /** HW configuration of ALSA ADSP card for Renderer/Capture */
 static struct snd_pcm_hardware snd_pcm_adsp_hw = {
-	.info		= (SNDRV_PCM_INFO_INTERLEAVED  /* PRQA S 1053 14 */
+	.info		= (SNDRV_PCM_INFO_INTERLEAVED
 			 | SNDRV_PCM_INFO_RESUME
 			 | SNDRV_PCM_INFO_BLOCK_TRANSFER
 			 | SNDRV_PCM_INFO_MMAP | SNDRV_PCM_INFO_MMAP_VALID),
@@ -492,9 +515,6 @@ static void *
 snd_adsp_get_drvdata_from_substream(struct snd_pcm_substream *substream);
 static struct snd_adsp_base_info *
 snd_adsp_get_base_from_substream(struct snd_pcm_substream *substream);
-static struct snd_adsp_base_info *
-snd_adsp_get_base_from_hrt(struct hrtimer *hrt);
-static enum hrtimer_restart snd_adsp_hrtimer_func(struct hrtimer *hrt);
 static int snd_adsp_playback_init(struct snd_adsp_playback **data,
 				  int eqz_flag,
 				  struct snd_pcm_substream *substream);
@@ -529,8 +549,6 @@ static int snd_adsp_pcm_trigger(struct snd_pcm_substream *substream, int idx);
 static snd_pcm_uframes_t
 snd_adsp_pcm_pointer(struct snd_pcm_substream *substream);
 static int snd_adsp_pcm_ack(struct snd_pcm_substream *substream);
-static void snd_adsp_pcm_transfer(struct snd_pcm_substream *substream,
-				  struct snd_pcm_indirect *rec, size_t bytes);
 static int snd_adsp_control_volume_info(struct snd_kcontrol *kcontrol,
 					struct snd_ctl_elem_info *uinfo);
 static int snd_adsp_control_volume_get(struct snd_kcontrol *kcontrol,
@@ -607,12 +625,13 @@ snd_adsp_rdr_empty_buf_done(void *data, int opcode, int length, char *buffer)
 	struct snd_adsp_base_info *base = (struct snd_adsp_base_info *)data;
 
 	if (base) {
-		spin_lock_irqsave(&base->lock, base->flag);
-
+		spin_lock(&base->lock);
+		base->hw_idx++; /* increase the DMA buffer index */
 		base->buf_queue++;
-		base->hw_idx += length; /* increase the DMA buffer index */
+		spin_unlock(&base->lock);
 
-		spin_unlock_irqrestore(&base->lock, base->flag);
+		if (COMPONENT_IS_RUNNING(base->state) == TRUE)
+			snd_pcm_period_elapsed(base->substream);
 	}
 
 	return 0;
@@ -669,12 +688,36 @@ snd_adsp_cap_fill_buf_done(void *data, int opcode, int length, char *buffer)
 	struct snd_adsp_base_info *base = (struct snd_adsp_base_info *)data;
 
 	if (base) {
-		spin_lock_irqsave(&base->lock, base->flag);
-
+		spin_lock(&base->lock);
+		base->hw_idx++; /* increase the DMA buffer index */
 		base->buf_queue++;
-		base->hw_idx += length; /* increase the DMA buffer index */
+		spin_unlock(&base->lock);
 
-		spin_unlock_irqrestore(&base->lock, base->flag);
+		if (COMPONENT_IS_RUNNING(base->state) == TRUE) {
+			snd_pcm_period_elapsed(base->substream);
+		} else {
+			/* the first fill_buf_done responds indicating the
+			 * initialized completetion of plugin.Change to running
+			 * state ans start sending messages to get data
+			 */
+			int i;
+			unsigned char *dma_buf = base->buffer;
+			int buf_bytes = base->buf_bytes;
+
+			base->hw_idx = 0;
+			base->buf_queue = base->buf_cnt;
+
+			/* mark for running state */
+			base->state |= XF_HANDLE_RUNNING;
+
+			for (i = 0; i < base->buf_cnt; i++) {
+				xf_adsp_fill_this_buffer(base->handle_id,
+							 dma_buf, buf_bytes);
+
+				dma_buf += buf_bytes;
+				base->buf_queue--;
+			}
+		}
 	}
 
 	return 0;
@@ -777,51 +820,6 @@ snd_adsp_get_base_from_substream(struct snd_pcm_substream *substream)
 	return base;
 }
 
-/** ***************************************************************************
- *  \brief    Get playback/record/TDM playback/TDM record's base data
- *  \internal
- *  \covers: DD_DRV_ALSA_01_009
- *	      from hr timer data
- *
- *  \param[in]	hrt		Pointer to hr timer data
- *  \retval	pointer		Pointer to playback/record's base data
- *****************************************************************************/
-static struct snd_adsp_base_info *
-snd_adsp_get_base_from_hrt(struct hrtimer *hrt)
-{
-	return (struct snd_adsp_base_info *)hrt;
-}
-
-/*****************************************************************************
- * hrtimer interrupt function
- * ***************************************************************************/
-
-/** **************************************************************************
- *  \brief	Interrupt function of high resolution timer
- *  \internal
- *  \covers: DD_DRV_ALSA_01_012
- *
- *  \param[in]	hrt		Pointer to hr timer data
- *  \retval	HRTIMER_RESTART Restart the timer after expire time
- *****************************************************************************/
-static enum hrtimer_restart snd_adsp_hrtimer_func(struct hrtimer *hrt)
-{
-	struct snd_adsp_base_info *base = snd_adsp_get_base_from_hrt(hrt);
-
-	spin_lock_irqsave(&base->lock, base->flag);
-	if (base->hw_idx != 0) {
-		spin_unlock_irqrestore(&base->lock, base->flag);
-		/* update PCM status for the next period */
-		snd_pcm_period_elapsed(base->substream);
-	} else {
-		spin_unlock_irqrestore(&base->lock, base->flag);
-	}
-
-	hrtimer_forward_now(hrt, base->ktime);
-
-	return HRTIMER_RESTART;
-}
-
 /*****************************************************************************
  * internal functions to manage playback and record functions
  * ***************************************************************************/
@@ -857,7 +855,6 @@ static int snd_adsp_playback_init(struct snd_adsp_playback **playback_data,
 	/* set handle state as NULL state */
 	playback->rdr_state = XF_HANDLE_NULL;
 	playback->eqz_state = XF_HANDLE_NULL;
-	playback->base.hrt_state = XF_HANDLE_NULL;
 
 	/* register renderer component */
 	if (xf_adsp_renderer_create(&playback->renderer,
@@ -890,15 +887,6 @@ static int snd_adsp_playback_init(struct snd_adsp_playback **playback_data,
 
 	/* save the substream data */
 	playback->base.substream = substream;
-
-	/* init high resolution timer for updating hw status */
-	hrtimer_init(&playback->base.hrtimer,
-		     CLOCK_MONOTONIC,
-		     HRTIMER_MODE_REL);
-
-	/* PRQA S 0563 1 */
-	playback->base.hrtimer.function = &snd_adsp_hrtimer_func;
-	playback->base.hrt_state = XF_HANDLE_CREATED;
 
 	/* success */
 	return 0;
@@ -935,7 +923,6 @@ static int snd_adsp_record_init(struct snd_adsp_record **record_data,
 	/* set handle state as NULL state */
 	record->cap_state = XF_HANDLE_NULL;
 	record->eqz_state = XF_HANDLE_NULL;
-	record->base.hrt_state = XF_HANDLE_NULL;
 
 	/* register capture component */
 	if (xf_adsp_capture_create(&record->capture,
@@ -969,13 +956,6 @@ static int snd_adsp_record_init(struct snd_adsp_record **record_data,
 	/* save the substream data */
 	record->base.substream = substream;
 
-	/* init high resolution timer for updating hw status */
-	hrtimer_init(&record->base.hrtimer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
-
-	/* PRQA S 0563 1 */
-	record->base.hrtimer.function = &snd_adsp_hrtimer_func;
-	record->base.hrt_state = XF_HANDLE_CREATED;
-
 	/* success */
 	return 0;
 }
@@ -994,122 +974,89 @@ static int snd_adsp_playback_prepare(struct snd_adsp_playback *playback,
 				     struct snd_pcm_substream *substream)
 {
 	struct snd_adsp_card *adsp_card;
-	int dai_idx, pcm_width, ch, fs, frame_size, vol_rate, hw_buffer_size;
-	int out_rate;
+	int dai_idx, pcm_width, ch, fs, frame_size, vol_rate, out_rate, out_ch;
 	struct snd_adsp_control *ctr_if;
 	struct snd_pcm_runtime *runtime;
 	struct xf_adsp_renderer *renderer;
 	struct xf_adsp_equalizer *equalizer;
 	struct snd_adsp_base_info *base;
+	struct snd_adsp_device_params *dev_params;
+	struct xf_adsp_renderer_params *params;
 	int i;
 
-	adsp_card = snd_adsp_get_drvdata_from_substream(substream);
-	dai_idx = snd_adsp_get_dai_id_from_substream(substream);
-	ctr_if = &adsp_card->ctr_if;
-	runtime = substream->runtime;
-	renderer = playback->renderer;
-	equalizer = playback->equalizer;
 	base = &playback->base;
-
-	/* runtime parameter */
-	fs = runtime->rate;
-	ch = runtime->channels;
-	pcm_width = (runtime->format == SNDRV_PCM_FORMAT_S16_LE) ? 16 : 24;
-	frame_size = runtime->period_size;
-	vol_rate = ctr_if->vol_rate[DIRECT_PLAYBACK][dai_idx];
-	out_rate = ctr_if->sample_rate[DIRECT_PLAYBACK][dai_idx];
-	hw_buffer_size = snd_pcm_lib_buffer_bytes(substream);
-
-	/* get number of bytes in a period */
-	base->period_bytes = snd_pcm_lib_period_bytes(substream);
-
-	if (pcm_width == 16)
-		base->buf_bytes = base->period_bytes;
-	else
-		base->buf_bytes = (base->period_bytes *
-			BYTES_PER_SAMPLE(S24_3LE)) / BYTES_PER_SAMPLE(S24_LE);
-
-	/* pcm indirect configuration */
-	base->pcm_indirect.hw_buffer_size = hw_buffer_size;
-	base->pcm_indirect.sw_buffer_size = base->pcm_indirect.hw_buffer_size;
-
-	/* it should equal to a period size in bytes */
-	base->pcm_indirect.hw_queue_size = base->period_bytes;
 
 	/* set parameters when Renderer is not ready */
 	if (COMPONENT_IS_READY(playback->rdr_state) == FALSE) {
-		struct xf_adsp_renderer_params *params = &renderer->params;
+		adsp_card = snd_adsp_get_drvdata_from_substream(substream);
+		dai_idx = snd_adsp_get_dai_id_from_substream(substream);
+		ctr_if = &adsp_card->ctr_if;
+		runtime = substream->runtime;
+		renderer = playback->renderer;
+		equalizer = playback->equalizer;
+		dev_params = &adsp_card->dev_params[dai_idx][DIRECT_PLAYBACK];
+		params = &renderer->params;
+
+		/* runtime parameter */
+		fs = runtime->rate;
+		ch = runtime->channels;
+		pcm_width = (runtime->format == SNDRV_PCM_FORMAT_S16_LE)
+				? 16 : 24;
+		frame_size = runtime->period_size;
+		vol_rate = ctr_if->vol_rate[DIRECT_PLAYBACK][dai_idx];
+		out_rate = ctr_if->sample_rate[DIRECT_PLAYBACK][dai_idx];
+		out_ch = ctr_if->rdr_out_ch[dai_idx];
 
 		/* apply renderer parameters */
 		params->in_rate = fs;
 		params->channel = ch;
 		params->pcm_width = pcm_width;
 		params->frame_size = frame_size;
+		params->ring_num = base->buf_cnt;
+		params->mix_ctrl = dev_params->mix_usage;
 
-		if (ctr_if->mix_usage == SECOND_RUN)
-			params->mix_ctrl = ctr_if->mix_usage;
-		else
-			params->mix_ctrl = MIX_UNUSED;
+		params->dev1 = dev_params->dev[0];
+		params->dev2 = dev_params->dev[1];
+		params->dma1 = dev_params->dma[0];
+		params->dma2 = dev_params->dma[1];
 
-		/* set flow as ADSP->PDMA0->SRC0->PDMA1->SSI0 */
-		params->dev1 = SRC0;
-		params->dev2 = SSI00;
-		params->dma1 = PDMA_CH00;
-		params->dma2 = PDMA_CH01;
-
-		/* when MIX is enabled, change to DMAC transfer type to save */
-		/* hw FIFO */
-		if (MIX_ENABLED(params->mix_ctrl) == TRUE)
-			params->dma1 = ADMAC_CH01;
-
-		/* set volume rate if it is set by user or default value */
-		/* is 100% */
+		/* get volume rate from user setting, set default is 100% */
 		if (vol_rate >= 0)
 			params->vol_rate = vol_rate;
 		else
-			params->vol_rate = (1 << 20);
+			params->vol_rate = 1 << 20;
 
 		/* set output channel if it is set by user */
-		if (ctr_if->rdr_out_ch[dai_idx] >= MONAURAL)
-			params->out_channel = ctr_if->rdr_out_ch[dai_idx];
+		if (out_ch >= MONAURAL)
+			params->out_channel = out_ch;
 		else
 			params->out_channel = params->channel;
 
 		/* set sample rate output if it is set by user */
-		if (out_rate >= 0)
+		if (out_rate > 0)
 			params->out_rate = out_rate;
+		else
+			params->out_rate = params->in_rate;
 
 		/* set parameters to ADSP Renderer plugin */
 		if (xf_adsp_renderer_set_params(renderer) != 0)
 			return -EINVAL;
-
-		/* allocate buffer pool to prepare the execution */
-		renderer->buf_pool = xf_adsp_allocate_mem_pool(
-				XF_BUF_POOL_SIZE, base->buf_bytes);
-
-		if (IS_ERR(renderer->buf_pool))	/* PRQA S 306*/
-			return -EINVAL;
-
-		for (i = 0; i < XF_BUF_POOL_SIZE; i++) {
-			base->buffer[i] = xf_adsp_get_data_from_pool(
-					renderer->buf_pool, i);
-
-			base->buf_queue++;
-			memset(base->buffer[i], 0, base->buf_bytes);
-		}
 
 		/* mark Renderer ready */
 		playback->rdr_state |= XF_HANDLE_READY;
 
 		/* set parameters for Equalizer if it is used */
 		if (COMPONENT_IS_CREATED(playback->eqz_state) == TRUE) {
+			/* check the framesize consistency between components */
+			if (frame_size != EQZ_FRAME_SIZE)
+				return -EINVAL;
+
 			/* apply Equalizer parameter setting */
 			equalizer->params.channel = ch;
 			equalizer->params.pcm_width = pcm_width;
 			equalizer->params.rate = fs;
 
 			/* get equalizer parameters from control interface */
-			/* data */
 			snd_adsp_get_eqz_params_from_control(
 				&equalizer->params,
 				&ctr_if->eqz_params[DIRECT_PLAYBACK][dai_idx],
@@ -1122,43 +1069,25 @@ static int snd_adsp_playback_prepare(struct snd_adsp_playback *playback,
 			/* route Equalizer to Renderer */
 			if (xf_adsp_route(equalizer->handle_id,
 					  renderer->handle_id,
-					  XF_BUF_POOL_SIZE,
-					  base->buf_bytes) != 0)
+					  base->buf_cnt, base->buf_bytes) != 0)
 				return -EINVAL;
 
 			/* mark Equalizer ready */
 			playback->eqz_state |= XF_HANDLE_READY;
-
-			/* prepare data before start PCM */
-			/* PRQA S 2462 1 */ /* PRQA S 2463 1 */
-			for (i = 0; i < XF_BUF_POOL_SIZE; i++) {
-				/* send buffer to plugin to kick */
-				/* init-processing */
-				if (xf_adsp_empty_this_buffer(
-							base->handle_id,
-							base->buffer[i],
-							base->buf_bytes) != 0)
-					return -EINVAL;
-
-				spin_lock_irqsave(&base->lock, base->flag);
-				base->buf_queue--;
-				spin_unlock_irqrestore(&base->lock, base->flag);
-			}
 		} else {
-			/* send zero buffer to plugin to kick */
-			/* init-processing */
-			if (xf_adsp_empty_this_buffer(base->handle_id,
-						      base->buffer[0],
-						      base->buf_bytes) != 0)
-				return -EINVAL;
-
-			spin_lock_irqsave(&base->lock, base->flag);
-			base->buf_queue--;
-			spin_unlock_irqrestore(&base->lock, base->flag);
+			/* request plugin to map data buffer */
+			for (i = 0; i < base->buf_cnt; i++)
+				if (xf_adsp_mmap_this_buffer(
+					  base->handle_id,
+					  base->buffer + i * base->buf_bytes,
+					  base->buf_bytes) != 0)
+					return -EINVAL;
 		}
-
-		/* wait until all the buffer have been consummed */
-		while (base->buf_queue != XF_BUF_POOL_SIZE) {
+	} else {
+		/* wait until all the buffer have been returned,
+		 * it may need a flush function
+		 */
+		while (base->buf_queue != base->buf_cnt) {
 			schedule_timeout_interruptible(2);
 			if (signal_pending(current))
 				break;
@@ -1168,11 +1097,16 @@ static int snd_adsp_playback_prepare(struct snd_adsp_playback *playback,
 				return -EINVAL;
 		}
 
-		/* reset HW index */
-		base->hw_idx = 0;
+		if (COMPONENT_IS_CREATED(playback->eqz_state) == FALSE)
+			/* change state of Renderer, because ALSA buffer index
+			 * will be reset to zero after this function
+			 */
+			if (xf_adsp_set_param(base->handle_id,
+					      XA_RDR_CONFIG_PARAM_STATE,
+					      XA_RDR_STATE_RESET) != 0)
+				return -EINVAL;
 	}
 
-	/* success */
 	return 0;
 }
 
@@ -1191,88 +1125,60 @@ static int snd_adsp_record_prepare(struct snd_adsp_record *record,
 {
 	struct snd_adsp_card *adsp_card;
 	int dai_idx, pcm_width, ch, fs, frame_size, vol_rate, in_rate;
-	int hw_buffer_size, hw_queue_size;
 	struct snd_adsp_control *ctr_if;
 	struct snd_pcm_runtime *runtime;
 	struct xf_adsp_capture *capture;
 	struct xf_adsp_equalizer *equalizer;
 	struct snd_adsp_base_info *base;
+	struct snd_adsp_device_params *dev_params;
+	struct xf_adsp_capture_params *params;
 	int i;
 
-	adsp_card = snd_adsp_get_drvdata_from_substream(substream);
-	dai_idx = snd_adsp_get_dai_id_from_substream(substream);
-	ctr_if = &adsp_card->ctr_if;
-	runtime = substream->runtime;
-	capture = record->capture;
-	equalizer = record->equalizer;
 	base = &record->base;
 
-	/* runtime parameter */
-	fs = runtime->rate;
-	ch = runtime->channels;
-	pcm_width = (runtime->format == SNDRV_PCM_FORMAT_S16_LE) ? 16 : 24;
-	frame_size = runtime->period_size;
-	vol_rate = ctr_if->vol_rate[DIRECT_CAPTURE][dai_idx];
-	in_rate = ctr_if->sample_rate[DIRECT_CAPTURE][dai_idx];
-	hw_buffer_size = snd_pcm_lib_buffer_bytes(substream);
-
-	/* total size of allocated buffers */
-	hw_queue_size = base->period_bytes * XF_BUF_POOL_SIZE;
-
-	/* get number of bytes in a period */
-	base->period_bytes = snd_pcm_lib_period_bytes(substream);
-
-	if (pcm_width == 16)
-		base->buf_bytes = base->period_bytes;
-	else
-		base->buf_bytes = ((base->period_bytes *
-			BYTES_PER_SAMPLE(S24_3LE)) / BYTES_PER_SAMPLE(S24_LE));
-
-	/* pcm indirect configuration */
-	base->pcm_indirect.hw_buffer_size = hw_buffer_size;
-	base->pcm_indirect.sw_buffer_size = base->pcm_indirect.hw_buffer_size;
-	base->pcm_indirect.hw_queue_size = hw_queue_size;
-
 	/* prepare parameters to set to Capture plugin when it is not yet */
-	/* ready */
 	if (COMPONENT_IS_READY(record->cap_state) == FALSE) {
-		struct xf_adsp_capture_params *params = &capture->params;
+		adsp_card = snd_adsp_get_drvdata_from_substream(substream);
+		dai_idx = snd_adsp_get_dai_id_from_substream(substream);
+		ctr_if = &adsp_card->ctr_if;
+		runtime = substream->runtime;
+		capture = record->capture;
+		equalizer = record->equalizer;
+		dev_params = &adsp_card->dev_params[dai_idx][DIRECT_CAPTURE];
+		params = &capture->params;
+
+		/* runtime parameter */
+		fs = runtime->rate;
+		ch = runtime->channels;
+		pcm_width = (runtime->format == SNDRV_PCM_FORMAT_S16_LE)
+				? 16 : 24;
+		frame_size = runtime->period_size;
+		vol_rate = ctr_if->vol_rate[DIRECT_CAPTURE][dai_idx];
+		in_rate = ctr_if->sample_rate[DIRECT_CAPTURE][dai_idx];
 
 		/* apply capture parameters */
 		params->out_rate = fs;
 		params->channel = ch;
 		params->pcm_width = pcm_width;
 		params->frame_size = frame_size;
+		params->ring_num = base->buf_cnt;
 
-		params->dev1 = SRC0;
-		params->dev2 = SSI10;
-		params->dma1 = PDMA_CH00;
-		params->dma2 = PDMA_CH01;
+		params->dev1 = dev_params->dev[0];
+		params->dev2 = dev_params->dev[1];
+		params->dma1 = dev_params->dma[0];
+		params->dma2 = dev_params->dma[1];
 
-		/* set volume rate if it is set by user or default volume as */
-		/* 100% */
+		/* get volume rate from user setting, set default is 100% */
 		if (vol_rate >= 0)
 			params->vol_rate = vol_rate;
 		else
-			params->vol_rate = (1 << 20);
+			params->vol_rate = 1 << 20;
 
 		/* set sample rate input if it is set by user */
-		if (in_rate >= 0)
+		if (in_rate > 0)
 			params->in_rate = in_rate;
-
-		/* allocate buffer pool to prepare the execution */
-		capture->buf_pool = xf_adsp_allocate_mem_pool(
-				XF_BUF_POOL_SIZE, base->buf_bytes);
-
-		if (IS_ERR(capture->buf_pool))		 /* PRQA S 306 */
-			return -EINVAL;
-
-		for (i = 0; i < XF_BUF_POOL_SIZE; i++) {
-			base->buffer[i] = xf_adsp_get_data_from_pool(
-					capture->buf_pool, i);
-
-			base->buf_queue++;
-		}
+		else
+			params->in_rate = params->out_rate;
 
 		/* set parameters to ADSP Capture plugin */
 		if (xf_adsp_capture_set_params(capture) != 0)
@@ -1283,13 +1189,16 @@ static int snd_adsp_record_prepare(struct snd_adsp_record *record,
 
 		/* set parameters for Equalizer if it's used */
 		if (COMPONENT_IS_CREATED(record->eqz_state) == TRUE) {
+			/* check the framesize consistency between components */
+			if (frame_size != EQZ_FRAME_SIZE)
+				return -EINVAL;
+
 			/* apply Equalizer parameter setting */
 			equalizer->params.channel = ch;
 			equalizer->params.pcm_width = pcm_width;
 			equalizer->params.rate = fs;
 
 			/* get equalizer parameter from control interface */
-			/* data */
 			snd_adsp_get_eqz_params_from_control(
 				&equalizer->params,
 				&ctr_if->eqz_params[DIRECT_CAPTURE][dai_idx],
@@ -1302,23 +1211,23 @@ static int snd_adsp_record_prepare(struct snd_adsp_record *record,
 			/* route Capture to Equalizer */
 			if (xf_adsp_route(capture->handle_id,
 					  equalizer->handle_id,
-					  XF_BUF_POOL_SIZE,
-					  base->buf_bytes) != 0)
+					  base->buf_cnt, base->buf_bytes) != 0)
 				return -EINVAL;
 
 			/* mark Equalizer ready */
 			record->eqz_state |= XF_HANDLE_READY;
+		} else {
+			/* request plugin to map data buffer */
+			for (i = 0; i < base->buf_cnt; i++)
+				if (xf_adsp_mmap_this_buffer(
+					  base->handle_id,
+					  base->buffer + i * base->buf_bytes,
+					  base->buf_bytes) != 0)
+					return -EINVAL;
 		}
-
-		/* kick init process by sending a zero buffer length */
-		xf_adsp_fill_this_buffer(base->handle_id, base->buffer[0], 0);
-
-		spin_lock_irqsave(&base->lock, base->flag);
-		base->buf_queue--;
-		spin_unlock_irqrestore(&base->lock, base->flag);
-
-		/* wait until finishing initialization */
-		while (base->buf_queue != XF_BUF_POOL_SIZE) {
+	} else {
+		/* wait until all the buffer have been returned */
+		while (base->buf_queue != base->buf_cnt) {
 			schedule_timeout_interruptible(2);
 			if (signal_pending(current))
 				break;
@@ -1328,38 +1237,16 @@ static int snd_adsp_record_prepare(struct snd_adsp_record *record,
 				return -EINVAL;
 		}
 
-		if (COMPONENT_IS_CREATED(record->eqz_state) == TRUE) {
-			/* PRQA S 2462 1 */ /* PRQA S 2463 1 */
-			for (i = 0; i < XF_BUF_POOL_SIZE; i++) {
-				/* send buffer to plugin */
-				if (xf_adsp_fill_this_buffer(
-						base->handle_id,
-						base->buffer[i],
-						base->buf_bytes) != 0)
-					return -EINVAL;
-
-				spin_lock_irqsave(&base->lock, base->flag);
-				base->buf_queue--;
-				spin_unlock_irqrestore(&base->lock, base->flag);
-			}
-
-			/* wait until all the buffer have been responsed */
-			while (base->buf_queue != XF_BUF_POOL_SIZE) {
-				schedule_timeout_interruptible(2);
-				if (signal_pending(current))
-					break;
-
-				/* check the error from initialization */
-				if (base->runtime_err)
-					return -EINVAL;
-			}
-		}
-
-		/* reset hw data position */
-		base->hw_idx = 0;
+		if (COMPONENT_IS_CREATED(record->eqz_state) == FALSE)
+			/* change state of Capture, because the ALSA buffer
+			 * index will be reset after this function
+			 */
+			if (xf_adsp_set_param(base->handle_id,
+					      XA_CAP_CONFIG_PARAM_STATE,
+					      XA_CAP_STATE_RESET) != 0)
+				return -EINVAL;
 	}
 
-	/* success */
 	return 0;
 }
 
@@ -1377,39 +1264,34 @@ static int snd_adsp_playback_deinit(struct snd_adsp_playback *playback)
 	int ret = 0;
 
 	/* perform de-initialization if playback has been created already */
-	if (playback) {
-		/* perform completion process */
-		if (COMPONENT_IS_CREATED(playback->rdr_state) == TRUE) {
-			/* send buffer with zero length to plugin for */
-			/* completion process *//* PRQA S 3200 2 */
-			xf_adsp_empty_this_buffer(playback->base.handle_id,
-						  NULL, 0);
+	if (!playback)
+		return ret;
 
-			/* free buffer pool */ /* PRQA S 3200 1 */
-			xf_adsp_free_mem_pool(playback->renderer->buf_pool);
+	/* perform completion process */
+	if (COMPONENT_IS_CREATED(playback->rdr_state) == TRUE) {
+		/* send buffer with zero length to plugin to complete process */
+		xf_adsp_empty_this_buffer(playback->base.handle_id, NULL, 0);
 
-			/* destroy Renderer */
-			if (xf_adsp_renderer_destroy(playback->renderer) != 0)
-				ret = -EINVAL;
+		/* destroy Renderer */
+		if (xf_adsp_renderer_destroy(playback->renderer) != 0)
+			ret = -EINVAL;
 
-			playback->renderer = NULL;
-		}
+		/* free buffer pool */
+		xf_adsp_free_mem_pool(playback->base.buf_pool);
 
-		/* destroy Equalizer if it is used */
-		if (COMPONENT_IS_CREATED(playback->eqz_state) == TRUE) {
-			if (xf_adsp_equalizer_destroy(playback->equalizer))
-				ret = -EINVAL;
-
-			playback->equalizer = NULL;
-		}
-
-		/* canncel timer interrupt */
-		if (COMPONENT_IS_CREATED(playback->base.hrt_state) == TRUE)
-			hrtimer_cancel(&playback->base.hrtimer);
-
-		/* free playback data */
-		kfree(playback);
+		playback->renderer = NULL;
 	}
+
+	/* destroy Equalizer if it is used */
+	if (COMPONENT_IS_CREATED(playback->eqz_state) == TRUE) {
+		if (xf_adsp_equalizer_destroy(playback->equalizer) != 0)
+			ret = -EINVAL;
+
+		playback->equalizer = NULL;
+	}
+
+	/* free playback data */
+	kfree(playback);
 
 	return ret;
 }
@@ -1433,14 +1315,13 @@ static int snd_adsp_record_deinit(struct snd_adsp_record *record)
 
 	/* perform completion process */
 	if (COMPONENT_IS_CREATED(record->cap_state) == TRUE) {
-		/* send buffer with zero length to plugin for */
-		/* completion process *//* PRQA S 3200 2 */
+		/* send buffer with zero length to plugin to complete process */
 		xf_adsp_empty_this_buffer(record->base.handle_id, NULL, 0);
 
-		/* free buffer pool */ /* PRQA S 3200 1 */
-		xf_adsp_free_mem_pool(record->capture->buf_pool);
+		/* free buffer pool */
+		xf_adsp_free_mem_pool(record->base.buf_pool);
 
-		if (xf_adsp_capture_destroy(record->capture))
+		if (xf_adsp_capture_destroy(record->capture) != 0)
 			ret = -EINVAL;
 
 		record->capture = NULL;
@@ -1453,10 +1334,6 @@ static int snd_adsp_record_deinit(struct snd_adsp_record *record)
 
 		record->equalizer = NULL;
 	}
-
-	/* canncel timer interrupt */
-	if (COMPONENT_IS_CREATED(record->base.hrt_state) == TRUE)
-		hrtimer_cancel(&record->base.hrtimer);
 
 	/* free record data */
 	kfree(record);
@@ -1498,7 +1375,6 @@ snd_adsp_tdm_playback_init(struct snd_adsp_tdm_playback **tdm_playback_data,
 
 	/* set handle state as NULL state */
 	tdm_playback->state = XF_HANDLE_NULL;
-	tdm_playback->base.hrt_state = XF_HANDLE_NULL;
 
 	/* register TDM renderer component */
 	if (xf_adsp_tdm_renderer_create(&tdm_playback->tdm_renderer,
@@ -1517,15 +1393,6 @@ snd_adsp_tdm_playback_init(struct snd_adsp_tdm_playback **tdm_playback_data,
 
 	/* save the substream data */
 	tdm_playback->base.substream = substream;
-
-	/* init high resolution timer for updating hw status */
-	hrtimer_init(&tdm_playback->base.hrtimer,
-		     CLOCK_MONOTONIC,
-		     HRTIMER_MODE_REL);
-
-	/* PRQA S 0563 1 */
-	tdm_playback->base.hrtimer.function = &snd_adsp_hrtimer_func;
-	tdm_playback->base.hrt_state = XF_HANDLE_CREATED;
 
 	return 0;
 }
@@ -1559,7 +1426,6 @@ snd_adsp_tdm_record_init(struct snd_adsp_tdm_record **tdm_record_data,
 
 	/* set handle state as NULL state */
 	tdm_record->state = XF_HANDLE_NULL;
-	tdm_record->base.hrt_state = XF_HANDLE_NULL;
 
 	/* register TDM Capture component */
 	if (xf_adsp_tdm_capture_create(&tdm_record->tdm_capture,
@@ -1578,15 +1444,6 @@ snd_adsp_tdm_record_init(struct snd_adsp_tdm_record **tdm_record_data,
 
 	/* save the substream data */
 	tdm_record->base.substream = substream;
-
-	/* init high resolution timer for updating hw status */
-	hrtimer_init(&tdm_record->base.hrtimer,
-		     CLOCK_MONOTONIC,
-		     HRTIMER_MODE_REL);
-
-	/* PRQA S 0563 1 */
-	tdm_record->base.hrtimer.function = &snd_adsp_hrtimer_func;
-	tdm_record->base.hrt_state = XF_HANDLE_CREATED;
 
 	/* success */
 	return 0;
@@ -1611,46 +1468,32 @@ snd_adsp_tdm_playback_prepare(struct snd_adsp_tdm_playback *tdm_playback,
 	struct snd_pcm_runtime *runtime;
 	struct xf_adsp_tdm_renderer *tdm_renderer;
 	struct snd_adsp_base_info *base;
-	int i;
-	int pcm_width, ch_mode, fs, frame_size, hw_buffer_size;
+	struct snd_adsp_device_params *dev_params;
+	struct xf_adsp_tdm_renderer_params *params;
+	int pcm_width, ch_mode, fs, frame_size, out_rate;
 
 	adsp_card = snd_adsp_get_drvdata_from_substream(substream);
-	ctr_if = &adsp_card->ctr_if;
-	runtime = substream->runtime;
-	tdm_renderer = tdm_playback->tdm_renderer;
 	base = &tdm_playback->base;
-
-	/* runtime parameter */
-	fs = runtime->rate;
-	pcm_width = (runtime->format == SNDRV_PCM_FORMAT_S16_LE) ? 16 : 24;
-	frame_size = runtime->period_size;
-
-	ch_mode = (runtime->channels == 8) ?
-		XA_TDM_RDR_CHANNEL_MODE_1X8 : XA_TDM_RDR_CHANNEL_MODE_1X6;
-
-	hw_buffer_size = snd_pcm_lib_buffer_bytes(substream);
-
-	/* get number of bytes in a period */
-	base->period_bytes = snd_pcm_lib_period_bytes(substream);
-
-	if (pcm_width == 16)
-		base->buf_bytes = base->period_bytes;
-	else
-		base->buf_bytes = ((base->period_bytes *
-			BYTES_PER_SAMPLE(S24_3LE)) / BYTES_PER_SAMPLE(S24_LE));
-
-	/* pcm indirect configuration */
-	base->pcm_indirect.hw_buffer_size = hw_buffer_size;
-	base->pcm_indirect.sw_buffer_size = base->pcm_indirect.hw_buffer_size;
-
-	/* it should equal to a period size in bytes */
-	base->pcm_indirect.hw_queue_size = base->period_bytes;
 
 	/* prepare parameters to set to TDM playback as it is not ready */
 	if (COMPONENT_IS_READY(tdm_playback->state) == FALSE) {
-		struct xf_adsp_tdm_renderer_params *params;
-
+		runtime = substream->runtime;
+		ctr_if = &adsp_card->ctr_if;
+		tdm_renderer = tdm_playback->tdm_renderer;
 		params = &tdm_renderer->params;
+		dev_params =
+			&adsp_card->dev_params[TDM_DAI_IDX][DIRECT_PLAYBACK];
+
+		/* runtime parameter */
+		fs = runtime->rate;
+		pcm_width = (runtime->format == SNDRV_PCM_FORMAT_S16_LE)
+			    ? 16 : 24;
+		frame_size = runtime->period_size;
+
+		ch_mode = (runtime->channels == 8)
+		    ? XA_TDM_RDR_CHANNEL_MODE_1X8 : XA_TDM_RDR_CHANNEL_MODE_1X6;
+
+		out_rate = ctr_if->tdm_sample_rate[DIRECT_PLAYBACK];
 
 		/* apply renderer parameters */
 		params->in_rate = fs;
@@ -1659,55 +1502,29 @@ snd_adsp_tdm_playback_prepare(struct snd_adsp_tdm_playback *tdm_playback,
 		params->frame_size = frame_size;
 
 		/* setting Audio device indexes */
-		params->dma1 = ADMAC_CH00; /* use DMAC for transfer data */
-		params->dma2 = PDMA_CH03;
-		params->dev1 = SRC1;
-		params->dev2 = SSI30;  /* set SSI index to SSI30 */
+		params->dma1 = dev_params->dma[0];
+		params->dma2 = dev_params->dma[1];
+		params->dev1 = dev_params->dev[0];
+		params->dev2 = dev_params->dev[1];
 
-		/* set volume rate if it is set by user or default value as */
-		/* 100% */
+		/* set volume rate from user value or default value as 100% */
 		params->vol_rate = (ctr_if->tdm_vol_rate[DIRECT_PLAYBACK] >= 0)
 			? ctr_if->tdm_vol_rate[DIRECT_PLAYBACK] : (1 << 20);
 
 		/* set output sampling rate if it is set by user */
-		if (ctr_if->tdm_sample_rate[DIRECT_PLAYBACK] >= 0)
-			params->out_rate =
-				ctr_if->tdm_sample_rate[DIRECT_PLAYBACK];
+		if (out_rate >= 0)
+			params->out_rate = out_rate;
 
 		/* set parameters to ADSP TDM Renderer plugin */
 		if (xf_adsp_tdm_renderer_set_params(tdm_renderer) != 0)
 			return -EINVAL;
 
-		/* allocate buffer pool to prepare the execution */
-		tdm_renderer->buf_pool = xf_adsp_allocate_mem_pool(
-				XF_BUF_POOL_SIZE, base->buf_bytes);
-
-		if (IS_ERR(tdm_renderer->buf_pool))	/* PRQA S 306*/
-			return -EINVAL;
-
-		for (i = 0; i < XF_BUF_POOL_SIZE; i++) {
-			base->buffer[i] = xf_adsp_get_data_from_pool(
-					tdm_renderer->buf_pool, i);
-
-			base->buf_queue++;
-		}
-
 		/* mark TDM Renderer created */
 		tdm_playback->state |= XF_HANDLE_READY;
 
-		/* send zero buffer to plugin to kick init-processing */
-		memset(base->buffer[0], 0, base->buf_bytes);
-
-		if (xf_adsp_empty_this_buffer(base->handle_id, base->buffer[0],
-					      base->buf_bytes) != 0)
-			return -EINVAL;
-
-		spin_lock_irqsave(&base->lock, base->flag);
-		base->buf_queue--;
-		spin_unlock_irqrestore(&base->lock, base->flag);
-
-		/* wait until all the buffer have been consummed */
-		while (base->buf_queue != XF_BUF_POOL_SIZE) {
+	} else {
+		/* wait until all the buffer have been returned */
+		while (base->buf_queue != base->buf_cnt) {
 			schedule_timeout_interruptible(2);
 			if (signal_pending(current))
 				break;
@@ -1716,9 +1533,6 @@ snd_adsp_tdm_playback_prepare(struct snd_adsp_tdm_playback *tdm_playback,
 			if (base->runtime_err)
 				return -EINVAL;
 		}
-
-		/* reset HW index */
-		base->hw_idx = 0;
 	}
 
 	/* success */
@@ -1744,38 +1558,27 @@ static int snd_adsp_tdm_record_prepare(struct snd_adsp_tdm_record *tdm_record,
 	struct snd_pcm_runtime *runtime = substream->runtime;
 	struct xf_adsp_tdm_capture *tdm_capture = tdm_record->tdm_capture;
 	struct snd_adsp_base_info *base = &tdm_record->base;
-	int i;
-	int pcm_width, ch_mode, fs, frame_size;
-
-	/* runtime parameter */
-	fs = runtime->rate;
-
-	ch_mode = (runtime->channels == 8) ?
-		XA_TDM_RDR_CHANNEL_MODE_1X8 : XA_TDM_RDR_CHANNEL_MODE_1X6;
-
-	pcm_width = (runtime->format == SNDRV_PCM_FORMAT_S16_LE) ? 16 : 24;
-	frame_size = runtime->period_size;
-
-	/* get number of bytes in a period */
-	base->period_bytes = snd_pcm_lib_period_bytes(substream);
-	base->buf_bytes = (pcm_width == 16) ?
-			   base->period_bytes : ((base->period_bytes *
-						BYTES_PER_SAMPLE(S24_3LE)) /
-						BYTES_PER_SAMPLE(S24_LE));
-
-	/* pcm indirect configuration */
-	base->pcm_indirect.hw_buffer_size = snd_pcm_lib_buffer_bytes(substream);
-	base->pcm_indirect.sw_buffer_size = base->pcm_indirect.hw_buffer_size;
-
-	/* total size of allocated buffers */
-	base->pcm_indirect.hw_queue_size = base->period_bytes *
-					   XF_BUF_POOL_SIZE;
+	struct snd_adsp_device_params *dev_params;
+	struct xf_adsp_tdm_capture_params *params;
+	int pcm_width, ch_mode, fs, frame_size, in_rate;
 
 	/* prepare parameters to set to TDM Capture as it is not yet ready */
 	if (COMPONENT_IS_READY(tdm_record->state) == FALSE) {
-		struct xf_adsp_tdm_capture_params *params;
-
 		params = &tdm_capture->params;
+		dev_params =
+			&adsp_card->dev_params[TDM_DAI_IDX][DIRECT_CAPTURE];
+
+		/* runtime parameter */
+		fs = runtime->rate;
+
+		ch_mode = (runtime->channels == 8)
+		    ? XA_TDM_RDR_CHANNEL_MODE_1X8 : XA_TDM_RDR_CHANNEL_MODE_1X6;
+
+		pcm_width = (runtime->format == SNDRV_PCM_FORMAT_S16_LE)
+		    ? 16 : 24;
+
+		frame_size = runtime->period_size;
+		in_rate = ctr_if->tdm_sample_rate[DIRECT_CAPTURE];
 
 		/* apply capture parameters */
 		params->out_rate = fs;
@@ -1784,35 +1587,18 @@ static int snd_adsp_tdm_record_prepare(struct snd_adsp_tdm_record *tdm_record,
 		params->frame_size = frame_size;
 
 		/* setting Audio device indexes */
-		params->dma1 = PDMA_CH00;
-		params->dma2 = PDMA_CH01;
-		params->dev1 = SRC0;
-		params->dev2 = SSI40;  /* set input device is SSI40 */
+		params->dma1 = dev_params->dma[0];
+		params->dma2 = dev_params->dma[1];
+		params->dev1 = dev_params->dev[0];
+		params->dev2 = dev_params->dev[1];
 
-		/* set volume rate if it is set by user or default value as */
-		/* 100% */
+		/* set volume rate from user value or default value as 100% */
 		params->vol_rate = (ctr_if->tdm_vol_rate[DIRECT_CAPTURE] >= 0)
 			? ctr_if->tdm_vol_rate[DIRECT_CAPTURE] : (1 << 20);
 
 		/* set input rate if it is set by user */
-		if (ctr_if->tdm_sample_rate[DIRECT_CAPTURE] >= 0) {
-			params->in_rate =
-				ctr_if->tdm_sample_rate[DIRECT_CAPTURE];
-		}
-
-		/* allocate buffer pool to prepare the execution */
-		tdm_capture->buf_pool = xf_adsp_allocate_mem_pool(
-				XF_BUF_POOL_SIZE, base->buf_bytes);
-
-		if (IS_ERR(tdm_capture->buf_pool))	/* PRQA S 306 */
-			return -EINVAL;
-
-		for (i = 0; i < XF_BUF_POOL_SIZE; i++) {
-			base->buffer[i] = xf_adsp_get_data_from_pool(
-					tdm_capture->buf_pool, i);
-
-			base->buf_queue++;
-		}
+		if (in_rate >= 0)
+			params->in_rate = in_rate;
 
 		/* set parameters to ADSP TDM Capture plugin */
 		if (xf_adsp_tdm_capture_set_params(tdm_capture) != 0)
@@ -1821,15 +1607,9 @@ static int snd_adsp_tdm_record_prepare(struct snd_adsp_tdm_record *tdm_record,
 		/* mark TDM Capture ready */
 		tdm_record->state |= XF_HANDLE_READY;
 
-		/* kick init process by sending a zero buffer length */
-		xf_adsp_fill_this_buffer(base->handle_id, base->buffer[0], 0);
-
-		spin_lock_irqsave(&base->lock, base->flag);
-		base->buf_queue--;
-		spin_unlock_irqrestore(&base->lock, base->flag);
-
-		/* wait until finishing initialization */
-		while (base->buf_queue != XF_BUF_POOL_SIZE) {
+	} else {
+		/* wait until all the buffer have been returned */
+		while (base->buf_queue != base->buf_cnt) {
 			schedule_timeout_interruptible(2);
 			if (signal_pending(current))
 				break;
@@ -1838,9 +1618,6 @@ static int snd_adsp_tdm_record_prepare(struct snd_adsp_tdm_record *tdm_record,
 			if (base->runtime_err)
 				return -EINVAL;
 		}
-
-		/* reset hw data position */
-		base->hw_idx = 0;
 	}
 
 	/* success */
@@ -1867,26 +1644,20 @@ snd_adsp_tdm_playback_deinit(struct snd_adsp_tdm_playback *tdm_playback)
 
 	/* perform completion process */
 	if (COMPONENT_IS_CREATED(tdm_playback->state) == TRUE) {
-		/* send buffer with zero length to plugin for */
-		/* completion process */
-		/* PRQA S 3200 2 */
+		/* send buffer with zero length to plugin to complete process */
 		xf_adsp_empty_this_buffer(tdm_playback->base.handle_id,
 					  NULL, 0);
 
-		/* free buffer pool *//* PRQA S 3200 2 */
-		xf_adsp_free_mem_pool(tdm_playback->tdm_renderer->buf_pool);
+		/* free buffer pool */
+		xf_adsp_free_mem_pool(tdm_playback->base.buf_pool);
 
 		/* destroy TDM Renderer component */
-		if (xf_adsp_tdm_renderer_destroy(
-				tdm_playback->tdm_renderer) != 0)
+		if (xf_adsp_tdm_renderer_destroy(tdm_playback->tdm_renderer)
+				!= 0)
 			ret = -EINVAL;
 
 		tdm_playback->tdm_renderer = NULL;
 	}
-
-	/* canncel timer interrupt */
-	if (COMPONENT_IS_CREATED(tdm_playback->base.hrt_state) == TRUE)
-		hrtimer_cancel(&tdm_playback->base.hrtimer);
 
 	/* free playback data */
 	kfree(tdm_playback);
@@ -1913,13 +1684,11 @@ static int snd_adsp_tdm_record_deinit(struct snd_adsp_tdm_record *tdm_record)
 
 	/* perform completion process */
 	if (COMPONENT_IS_CREATED(tdm_record->state) == TRUE) {
-		/* send buffer with zero length to plugin for */
-		/* completion process */
-		/* PRQA S 3200 2 */
+		/* send buffer with zero length to plugin to complete process */
 		xf_adsp_empty_this_buffer(tdm_record->base.handle_id, NULL, 0);
 
-		/* free buffer pool *//* PRQA S 3200 2 */
-		xf_adsp_free_mem_pool(tdm_record->tdm_capture->buf_pool);
+		/* free buffer pool */
+		xf_adsp_free_mem_pool(tdm_record->base.buf_pool);
 
 		/* destroy TDM Capture component */
 		if (xf_adsp_tdm_capture_destroy(tdm_record->tdm_capture) != 0)
@@ -1927,10 +1696,6 @@ static int snd_adsp_tdm_record_deinit(struct snd_adsp_tdm_record *tdm_record)
 
 		tdm_record->tdm_capture = NULL;
 	}
-
-	/* canncel timer interrupt */
-	if (COMPONENT_IS_CREATED(tdm_record->base.hrt_state) == TRUE)
-		hrtimer_cancel(&tdm_record->base.hrtimer);
 
 	/* free record data */
 	kfree(tdm_record);
@@ -1967,9 +1732,9 @@ static int snd_adsp_pcm_open(struct snd_pcm_substream *substream)
 		if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
 			/* perform playback initialization */
 			if (snd_adsp_playback_init(
-				   &adsp_card->playback[dai_idx],
-				   ctr_if->eqz_switch[DIRECT_PLAYBACK][dai_idx],
-				   substream) < 0) {
+				 &adsp_card->playback[dai_idx],
+				 ctr_if->eqz_switch[DIRECT_PLAYBACK][dai_idx],
+				 substream) < 0) {
 				/* perform playback de-initialization when */
 				/* the initialization fails */
 				snd_adsp_playback_deinit(
@@ -1981,9 +1746,9 @@ static int snd_adsp_pcm_open(struct snd_pcm_substream *substream)
 		} else {
 			/* perform record initialization */
 			if (snd_adsp_record_init(
-				    &adsp_card->record[dai_idx],
-				    ctr_if->eqz_switch[DIRECT_CAPTURE][dai_idx],
-				    substream) < 0) {
+				 &adsp_card->record[dai_idx],
+				 ctr_if->eqz_switch[DIRECT_CAPTURE][dai_idx],
+				 substream) < 0) {
 				/* perform record de-initialization when the */
 				/* initialization fails */
 				snd_adsp_record_deinit(
@@ -1997,17 +1762,12 @@ static int snd_adsp_pcm_open(struct snd_pcm_substream *substream)
 		/* save the hardware parameters */
 		snd_soc_set_runtime_hwparams(substream, &snd_pcm_adsp_hw);
 
-		/* each period has a frame size */
-		snd_pcm_hw_constraint_single(substream->runtime,
-					     SNDRV_PCM_HW_PARAM_PERIOD_SIZE,
-					     FRAME_SIZE);
 	} else {
 		/* register data for TDM playback/record functions */
 		if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
 			/* perform TDM playback initialization */
-			if (snd_adsp_tdm_playback_init(
-						&adsp_card->tdm_playback,
-						substream) < 0) {
+			if (snd_adsp_tdm_playback_init(&adsp_card->tdm_playback,
+						       substream) < 0) {
 				/* perform TDM playback de-initialization */
 				/* when the initialization fails */
 				snd_adsp_tdm_playback_deinit(
@@ -2039,8 +1799,9 @@ static int snd_adsp_pcm_open(struct snd_pcm_substream *substream)
 					     TDM_FRAME_SIZE);
 	}
 
-	snd_pcm_hw_constraint_integer(substream->runtime,
-				      SNDRV_PCM_HW_PARAM_PERIODS);
+	/* period size must be power of two */
+	snd_pcm_hw_constraint_pow2(substream->runtime, 0,
+				   SNDRV_PCM_HW_PARAM_PERIODS);
 
 	return 0;
 }
@@ -2099,7 +1860,7 @@ static int snd_adsp_pcm_close(struct snd_pcm_substream *substream)
 }
 
 /** **************************************************************************
- *  \brief	Allocate ALSA buffer and calculate expire time of hr timer
+ *  \brief	Allocate ALSA buffer and shared memory
  *  \internal
  *  \covers: DD_DRV_ALSA_01_031
  *
@@ -2110,21 +1871,98 @@ static int snd_adsp_pcm_close(struct snd_pcm_substream *substream)
 static int snd_adsp_pcm_hw_params(struct snd_pcm_substream *substream,
 				  struct snd_pcm_hw_params *hw_params)
 {
-	struct snd_adsp_base_info *base;
+	struct snd_adsp_base_info *base = NULL;
+	struct xf_pool *pool = NULL;
+	int pool_size;
+	int buffer_bytes, period_size, period_cnt, channels, bit_width;
+	int dai_idx;
 	int err = 0;
 
+	dai_idx = snd_adsp_get_dai_id_from_substream(substream);
 	base = snd_adsp_get_base_from_substream(substream);
 
-	/* set expire time of hrtimer, this value should be time for */
-	/* transfer a frame */
-	base->ktime = ns_to_ktime((1000000000 / params_rate(hw_params)) *
-				  params_period_size(hw_params));
+	/* memory has been allocated, return here */
+	if (base->buf_pool)
+		return 0;
 
-	err = snd_pcm_lib_malloc_pages(substream,
-				       params_buffer_bytes(hw_params));
+	buffer_bytes = params_buffer_bytes(hw_params);
+	period_size = params_period_size(hw_params);
+	period_cnt = params_periods(hw_params);
+	channels = params_channels(hw_params);
 
-	/* reset DMA buffer area */
-	memset(substream->runtime->dma_area, 0, substream->runtime->dma_bytes);
+	/* check the valid of period_size, it much be power of two */
+	if ((period_size & (period_size - 1)) != 0)
+		return -EINVAL;
+
+	/* calculate bit width based on defined params */
+	bit_width = buffer_bytes / (period_size * period_cnt * channels);
+
+	/* calculate buf_bytes and period_bytes */
+	base->period_bytes = period_size * channels * bit_width;
+
+	/* data size of TDM in 24 bits is different between ALSA and ADSP sides
+	 * ALSA 24 bit: 0x00nnnnnn -> 4 bytes with padding zero in MSB
+	 * ADSP 24 bit: 0xnnnnnn   -> 3 bytes
+	 */
+	if (dai_idx != TDM_DAI_IDX) {
+		base->buf_bytes = base->period_bytes;
+	} else {
+		if (bit_width == BYTES_PER_SAMPLE(S24_LE))
+			base->buf_bytes = base->period_bytes *
+					    BYTES_PER_SAMPLE(S24_3LE) /
+					    BYTES_PER_SAMPLE(S24_LE);
+		else
+			base->buf_bytes = base->period_bytes;
+	}
+
+	base->buf_cnt = period_cnt;
+	base->buf_queue = base->buf_cnt;
+
+	/* In Renderer and Capture, shared memory can mapped directly to ALSA
+	 * buffer and user. So it should be set manually as below.
+	 *
+	 * In this case, the address has to be aligned with kernel page.
+	 * So there are a workaround for adjustment if the required size from
+	 * shared memory is not aligned yet.
+	 *
+	 * In TDM, the buffer in shared memory cannot be mapped. So the ALSA
+	 * pointer will be allocated by its standard function,
+	 * snd_pcm_lib_malloc_pages().
+	 */
+
+	pool_size = base->buf_bytes * base->buf_cnt;
+
+	/* Adjust pool size */
+	if (dai_idx != TDM_DAI_IDX)
+		pool_size = ((pool_size + PAGE_SIZE) - 1) & ~(PAGE_SIZE - 1);
+
+	/* allocate buffer pool to prepare the execution */
+	pool = xf_adsp_allocate_mem_pool(1, pool_size);
+
+	if (IS_ERR(pool))
+		return -EINVAL;
+
+	base->buf_pool = pool;
+	base->buffer = xf_adsp_get_data_from_pool(base->buf_pool, 0);
+
+	/* reset shared memory area */
+	memset(base->buffer, 0, pool_size);
+
+	if (dai_idx != TDM_DAI_IDX) {
+		substream->dma_buffer.area = base->buffer;
+		substream->dma_buffer.bytes = buffer_bytes;
+		substream->dma_buffer.dev.type = SNDRV_DMA_TYPE_CONTINUOUS;
+		substream->dma_buffer.addr = virt_to_phys(base->buffer);
+		substream->dma_buffer.private_data = NULL;
+
+		snd_pcm_set_runtime_buffer(substream, &substream->dma_buffer);
+	} else {
+		err = snd_pcm_lib_malloc_pages(substream, buffer_bytes);
+		/* reset DMA buffer area */
+		if (err >= 0)
+			memset(substream->runtime->dma_area, 0,
+			       substream->runtime->dma_bytes);
+	}
 
 	return err;
 }
@@ -2140,7 +1978,12 @@ static int snd_adsp_pcm_hw_params(struct snd_pcm_substream *substream,
  *****************************************************************************/
 static int snd_adsp_pcm_hw_free(struct snd_pcm_substream *substream)
 {
-	return snd_pcm_lib_free_pages(substream);
+	int dai_idx = snd_adsp_get_dai_id_from_substream(substream);
+
+	if (dai_idx != TDM_DAI_IDX)
+		return 0;
+	else
+		return snd_pcm_lib_free_pages(substream);
 }
 
 /** **************************************************************************
@@ -2197,45 +2040,61 @@ static int snd_adsp_pcm_prepare(struct snd_pcm_substream *substream)
  *****************************************************************************/
 static int snd_adsp_pcm_trigger(struct snd_pcm_substream *substream, int idx)
 {
-	struct snd_adsp_base_info *
-		base = snd_adsp_get_base_from_substream(substream);
+	struct snd_adsp_base_info *base;
+	unsigned char *dma_buf;
+	int buf_bytes, handle_id, i;
+
+	base = snd_adsp_get_base_from_substream(substream);
 
 	switch (idx) {
 	case SNDRV_PCM_TRIGGER_START:
 	case SNDRV_PCM_TRIGGER_RESUME:
-		/* start high-resolution timer */
-		hrtimer_start(&base->hrtimer, base->ktime, HRTIMER_MODE_REL);
+
+		/* reset HW index */
+		base->hw_idx = 0;
+		base->old_app_ptr = 0;
+
+		dma_buf = base->buffer;
+		buf_bytes = base->buf_bytes;
+		handle_id = base->handle_id;
 
 		if (substream->stream == SNDRV_PCM_STREAM_CAPTURE) {
-			int buf_queue = 0;
+			if (COMPONENT_IS_RUNNING(base->state) == FALSE) {
+				/* send zero length buffer to kick init */
+				xf_adsp_fill_this_buffer(handle_id, dma_buf, 0);
+			} else {
+				/* when XRUN happen, ALSA will resend the
+				 * trigger start. Because plugin no needs to
+				 * kick init again. There are only send the
+				 * buffers to get data
+				 */
+				for (i = 0; i < base->buf_cnt; i++) {
+					xf_adsp_fill_this_buffer(
+							handle_id,
+							dma_buf, buf_bytes);
 
-			/* get current available buffer */
-			spin_lock_irqsave(&base->lock, base->flag);
-			buf_queue = base->buf_queue;
-			spin_unlock_irqrestore(&base->lock, base->flag);
+					dma_buf += buf_bytes;
 
-			/* send all available buffer to plugin to */
-			/* get data */
-			for (; buf_queue > 0; buf_queue--) {
-				if (xf_adsp_fill_this_buffer(
-						base->handle_id,
-						base->buffer[base->buf_idx],
-						base->buf_bytes) != 0)
-					return -EINVAL;
-
-				spin_lock_irqsave(&base->lock, base->flag);
-				base->buf_queue--;
-				spin_unlock_irqrestore(&base->lock, base->flag);
-
-				base->buf_idx++;
-
-				if (base->buf_idx >= XF_BUF_POOL_SIZE)
-					base->buf_idx = 0;
+					spin_lock(&base->lock);
+					base->buf_queue--;
+					spin_unlock(&base->lock);
+				}
 			}
+		} else {
+			/* mark for running state */
+			base->state |= XF_HANDLE_RUNNING;
+			base->substream->ops->ack(base->substream);
 		}
+
 		break;
 	case SNDRV_PCM_TRIGGER_STOP:
 	case SNDRV_PCM_TRIGGER_SUSPEND:
+		/* only reset flag for playback because there are no need to
+		 * re-initialized Capture/TDM Capture plugins
+		 */
+		if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
+			base->state &= ~XF_HANDLE_RUNNING;
+
 		break;
 	default:
 		return -EINVAL;
@@ -2254,66 +2113,50 @@ static int snd_adsp_pcm_trigger(struct snd_pcm_substream *substream, int idx)
 static snd_pcm_uframes_t
 snd_adsp_pcm_pointer(struct snd_pcm_substream *substream)
 {
-	struct snd_adsp_base_info *
-		base = snd_adsp_get_base_from_substream(substream);
-	unsigned int hw_idx, hw_buffer_size;
-	snd_pcm_uframes_t pointer;
+	struct snd_adsp_base_info *base;
 
-	/* convert hw index to correct as submitted bytes */
-	spin_lock_irqsave(&base->lock, base->flag);
-	hw_idx = (base->hw_idx / base->buf_bytes) * base->period_bytes;
-	spin_unlock_irqrestore(&base->lock, base->flag);
+	base = snd_adsp_get_base_from_substream(substream);
 
-	hw_buffer_size = base->pcm_indirect.hw_buffer_size;
+	if (COMPONENT_IS_RUNNING(base->state) == FALSE)
+		return 0;
 
-	if (hw_idx >= hw_buffer_size) {
-		spin_lock_irqsave(&base->lock, base->flag);
-
-		base->hw_idx -= (hw_buffer_size / base->period_bytes) *
-							base->buf_bytes;
-
-		spin_unlock_irqrestore(&base->lock, base->flag);
+	spin_lock(&base->lock);
+	if (base->hw_idx >= base->buf_cnt) {
+		base->hw_idx -= base->buf_cnt;
+		spin_unlock(&base->lock);
+	} else {
+		spin_unlock(&base->lock);
 	}
 
-	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
-		pointer = snd_pcm_indirect_playback_pointer(substream,
-							    &base->pcm_indirect,
-							    hw_idx);
-	else
-		pointer = snd_pcm_indirect_capture_pointer(substream,
-							   &base->pcm_indirect,
-							   hw_idx);
-
-	return pointer;
+	return bytes_to_frames(substream->runtime,
+				base->hw_idx * base->period_bytes);
 }
 
 /** **************************************************************************
- *  \brief	  Call read/write process to transfer data
+ *  \brief	 Map ALSA memory to user side
  *  \internal
- *  \covers: DD_DRV_ALSA_01_035
+ *  \covers: DD_DRV_ALSA_01_009
  *
- *  \param[in]	substream		Pointer to substream object
- *  \retval	0			Success
- *  \retval	-EINVAL			Error
+ *  \param[in]	  substream		Pointer to substream object
+ *  \param[in]	  vma			Pointer to virtual memory object
+ *  \retval	  0			Success
+ *		  -EINVAL		Map fail
  *****************************************************************************/
-static int snd_adsp_pcm_ack(struct snd_pcm_substream *substream)
+static int snd_adsp_pcm_mmap(struct snd_pcm_substream *substream,
+			     struct vm_area_struct *vma)
 {
-	struct snd_adsp_base_info *
-		base = snd_adsp_get_base_from_substream(substream);
+	int dai_idx = snd_adsp_get_dai_id_from_substream(substream);
 
-	if (base->runtime_err)
-		return -EINVAL;
+	if (dai_idx != TDM_DAI_IDX) {
+		vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
 
-	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
-		snd_pcm_indirect_playback_transfer(substream,
-						   &base->pcm_indirect,
-						   snd_adsp_pcm_transfer);
-	else
-		snd_pcm_indirect_capture_transfer(substream,
-						  &base->pcm_indirect,
-						  snd_adsp_pcm_transfer);
-
-	return 0;
+		return remap_pfn_range(vma, vma->vm_start,
+			__phys_to_pfn(substream->runtime->dma_addr) +
+			    vma->vm_pgoff,
+			vma->vm_end - vma->vm_start, vma->vm_page_prot);
+	} else {
+		return snd_pcm_lib_default_mmap(substream, vma);
+	}
 }
 
 /** ***************************************************************************
@@ -2373,75 +2216,92 @@ snd_adsp_copy_data(void *dst, void *src, int dst_size, int src_size)
 }
 
 /** **************************************************************************
- *  \brief	  Transfer data process between ALSA buffer and ADSP buffer
+ *  \brief	  Call read/write process to transfer data
  *  \internal
- *  \covers: DD_DRV_ALSA_01_026
+ *  \covers: DD_DRV_ALSA_01_035
  *
- *  \param[in]	  substream		Pointer to substream object
- *  \param[in]	  rec			Pointer to indirect PCM data
- *  \param[in]	  bytes			Number of byte need to be transferred
- *  \retval	  None
+ *  \param[in]	substream		Pointer to substream object
+ *  \retval	0			Success
+ *  \retval	-EINVAL			Error
  *****************************************************************************/
-static void snd_adsp_pcm_transfer(struct snd_pcm_substream *substream,
-				  struct snd_pcm_indirect *rec,
-				  size_t bytes)
+static int snd_adsp_pcm_ack(struct snd_pcm_substream *substream)
 {
-	struct snd_adsp_base_info *
-		base = snd_adsp_get_base_from_substream(substream);
-	int direct = substream->stream;
-	int trans_bytes = bytes;
-	int buf_bytes, period_bytes;
-	void *dma_buf, *data_buff;
+	struct snd_adsp_base_info *base;
+	struct snd_pcm_runtime *runtime = substream->runtime;
+	unsigned char *dma_buf, *alsa_buf;
+	int app_ptr, buffer_bytes, trans_bytes, period_bytes, buf_bytes;
+	int dai_idx;
 
-	/* get the DMA buffer pointer */
-	dma_buf = (void *)(substream->runtime->dma_area + rec->sw_data);
-
-	/* get information from base */
-	buf_bytes = base->buf_bytes;
+	base = snd_adsp_get_base_from_substream(substream);
+	dai_idx = snd_adsp_get_dai_id_from_substream(substream);
 	period_bytes = base->period_bytes;
+	buf_bytes = base->buf_bytes;
 
-	/* make sure the available buffer and transfer size - TBD */
-	while (trans_bytes > 0) {
-		spin_lock_irqsave(&base->lock, base->flag);
-		if (base->buf_queue > 0 && trans_bytes >= period_bytes) {
-			base->buf_queue--;
-			spin_unlock_irqrestore(&base->lock, base->flag);
+	if (COMPONENT_IS_RUNNING(base->state) == FALSE)
+		return 0;
 
-			/* get the buffer pointer from stream */
-			data_buff = base->buffer[base->buf_idx];
+	if (base->runtime_err)
+		return -EINVAL;
 
-			if (direct == SNDRV_PCM_STREAM_PLAYBACK) {
-				/* copy data from user *//* PRQA S 3200 2 */
-				snd_adsp_copy_data(data_buff, dma_buf,
+	/* get application pointer index in the ring buffer, sample unit */
+	app_ptr = READ_ONCE(runtime->control->appl_ptr);
+	app_ptr = app_ptr % runtime->buffer_size;
+	if (app_ptr == 0)
+		app_ptr = runtime->buffer_size;
+
+	/* convert to byte unit */
+	app_ptr = frames_to_bytes(runtime, app_ptr);
+	buffer_bytes = frames_to_bytes(runtime, runtime->buffer_size);
+
+	trans_bytes = app_ptr - base->old_app_ptr;
+	if (trans_bytes < 0)
+		trans_bytes += buffer_bytes;
+
+	while (trans_bytes >= period_bytes && base->buf_queue > 0) {
+		/* In case of TDM, data will be transferred between ALSA
+		 * buffers and shared buffes before submitting to ADSP
+		 */
+		if (dai_idx == TDM_DAI_IDX) {
+			/* get ALSA buffer based on the current index */
+			alsa_buf = substream->runtime->dma_area +
+				    base->old_app_ptr;
+
+			/* get current buffer to submit */
+			dma_buf = base->buffer + (base->old_app_ptr *
+						    buf_bytes) / period_bytes;
+
+			/* copy data from/to ALSA buffer */
+			if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
+				snd_adsp_copy_data(dma_buf, alsa_buf,
 						   buf_bytes, period_bytes);
-
-				/* send buffer to plugin */
-				if (xf_adsp_empty_this_buffer(base->handle_id,
-							      data_buff,
-							      buf_bytes) < 0)
-					base->runtime_err = TRUE;
-			} else {
-				/* copy data to user *//* PRQA S 3200 2 */
-				snd_adsp_copy_data(dma_buf, data_buff,
+			else
+				snd_adsp_copy_data(alsa_buf, dma_buf,
 						   period_bytes, buf_bytes);
-
-				/* send buffer to plugin */
-				if (xf_adsp_fill_this_buffer(base->handle_id,
-							     data_buff,
-							     buf_bytes) < 0)
-					base->runtime_err = TRUE;
-			}
-
-			base->buf_idx++;
-			if (base->buf_idx >= XF_BUF_POOL_SIZE)
-				base->buf_idx = 0;
 		} else {
-			spin_unlock_irqrestore(&base->lock, base->flag);
-			break;
+			/* get current buffer to submit */
+			dma_buf = base->buffer + base->old_app_ptr;
 		}
 
+		/* send data back to ADSP */
+		if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK)
+			xf_adsp_empty_this_buffer(base->handle_id,
+						  dma_buf, buf_bytes);
+		else
+			xf_adsp_fill_this_buffer(base->handle_id,
+						 dma_buf, buf_bytes);
+
+		spin_lock(&base->lock);
+		base->buf_queue--;
+		spin_unlock(&base->lock);
+
 		trans_bytes -= period_bytes;
+
+		base->old_app_ptr += period_bytes;
+		if (base->old_app_ptr >= buffer_bytes)
+			base->old_app_ptr -= buffer_bytes;
 	}
+
+	return 0;
 }
 
 /** **************************************************************************
@@ -3705,6 +3565,7 @@ static struct snd_pcm_ops snd_adsp_pcm_ops = {
 	.prepare = &snd_adsp_pcm_prepare,
 	.trigger = &snd_adsp_pcm_trigger,
 	.pointer = &snd_adsp_pcm_pointer,
+	.mmap = &snd_adsp_pcm_mmap,
 	.ack = &snd_adsp_pcm_ack
 };
 
@@ -3783,7 +3644,6 @@ static int snd_adsp_pcm_new(struct snd_soc_pcm_runtime *runtime)
 	int id;
 	struct snd_card *card;
 	struct snd_adsp_card *adsp_card;
-	int alsa_buf_sz = 0;
 
 	/* get sound card data */
 	card = runtime->card->snd_card;
@@ -3799,7 +3659,7 @@ static int snd_adsp_pcm_new(struct snd_soc_pcm_runtime *runtime)
 	    id == RDR_DAI_IDX2 || id == RDR_DAI_IDX3) {
 		struct snd_kcontrol *kctl[RDR_CONTROL_NUM];
 		void *rdr_ctr[RDR_CONTROL_NUM] = {
-			&snd_adsp_playback_volume_control[id], /* PRQA S 1031 */
+			&snd_adsp_playback_volume_control[id],
 			&snd_adsp_capture_volume_control[id],
 			&snd_adsp_playback_sample_rate_out_control[id],
 			&snd_adsp_capture_sample_rate_in_control[id],
@@ -3817,16 +3677,6 @@ static int snd_adsp_pcm_new(struct snd_soc_pcm_runtime *runtime)
 			if (err < 0)
 				return -EINVAL;
 		}
-
-		/* assign ALSA buffer size */
-		alsa_buf_sz = MAX_BUFFER_BYTES;
-
-		/* enable MIX feature from the 2nd playback/record stream */
-		if (adsp_card->ctr_if.mix_usage == MIX_UNUSED)
-			adsp_card->ctr_if.mix_usage = FIRST_RUN;
-		else if (adsp_card->ctr_if.mix_usage == FIRST_RUN)
-			adsp_card->ctr_if.mix_usage = SECOND_RUN;
-
 	} else {
 		struct snd_kcontrol *kctl[TDM_CONTROL_NUM];
 		void *tdm_ctr[TDM_CONTROL_NUM] = {
@@ -3844,14 +3694,13 @@ static int snd_adsp_pcm_new(struct snd_soc_pcm_runtime *runtime)
 				return -EINVAL;
 		}
 
-		/* assign ALSA buffer size */
-		alsa_buf_sz = TDM_MAX_BUFFER_BYTES;
+		return snd_pcm_lib_preallocate_pages_for_all(runtime->pcm,
+				SNDRV_DMA_TYPE_CONTINUOUS,
+				snd_dma_continuous_data(GFP_KERNEL),
+				TDM_MAX_BUFFER_BYTES, TDM_MAX_BUFFER_BYTES);
 	}
 
-	return snd_pcm_lib_preallocate_pages_for_all(runtime->pcm,
-			SNDRV_DMA_TYPE_CONTINUOUS,
-			snd_dma_continuous_data(GFP_KERNEL),
-			alsa_buf_sz, alsa_buf_sz);
+	return 0;
 }
 
 /* ****************************************************************************
@@ -3860,19 +3709,18 @@ static int snd_adsp_pcm_new(struct snd_soc_pcm_runtime *runtime)
 
 /** callback function of platform driver */
 static struct snd_soc_platform_driver snd_adsp_platform = {
-	.pcm_new	= &snd_adsp_pcm_new, /* PRQA S 1053 *//* PRQA S 0674 */
+	.pcm_new	= &snd_adsp_pcm_new,
 	.ops		= &snd_adsp_pcm_ops,
 };
 
 /** component information of driver */
 static const struct snd_soc_component_driver snd_adsp_component = {
-	.name		= "snd_adsp",		   /* PRQA S 1053 */
+	.name		= "snd_adsp",
 };
 
 /** DAI information of ADSP ALSA driver */
 static struct snd_soc_dai_driver snd_adsp_dai[MAX_DAI_IDX] = {
 	{
-		/* PRQA S 1053 */
 		.id			= RDR_DAI_IDX0,
 		.name			= "adsp-dai.0",
 		.playback.stream_name   = "Playback0",
@@ -3903,6 +3751,235 @@ static struct snd_soc_dai_driver snd_adsp_dai[MAX_DAI_IDX] = {
 		.capture.stream_name	= "TDM Capture",
 	}
 };
+
+/** ****************************************************************************
+ *  \brief	 Convert device string to device index
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_026
+ *
+ *  \param[in]	  dev_info	device string
+ *  \retval	  number	device index
+ *  \retval	  -1		invalid device string
+ ******************************************************************************/
+static int snd_adsp_convert_dev_to_num(const char *dev_info)
+{
+	int num = -1;
+
+	if (strstr(dev_info, "src")) {
+		if (sscanf(dev_info, "src-%d", &num) != 1)
+			return -1;
+
+		if (num < 0)
+			return -1;
+
+		num = SRC0 + num;
+
+	} else if (strstr(dev_info, "ssi")) {
+		if (sscanf(dev_info, "ssi-%d", &num) != 1)
+			return -1;
+
+		if (num < 0)
+			return -1;
+
+		num = SSI00 + num * 10;
+
+	} else {
+		return -1;
+	}
+
+	return num;
+}
+
+/** ****************************************************************************
+ *  \brief	 Convert dma string to dma index
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_052
+ *
+ *  \param[in]	  dev_info	dma string
+ *  \retval	  number	dma index
+ *  \retval	  -1		invalid dma string
+ ******************************************************************************/
+static int snd_adsp_convert_dma_to_num(const char *dev_info)
+{
+	int num = -1;
+
+	if (strstr(dev_info, "pdma")) {
+		if (sscanf(dev_info, "pdma-%d", &num) != 1)
+			return -1;
+
+		if (num < 0)
+			return -1;
+
+		num = PDMA_CH00 + num;
+
+	} else if (strstr(dev_info, "dmac")) {
+		if (sscanf(dev_info, "dmac-%d", &num) != 1)
+			return -1;
+
+		if (num < 0)
+			return -1;
+
+		num = ADMAC_CH00 + num;
+
+	} else {
+		return -1;
+	}
+
+	return num;
+}
+
+/** ****************************************************************************
+ *  \brief	 Get dai index from sub node dai-n
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_012
+ *
+ *  \param[in]	  name		dai string
+ *  \retval	  number	dai index
+ *  \retval	  -1		invalid dai index
+ ******************************************************************************/
+static int snd_adsp_get_dai_id_by_node_name(const char *name)
+{
+	int id = -1;
+
+	if (sscanf(name, "dai-%d", &id) != 1)
+		return -1;
+
+	if (id < 0 || id >= MAX_DAI_IDX)
+		return -1;
+
+	return id;
+}
+
+/** ****************************************************************************
+ *  \brief	 Convert Audio HW information in each playback/record
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_054
+ *
+ *  \param[in]	  dev_node	device node object
+ *  \param[in]	  dev_params	store device information
+ *  \retval	  0		success
+ *  \retval	  -1		invalid HW information
+ ******************************************************************************/
+static int __snd_adsp_device_params_parse(
+		struct device_node *dev_node,
+		struct snd_adsp_device_params *dev_params)
+{
+	struct property *pp = NULL;
+	const char *dev_info = NULL;
+	int i = 0;
+
+	pp = of_find_property(dev_node, "dev", NULL);
+	if (pp) {
+		for (dev_info = of_prop_next_string(pp, NULL), i = 0; dev_info;
+			dev_info = of_prop_next_string(pp, dev_info), i++) {
+			if (i >= MAX_DEV_NUM)
+				return -1;
+
+			dev_params->dev[i] =
+				snd_adsp_convert_dev_to_num(dev_info);
+
+			if (dev_params->dev[i] < 0)
+				return -1;
+
+			pr_info("dev%d = %s = %d\n",
+				i, dev_info, dev_params->dev[i]);
+		}
+	}
+
+	pp = of_find_property(dev_node, "dma", NULL);
+	if (pp) {
+		for (dev_info = of_prop_next_string(pp, NULL), i = 0; dev_info;
+			dev_info = of_prop_next_string(pp, dev_info), i++) {
+			if (i >= MAX_DEV_NUM)
+				return -1;
+
+			dev_params->dma[i] =
+				snd_adsp_convert_dma_to_num(dev_info);
+
+			if (dev_params->dma[i] < 0)
+				return -1;
+
+			pr_info("dma%d = %s = %d\n",
+				i, dev_info, dev_params->dma[i]);
+		}
+	}
+
+	if (of_find_property(dev_node, "mix_usage", NULL)) {
+		pr_info("mix is used\n");
+		dev_params->mix_usage = 1;
+	}
+
+	return 0;
+}
+
+/** ****************************************************************************
+ *  \brief	 Get Audio HW information from each dai
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_053
+ *
+ *  \param[in]	  adsp_card	ADSP ALSA driver data
+ *  \param[in]	  dev_node	device node object
+ *  \retval	  0		success
+ *  \retval	  -1		invalid HW information
+ ******************************************************************************/
+static int _snd_adsp_device_params_parse(struct snd_adsp_card *adsp_card,
+					 struct device_node *dev_node)
+{
+	struct device_node *ch_node = NULL;
+	struct snd_adsp_device_params *dev_params = NULL;
+	int dai_idx = snd_adsp_get_dai_id_by_node_name(dev_node->name);
+
+	if (dai_idx < 0)
+		return -1;
+
+	/* get playback parameters */
+	dev_params = &adsp_card->dev_params[dai_idx][DIRECT_PLAYBACK];
+
+	ch_node = of_get_child_by_name(dev_node, "playback");
+	if (ch_node) {
+		pr_info("Playback[%d]: %s\n", dai_idx, dev_node->name);
+		if (__snd_adsp_device_params_parse(ch_node, dev_params) < 0)
+			return -1;
+	}
+
+	/* get capture parameters */
+	dev_params = &adsp_card->dev_params[dai_idx][DIRECT_CAPTURE];
+
+	ch_node = of_get_child_by_name(dev_node, "capture");
+	if (ch_node) {
+		pr_info("Capture[%d]: %s\n", dai_idx, dev_node->name);
+		if (__snd_adsp_device_params_parse(ch_node, dev_params) < 0)
+			return -1;
+	}
+
+	return 0;
+}
+
+/** ****************************************************************************
+ *  \brief	 Get Audio HW information from device tree
+ *  \internal
+ *  \covers: DD_DRV_ALSA_01_055
+ *
+ *  \param[in]	  dev		ADSP ALSA device information
+ *  \retval	  0		success
+ *  \retval	  -1		invalid HW information
+ ******************************************************************************/
+static int snd_adsp_device_params_parse(struct device *dev)
+{
+	struct snd_adsp_card *adsp_card = dev_get_drvdata(dev);
+	struct device_node *dev_node = NULL;
+	struct device_node *ch_node = NULL;
+
+	dev_node = of_get_child_by_name(dev->of_node, "device_params");
+	if (!dev_node)
+		return 0;
+
+	for_each_child_of_node(dev_node, ch_node)
+		if (_snd_adsp_device_params_parse(adsp_card, ch_node) < 0)
+			return -1;
+
+	return 0;
+}
 
 /** ***************************************************************************
  *  \brief	 Register platform driver and ADSP ALSA sound card
@@ -3936,11 +4013,39 @@ static int snd_adsp_probe(struct platform_device *pdev)
 		adsp_card->ctr_if.eqz_switch[DIRECT_PLAYBACK][i] = 0;
 	}
 
-	/* disable MIX function for all */
-	adsp_card->ctr_if.mix_usage = MIX_UNUSED;
+	for (i = 0; i < (MAX_DAI_IDX - 1); i++) {
+		/* Renderer HW information */
+		adsp_card->dev_params[i][DIRECT_PLAYBACK].dma[0] = ADMAC_CH00;
+		adsp_card->dev_params[i][DIRECT_PLAYBACK].dma[1] = PDMA_CH00;
+		adsp_card->dev_params[i][DIRECT_PLAYBACK].dev[0] = SRC0;
+		adsp_card->dev_params[i][DIRECT_PLAYBACK].dev[1] = SSI00;
+		adsp_card->dev_params[i][DIRECT_PLAYBACK].mix_usage = 0;
+
+		/* Capture HW information */
+		adsp_card->dev_params[i][DIRECT_CAPTURE].dma[0] = ADMAC_CH00;
+		adsp_card->dev_params[i][DIRECT_CAPTURE].dma[1] = PDMA_CH00;
+		adsp_card->dev_params[i][DIRECT_CAPTURE].dev[0] = SRC1;
+		adsp_card->dev_params[i][DIRECT_CAPTURE].dev[1] = SSI10;
+	}
+
+	/* TDM Renderer HW information */
+	adsp_card->dev_params[i][DIRECT_PLAYBACK].dma[0] = ADMAC_CH00;
+	adsp_card->dev_params[i][DIRECT_PLAYBACK].dma[1] = PDMA_CH00;
+	adsp_card->dev_params[i][DIRECT_PLAYBACK].dev[0] = SRC0;
+	adsp_card->dev_params[i][DIRECT_PLAYBACK].dev[1] = SSI30;
+
+	/* TDM Capture HW information */
+	adsp_card->dev_params[i][DIRECT_CAPTURE].dma[0] = ADMAC_CH00;
+	adsp_card->dev_params[i][DIRECT_CAPTURE].dma[1] = PDMA_CH00;
+	adsp_card->dev_params[i][DIRECT_CAPTURE].dev[0] = SRC1;
+	adsp_card->dev_params[i][DIRECT_CAPTURE].dev[1] = SSI40;
 
 	/* save driver data */
 	dev_set_drvdata(&pdev->dev, adsp_card);
+
+	/* parse device information for each DAI */
+	if (snd_adsp_device_params_parse(&pdev->dev) < 0)
+		return -EINVAL;
 
 	/* register platform device */
 	if (snd_soc_register_platform(&pdev->dev, &snd_adsp_platform) < 0) {
