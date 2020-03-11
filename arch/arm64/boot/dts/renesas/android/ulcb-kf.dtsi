@@ -419,13 +419,6 @@
 &gpio_exp_75 {
 	#interrupt-cells = <2>;
 
-	gps_rst {
-		gpio-hog;
-		gpios = <6 GPIO_ACTIVE_HIGH>;
-		output-high;
-		line-name = "GPS rst";
-	};
-
 	fpdl_shdn {
 		gpio-hog;
 		gpios = <9 GPIO_ACTIVE_HIGH>;
