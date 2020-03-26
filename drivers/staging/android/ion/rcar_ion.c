@@ -25,18 +25,27 @@
 
 #include "ion.h"
 #include "ion_of.h"
-#include "../uapi/rcar_ion.h"
+#include "rcar_ion.h"
+#include "rcar_ion_oom.h"
 
 static struct ion_of_heap rcar_ion_heaps[] = {
 	PLATFORM_HEAP("renesas,ion-rcar-heap", ION_HEAP_TYPE_DMA,
 		ION_HEAP_TYPE_CARVEOUT, "ion_heap"),
 };
 
-struct ion_rcar_heap {
-	struct ion_heap heap;
-	struct gen_pool *pool;
-	phys_addr_t base;
-};
+static struct ion_rcar_heap *prheap;
+
+void rcar_ion_set_heap(struct ion_rcar_heap *heap)
+{
+	prheap = heap;
+}
+
+
+struct ion_rcar_heap *rcar_ion_get_heap(void)
+{
+	return prheap;
+}
+
 
 long rcar_ion_get_phys_addr(unsigned long arg)
 {
@@ -86,6 +95,9 @@ long rcar_ion_custom_ioctl(unsigned long arg)
 	case RCAR_GET_PHYS_ADDR:
 		ret = rcar_ion_get_phys_addr(data.arg);
 		break;
+	case RCAR_GET_OOM_EVENT:
+		ret = rcar_ion_get_oom_event(data.arg);
+		break;
 	default:
 		return -ENOTTY;
 	}
@@ -112,6 +124,10 @@ static int rcar_ion_heap_allocate(struct ion_heap *heap,
 
 	if (!paddr) {
 		ret = -ENOMEM;
+		pr_err("%s: Error: Not enough memory(Available = %ld, size = %ld)\n",
+			__func__, gen_pool_avail(rheap->pool), size);
+		rcar_ion_set_oom(rheap, OOM_ERROR);
+		wake_up_interruptible(&rheap->wq_oom);
 		goto err_free_table;
 	}
 
@@ -122,6 +138,10 @@ static int rcar_ion_heap_allocate(struct ion_heap *heap,
 	if (page) {
 		mod_node_page_state(page_pgdat(page), NR_ION_HEAP, (size/PAGE_SIZE));
 		mod_node_page_state(page_pgdat(page), NR_ION_HEAP_POOL, -(size/PAGE_SIZE));
+		if (rcar_ion_decrease_available(rheap, size)) {
+			/*We've reached defined threshold*/
+			wake_up_interruptible(&rheap->wq_oom);
+		}
 	}
 
 	return 0;
@@ -151,6 +171,10 @@ static void rcar_ion_heap_free(struct ion_buffer *buffer)
 	kfree(table);
 	mod_node_page_state(page_pgdat(page), NR_ION_HEAP, -(buffer->size/PAGE_SIZE));
 	mod_node_page_state(page_pgdat(page), NR_ION_HEAP_POOL, buffer->size/PAGE_SIZE);
+	rcar_ion_increase_available(rheap, buffer->size);
+	if (OOM_ERROR & rcar_ion_check_oom_event(rheap)) {
+		rcar_ion_clear_oom(rheap, OOM_ERROR);
+	}
 }
 
 static struct ion_heap_ops rcar_ion_heap_ops = {
@@ -215,6 +239,12 @@ int rcar_ion_probe(struct platform_device *pdev)
 	rheap->heap.type = ION_HEAP_TYPE_DMA;
 	rheap->heap.flags = ION_HEAP_FLAG_DEFER_FREE;
 	rheap->heap.name = "rcar-ion";
+	rheap->oom.memory_available = pheap->size;
+	rheap->oom.state = OOM_RELEASED;
+
+	init_waitqueue_head(&rheap->wq_oom);
+	spin_lock_init(&rheap->rheap_lock);
+	rcar_ion_set_heap(rheap);
 
 	ion_device_add_heap(&rheap->heap);
 
