@@ -25,6 +25,7 @@
 
 #include "ion.h"
 #include "ion_of.h"
+#include "../uapi/rcar_ion.h"
 
 static struct ion_of_heap rcar_ion_heaps[] = {
 	PLATFORM_HEAP("renesas,ion-rcar-heap", ION_HEAP_TYPE_DMA,
@@ -41,7 +42,7 @@ long rcar_ion_get_phys_addr(unsigned long arg)
 {
 	struct dma_buf *dmabuf;
 	struct ion_buffer *buffer = NULL;
-	struct ion_custom_data data;
+	struct ion_phys_addr data;
 	struct page *page;
 	phys_addr_t paddr;
 
@@ -49,7 +50,7 @@ long rcar_ion_get_phys_addr(unsigned long arg)
 			sizeof(struct ion_custom_data)))
 		return -EFAULT;
 
-	dmabuf = dma_buf_get(data.cmd);
+	dmabuf = dma_buf_get(data.dma_fd);
 	if (IS_ERR(dmabuf))
 		return PTR_ERR(dmabuf);
 
@@ -64,12 +65,31 @@ long rcar_ion_get_phys_addr(unsigned long arg)
 
 	dma_buf_put(dmabuf);
 
-	data.arg = (unsigned long)paddr;
+	data.phys_addr = (unsigned long)paddr;
 	if (copy_to_user((void __user *)arg, &data,
 				sizeof(struct ion_custom_data)))
 		return -EFAULT;
 
 	return 0;
+}
+
+long rcar_ion_custom_ioctl(unsigned long arg)
+{
+	struct ion_custom_data data;
+	int ret = -1;
+
+	if (copy_from_user(&data, (void __user *)arg,
+			sizeof(struct ion_custom_data)))
+		return -EFAULT;
+
+	switch (data.cmd) {
+	case RCAR_GET_PHYS_ADDR:
+		ret = rcar_ion_get_phys_addr(data.arg);
+		break;
+	default:
+		return -ENOTTY;
+	}
+	return ret;
 }
 
 static int rcar_ion_heap_allocate(struct ion_heap *heap,

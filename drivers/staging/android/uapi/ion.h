@@ -113,13 +113,6 @@ struct ion_heap_query {
 	__u32 reserved2;
 };
 
-#if defined(CONFIG_ION_RCAR)
-struct ion_custom_data {
-	unsigned int cmd;
-	unsigned long arg;
-};
-#endif // CONFIG_ION_RCAR
-
 #define ION_IOC_MAGIC		'I'
 
 /**
@@ -141,7 +134,7 @@ struct ion_custom_data {
 					struct ion_heap_query)
 
 #if defined(CONFIG_ION_RCAR)
-#define ION_IOC_CUSTOM          _IOWR(ION_IOC_MAGIC, 6, struct ion_custom_data)
+#include "rcar_ion.h"
 #endif // CONFIG_ION_RCAR
 
 #endif /* _UAPI_LINUX_ION_H */

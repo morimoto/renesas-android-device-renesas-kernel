@@ -21,7 +21,7 @@
 #include "ion.h"
 
 #if defined(CONFIG_ION_RCAR)
-long rcar_ion_get_phys_addr(unsigned long);
+long rcar_ion_custom_ioctl(unsigned long arg);
 #endif // CONFIG_ION_RCAR
 
 union ion_ioctl_arg {
@@ -62,8 +62,8 @@ long ion_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 	union ion_ioctl_arg data;
 
 #if defined(CONFIG_ION_RCAR)
-	if (cmd == ION_IOC_CUSTOM) {
-		return rcar_ion_get_phys_addr(arg);
+	if (cmd == RCAR_ION_CUSTOM) {
+		return rcar_ion_custom_ioctl(arg);
 	}
 #endif
 
