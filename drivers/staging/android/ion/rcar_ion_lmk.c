@@ -28,6 +28,7 @@
 #include <linux/dma-buf.h>
 #include <linux/uaccess.h>
 #include <linux/list.h>
+#include <linux/cgroup.h>
 
 #include "ion.h"
 #include "../uapi/rcar_ion_lmk.h"
@@ -62,6 +63,8 @@ static size_t update_consumers_info(void)
 	size_t max_fds;
 	size_t ion_mem_consumed;
 	int fd;
+	char *buf;
+	struct cgroup_subsys_state *css;
 
 	free_consumers_info();
 
@@ -114,6 +117,13 @@ static size_t update_consumers_info(void)
 			       TASK_COMM_LEN);
 			list_add_tail(&new_elem->node, &consumers_list);
 			consumers_num++;
+
+			/* css can't be NULL, so don't need to check the pointer */
+			css = task_get_css(task, cpuset_cgrp_id);
+			cgroup_path_ns(css->cgroup, new_elem->info.state,
+			               sizeof(new_elem->info.state),
+			               current->nsproxy->cgroup_ns);
+			css_put(css);
 		}
 		spin_unlock(&files->file_lock);
 		put_files_struct(files);
