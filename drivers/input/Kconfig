@@ -185,6 +185,13 @@ config INPUT_APMPOWER
 	  To compile this driver as a module, choose M here: the
 	  module will be called apm-power.
 
+config INPUT_KEYLONGPRESS
+	bool "Long press key"
+	depends on INPUT
+	select INPUT_KEYRESET
+	---help---
+	  Say Y here if you want to poweroff when some keys are long pressed;
+
 comment "Input Device Drivers"
 
 source "drivers/input/keyboard/Kconfig"
