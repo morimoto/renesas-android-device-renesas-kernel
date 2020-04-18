@@ -291,11 +291,11 @@ static int pcm3168a_digital_mute(struct snd_soc_dai *dai, int mute)
 {
 	struct snd_soc_component *component = dai->component;
 	struct pcm3168a_priv *pcm3168a = snd_soc_component_get_drvdata(component);
-	int ret;
+	int ret = 0;
 
-	if (mute)
+	if (mute && regulator_is_enabled(pcm3168a->amp_mute.consumer))
 		ret = regulator_bulk_disable(1, &pcm3168a->amp_mute);
-	else
+	else if (!mute && !regulator_is_enabled(pcm3168a->amp_mute.consumer))
 		ret = regulator_bulk_enable(1, &pcm3168a->amp_mute);
 
 	if (ret)
