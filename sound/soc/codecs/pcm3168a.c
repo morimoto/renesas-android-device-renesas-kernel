@@ -57,6 +57,7 @@ struct pcm3168a_io_params {
 
 struct pcm3168a_priv {
 	struct regulator_bulk_data supplies[PCM3168A_NUM_SUPPLIES];
+	struct regulator_bulk_data amp_mute;
 	struct regmap *regmap;
 	struct clk *scki;
 	unsigned long sysclk;
@@ -290,6 +291,15 @@ static int pcm3168a_digital_mute(struct snd_soc_dai *dai, int mute)
 {
 	struct snd_soc_component *component = dai->component;
 	struct pcm3168a_priv *pcm3168a = snd_soc_component_get_drvdata(component);
+	int ret;
+
+	if (mute)
+		ret = regulator_bulk_disable(1, &pcm3168a->amp_mute);
+	else
+		ret = regulator_bulk_enable(1, &pcm3168a->amp_mute);
+
+	if (ret)
+		pr_warn("%s: failed to control supply: %d\n", __func__, ret);
 
 	regmap_write(pcm3168a->regmap, PCM3168A_DAC_MUTE, mute ? 0xff : 0);
 
@@ -757,6 +767,14 @@ int pcm3168a_probe(struct device *dev, struct regmap *regmap)
 	if (ret) {
 		dev_err(dev, "failed to enable supplies: %d\n", ret);
 		goto err_clk;
+	}
+
+	pcm3168a->amp_mute.supply = "AMP";
+	ret = devm_regulator_bulk_get(dev, 1, &pcm3168a->amp_mute);
+	if (ret) {
+		if (ret != -EPROBE_DEFER)
+			dev_err(dev, "failed to request amplifier mute control: %d\n", ret);
+		goto err_regulator;
 	}
 
 	pcm3168a->regmap = regmap;
