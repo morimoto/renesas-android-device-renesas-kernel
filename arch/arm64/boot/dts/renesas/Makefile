@@ -24,3 +24,5 @@ dtb-$(CONFIG_ARCH_R8A77990) += r8a77990-ebisu.dtb
 dtb-$(CONFIG_ARCH_R8A77990) += r8a77990-ebisu-4d.dtb
 dtb-$(CONFIG_ARCH_R8A77990) += r8a77990-es10-ebisu.dtb r8a77990-es10-ebisu-4d.dtb
 dtb-$(CONFIG_ARCH_R8A77995) += r8a77995-draak.dtb
+
+DTC_FLAGS += -@ -p 1024
