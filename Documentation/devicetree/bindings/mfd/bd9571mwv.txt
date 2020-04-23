@@ -25,6 +25,12 @@ Required properties:
 			    Each child node is defined using the standard
 			    binding for regulators.
 
+Optional properties:
+  - rohm,ddr-backup-power : Value to use for DDR-Backup Power.  This controls
+			    which DDR rails need to be kept powered when backup
+			    mode is enabled, cfr. the KEEPON_DDR* bits in the
+			    documentation for the "BKUP Mode Cnt" register.
+
 Example:
 
 	pmic: pmic@30 {
@@ -36,6 +42,7 @@ Example:
 		#interrupt-cells = <2>;
 		gpio-controller;
 		#gpio-cells = <2>;
+		rohm,ddr-backup-power = <15>;
 
 		regulators {
 			dvfs: dvfs {
