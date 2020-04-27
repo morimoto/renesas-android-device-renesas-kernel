@@ -14,14 +14,11 @@ static time64_t                     rtc_time_sec = 1474903385;
 static unsigned long                init_time;
 static struct rtc_wkalrm            rtc_alarm;
 static struct platform_device *     rtc_fake_dev = NULL;
-static struct timer_list            rtc_timer;
 
-
-static int rtc_fake_set_mmss(struct device *dev, unsigned long secs)
-{
-    dev_info(dev, "%s, secs = %lu\n", __func__, secs);
-    return 0;
-}
+struct rtc_fake_data {
+	struct timer_list rtc_timer;
+	struct rtc_device *rtc;
+};
 
 static int rtc_fake_alarm_irq_enable(struct device *dev, unsigned int enable)
 {
@@ -49,6 +46,7 @@ static int rtc_fake_read_alarm(struct device *dev, struct rtc_wkalrm *alrm)
 
 static int rtc_fake_set_alarm(struct device *dev, struct rtc_wkalrm *alrm)
 {
+    struct rtc_fake_data *rtd = dev_get_drvdata(dev);
     time64_t curr_seconds_time = ktime_get_real_seconds();
     time64_t alarm_seconds_time = rtc_tm_to_time64(&alrm->time);
     uint64_t diff = 0;
@@ -61,7 +59,7 @@ static int rtc_fake_set_alarm(struct device *dev, struct rtc_wkalrm *alrm)
     diff = (uint64_t)(rtc_tm_to_time64(&alrm->time) - curr_seconds_time);
     diff *= 1000;
 
-    mod_timer(&rtc_timer, jiffies + msecs_to_jiffies(diff));
+    mod_timer(&rtd->rtc_timer, jiffies + msecs_to_jiffies(diff));
 
     return 0;
 }
@@ -71,7 +69,6 @@ static struct rtc_class_ops rtc_fake_ops = {
     .read_time          = rtc_fake_read_time,
     .read_alarm         = rtc_fake_read_alarm,
     .set_alarm          = rtc_fake_set_alarm,
-    .set_mmss           = rtc_fake_set_mmss,
     .alarm_irq_enable   = rtc_fake_alarm_irq_enable,
 };
 
@@ -87,7 +84,8 @@ static ssize_t rtc_fake_irq_store(struct device *dev,
 {
     int retval;
     struct platform_device *pdev = to_platform_device(dev);
-    struct rtc_device *rtc = platform_get_drvdata(pdev);
+    struct rtc_fake_data *rfd = platform_get_drvdata(pdev);
+    struct rtc_device *rtc = rfd->rtc;
 
     retval = count;
     if (strncmp(buf, "tick", 4) == 0 && rtc->pie_enabled)
@@ -109,20 +107,24 @@ static ssize_t rtc_fake_irq_store(struct device *dev,
 
 static DEVICE_ATTR(irq, S_IRUGO | S_IWUSR, rtc_fake_irq_show, rtc_fake_irq_store);
 
-static void rtc_timer_callback(unsigned long data)
+static void rtc_timer_callback(struct timer_list *t)
 {
-    struct rtc_device *rtc = (struct rtc_device *)data;
+    struct rtc_fake_data *rfd = from_timer(rfd, t, rtc_timer);
 
     if (rtc_alarm.enabled)
-        rtc_update_irq(rtc, 1, RTC_AF | RTC_IRQF);
+        rtc_update_irq(rfd->rtc, 1, RTC_AF | RTC_IRQF);
 }
 
 static int rtc_fake_probe(struct platform_device *pdev)
 {
     int err;
-    struct rtc_device *rtc;
+    struct rtc_fake_data *rfd;
 
+    rfd = devm_kzalloc(&pdev->dev, sizeof(rfd), GFP_KERNEL);
+    if (rfd)
+	    return -ENOMEM;
     /* Initially alarm is disabled. */
+
     rtc_alarm.enabled = 0;
     rtc_alarm.pending = 0;
     rtc_alarm.time.tm_mon = -1;
@@ -137,11 +139,11 @@ static int rtc_fake_probe(struct platform_device *pdev)
     /* */
     device_init_wakeup(&pdev->dev, 1);
 
-    rtc = devm_rtc_device_register(&pdev->dev,
+    rfd->rtc = devm_rtc_device_register(&pdev->dev,
             dev_name(&pdev->dev), &rtc_fake_ops, THIS_MODULE);
 
-    if (IS_ERR(rtc)) {
-        return PTR_ERR(rtc);
+    if (IS_ERR(rfd->rtc)) {
+        return PTR_ERR(rfd->rtc);
     }
 
     err = device_create_file(&pdev->dev, &dev_attr_irq);
@@ -149,17 +151,18 @@ static int rtc_fake_probe(struct platform_device *pdev)
         dev_err(&pdev->dev, "Unable to create sysfs entry: %s\n",
             dev_attr_irq.attr.name);
 
-    platform_set_drvdata(pdev, rtc);
+    platform_set_drvdata(pdev, rfd);
 
-    setup_timer(&rtc_timer, rtc_timer_callback, (unsigned long)rtc);
+    timer_setup(&rfd->rtc_timer, rtc_timer_callback, 0);
 
     return 0;
 }
 
 static int rtc_fake_remove(struct platform_device *pdev)
 {
+    struct rtc_fake_data *rfd = platform_get_drvdata(pdev);
     device_remove_file(&pdev->dev, &dev_attr_irq);
-    del_timer(&rtc_timer);
+    del_timer(&rfd->rtc_timer);
     return 0;
 }
 
