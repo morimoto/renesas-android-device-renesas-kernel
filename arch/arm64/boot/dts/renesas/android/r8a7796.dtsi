@@ -1,0 +1,174 @@
+/*
+ * Device Tree Source for the Android
+ *
+ * Copyright (C) 2018 GlobalLogic
+ *
+ * This file is licensed under the terms of the GNU General Public License
+ * version 2.  This program is licensed "as is" without any warranty of any
+ * kind, whether express or implied.
+ */
+
+#include "fstab.dtsi"
+#include "common.dtsi"
+
+/ {
+	/delete-node/ reserved-memory;
+
+	reserved-memory {
+		#address-cells = <2>;
+		#size-cells = <2>;
+		ranges;
+
+		ramoops@4fe00000 {
+			compatible = "ramoops";
+			reg = <0x00000000 0x4FE00000 0x0 0x0100000>; /* 1MB */
+			record-size = <0x40000>;
+			console-size = <0x80000>;
+		};
+
+		rambootreason {
+			reg = <0x00000000 0x4FF00000 0x0 0x00001000>;
+		};
+
+		/* global autoconfigured region for contiguous allocations */
+		cma_reserved: linux,cma@50000000 {
+			compatible = "shared-dma-pool";
+			reusable;
+			reg = <0x00000000 0x50000000 0x0 0x04000000>; /* 64Mb */
+			linux,cma-default;
+		};
+
+		/* device specific region for Lossy Decompression */
+		lossy_decompress: linux,lossy_decompress@54000000 {
+			no-map;
+			reg = <0x00000000 0x54000000 0x0 0x03000000>;
+		};
+
+		adsp_reserved: linux,adsp@57000000 {
+			compatible = "shared-dma-pool";
+			reusable;
+			reg = <0x00000000 0x57000000 0x0 0x01000000>;
+		};
+
+
+		/* device specific region for contiguous allocations */
+		mmp_reserved: linux,multimedia@58000000 {
+			compatible = "shared-dma-pool";
+			reusable;
+			reg = <0x00000000 0x58000000 0x0 0x10000000>; /* 256Mb */
+		};
+
+		ion_reserved: linux,ion@68000000 {
+			compatible = "ion-region";
+			reg = <0x00000000 0x68000000 0x0 0x18000000>; /* 384Mb */
+		};
+	};
+	cpus {
+		cpu-map {
+			cluster0 {
+				core0 {
+					cpu = <&a57_0>;
+				};
+				core1 {
+					cpu = <&a57_1>;
+				};
+			};
+
+			cluster1 {
+				core0 {
+					cpu = <&a53_0>;
+				};
+				core1 {
+					cpu = <&a53_1>;
+				};
+				core2 {
+					cpu = <&a53_2>;
+				};
+				core3 {
+					cpu = <&a53_3>;
+				};
+			};
+		};
+	};
+
+	energy-costs {
+		CPU_COST_0: core-cost0 {
+			busy-cost-data = <
+				293   299
+				560   581
+				853   888
+				910   1098
+				967   1179
+				1024  1421
+			>;
+			idle-cost-data = <
+				83
+				83
+				0
+				0
+			>;
+		};
+		CPU_COST_1: core-cost1 {
+			busy-cost-data = <
+				362   131
+			>;
+			idle-cost-data = <
+				16
+				16
+				0
+				0
+			>;
+		};
+		CLUSTER_COST_0: cluster-cost0 {
+			busy-cost-data = <
+				293   17
+				560   42
+				853   66
+				910   72
+				967   90
+				1024  115
+			>;
+			idle-cost-data = <
+				66
+				66
+				0
+				0
+			>;
+		};
+		CLUSTER_COST_1: cluster-cost1 {
+			busy-cost-data = <
+				362   33
+			>;
+			idle-cost-data = <
+				33
+				33
+				0
+				0
+			>;
+		};
+	};
+};
+
+&a57_0 {
+	sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
+};
+
+&a57_1 {
+	sched-energy-costs = <&CPU_COST_0 &CLUSTER_COST_0>;
+};
+
+&a53_0 {
+	sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
+};
+
+&a53_1 {
+	sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
+};
+
+&a53_2 {
+	sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
+};
+
+&a53_3 {
+	sched-energy-costs = <&CPU_COST_1 &CLUSTER_COST_1>;
+};

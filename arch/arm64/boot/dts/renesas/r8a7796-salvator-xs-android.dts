@@ -1,5 +1,5 @@
 /*
- * Device Tree Source for the H3ULCB Kingfisher board
+ * Device Tree Source for the Salvator-XS 2nd version board with R-Car H3 ES2.0
  * Android specific extensions
  *
  * Copyright (C) 2018 GlobalLogic
@@ -10,8 +10,6 @@
  */
 
 /dts-v1/;
-#define __H3ULCB_OVERWRITE__
-#include "r8a7795-h3ulcb-kf.dts"
-#include "r8a7795-ulcb-android.dts"
-#include "android/ulcb-kf.dtsi"
-#include "android/ulcb-kf-cn10.dtsi"
+#include "r8a7796-salvator-xs.dts"
+#include "android/r8a7796.dtsi"
+#include "android/salvator.dtsi"

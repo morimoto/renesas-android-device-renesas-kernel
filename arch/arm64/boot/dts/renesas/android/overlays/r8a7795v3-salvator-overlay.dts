@@ -1,0 +1,21 @@
+/*
+ * Device Tree Source for the Salvator-X 2nd version board with R-Car H3 ES3.0
+ *
+ * Copyright (C) 2018 Renesas Electronics Corp.
+ *
+ * This file is licensed under the terms of the GNU General Public License
+ * version 2.  This program is licensed "as is" without any warranty of any
+ * kind, whether express or implied.
+ */
+/dts-v1/;
+/plugin/;
+
+/{
+  fragment_root {
+    target-path = "/";
+    __overlay__ {
+		model = "Renesas Salvator-X 2nd version board based on r8a7795 ES3.0+ with 8GiB (4x2 GiB)";
+		compatible = "renesas,salvator-xs", "renesas,r8a7795";
+    };
+  };
+};

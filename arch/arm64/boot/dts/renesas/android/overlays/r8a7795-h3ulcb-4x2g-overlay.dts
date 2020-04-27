@@ -1,0 +1,43 @@
+/*
+ * Device Tree Source for the H3ULCB Kingfisher board with R-Car H3 ES2.0+ with 8GiB
+ *
+ * Copyright (C) 2018 Renesas Electronics Corp.
+ *
+ * This file is licensed under the terms of the GNU General Public License
+ * version 2.  This program is licensed "as is" without any warranty of any
+ * kind, whether express or implied.
+ */
+
+/dts-v1/;
+/plugin/;
+
+&memory_ch1 {
+	device_type = "memory";
+	/* first 128MB is reserved for secure area. */
+	reg = <0x0 0x48000000 0x0 0x78000000>;
+};
+
+&memory_ch2 {
+	device_type = "memory";
+	reg = <0x5 0x00000000 0x0 0x80000000>;
+};
+
+&memory_ch3 {
+	device_type = "memory";
+	reg = <0x6 0x00000000 0x0 0x80000000>;
+};
+
+&memory_ch4 {
+	device_type = "memory";
+	reg = <0x7 0x00000000 0x0 0x80000000>;
+};
+
+&pciec0 {
+	/* Map all possible DDR as inbound ranges */
+	dma-ranges = <0x42000000 0 0x40000000 0 0x40000000 0 0x80000000>;
+};
+
+&pciec1 {
+	/* Map all possible DDR as inbound ranges */
+	dma-ranges = <0x42000000 0 0x40000000 0 0x40000000 0 0x80000000>;
+};
