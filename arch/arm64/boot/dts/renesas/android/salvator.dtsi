@@ -1,0 +1,139 @@
+/*
+ * Device Tree Source for the Salvator board
+ * Android specific extensions
+ *
+ * Copyright (C) 2018 GlobalLogic
+ *
+ * This file is licensed under the terms of the GNU General Public License
+ * version 2.  This program is licensed "as is" without any warranty of any
+ * kind, whether express or implied.
+ */
+
+#include <dt-bindings/input/linux-event-codes.h>
+
+/ {
+	memory_ch1: memory@48000000 {
+	};
+
+	memory_ch2: memory@500000000 {
+	};
+
+	memory_ch3: memory@600000000 {
+	};
+
+	memory_ch4: memory@700000000 {
+	};
+
+	ion {
+		compatible = "renesas,ion-rcar";
+
+		ion_heap {
+			compatible = "renesas,ion-rcar-heap";
+			memory-region = <&ion_reserved>;
+			heap-name = "rcar-ion";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		power {
+			label = "SW-TACT-22";
+			gpios = <&gpio6 13 GPIO_ACTIVE_LOW>;
+			linux,code = <116>;
+			gpio-key,wakeup;
+		};
+
+		volume-up {
+			label = "SW-TACT-20";
+			gpios = <&gpio6 11 GPIO_ACTIVE_LOW>;
+			linux,code = <115>;
+		};
+
+		volume-down {
+			label = "SW-TACT-21";
+			gpios = <&gpio6 12 GPIO_ACTIVE_LOW>;
+			linux,code = <114>;
+		};
+
+		soft_sw0 {
+			label = "SW-4-1";
+			gpios = <&gpio5 17 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_F4>;
+		};
+
+		soft_sw1 {
+			label = "SW-4-2";
+			gpios = <&gpio5 20 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_F3>;
+		};
+
+		soft_sw2 {
+			label = "SW-4-3";
+			gpios = <&gpio5 22 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_MEDIA>;
+		};
+
+		soft_sw3 {
+			label = "SW-4-4";
+			gpios = <&gpio5 23 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_CANCEL>;
+		};
+	};
+
+	vga-encoder {
+		adi,clock-max-rate = <100000>;
+	};
+
+	lvds: lvds {
+		port {
+			lvds_in: endpoint {
+				remote-endpoint = <&lvds0_out>;
+			};
+		};
+	};
+
+};
+
+/delete-node/ &adsp_port0;
+/delete-node/ &adsp_port1;
+/delete-node/ &adsp_port2;
+/delete-node/ &adsp_port3;
+/delete-node/ &ak4613_endpoint0;
+/delete-node/ &ak4613_endpoint1;
+/delete-node/ &ak4613_endpoint2;
+/delete-node/ &ak4613_endpoint3;
+
+&rcar_adsp_sound {
+	status = "disabled";
+};
+
+&sound_card {
+		routing = "ak4613 Playback", "DAI0 Playback",
+				"DAI0 Capture", "ak4613 Capture";
+		dais = <&rsnd_port0>;
+};
+
+&pfc {
+	can0_pins: can0 {
+		groups = "can0_data_a";
+		function = "can0";
+	};
+
+	can1_pins: can1 {
+		groups = "can1_data";
+		function = "can1";
+	};
+};
+
+&can0 {
+	pinctrl-0 = <&can0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&can1 {
+	pinctrl-0 = <&can1_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};

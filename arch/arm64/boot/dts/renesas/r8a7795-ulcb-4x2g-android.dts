@@ -1,5 +1,5 @@
 /*
- * Device Tree Source for the H3ULCB Kingfisher board
+ * Device Tree Source for the H3ULCB (R-Car Starter Kit Premier) board
  * Android specific extensions
  *
  * Copyright (C) 2018 GlobalLogic
@@ -11,7 +11,5 @@
 
 /dts-v1/;
 #define __H3ULCB_OVERWRITE__
-#include "r8a7795-h3ulcb-kf.dts"
+#include "r8a7795-h3ulcb-4x2g.dts"
 #include "r8a7795-ulcb-android.dts"
-#include "android/ulcb-kf.dtsi"
-#include "android/ulcb-kf-cn10.dtsi"
