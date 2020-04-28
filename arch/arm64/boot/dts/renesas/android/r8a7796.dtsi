@@ -58,8 +58,9 @@
 			reg = <0x00000000 0x58000000 0x0 0x10000000>; /* 256Mb */
 		};
 
-		ion_reserved: linux,ion@68000000 {
-			compatible = "ion-region";
+		ion_reserved: rcar-ion {
+			compatible = "shared-dma-pool";
+			reusable;
 			reg = <0x00000000 0x68000000 0x0 0x18000000>; /* 384Mb */
 		};
 	};
