@@ -884,14 +884,12 @@ static const struct iio_info lsm9ds0_gyro_info = {
 	.attrs = &lsm9ds0_gyro_group,
 	.read_raw = lsm9ds0_read_raw,
 	.write_raw = lsm9ds0_write_raw,
-	.driver_module = THIS_MODULE,
 };
 
 static const struct iio_info lsm9ds0_accel_magn_info = {
 	.attrs = &lsm9ds0_accel_magn_group,
 	.read_raw = lsm9ds0_read_raw,
 	.write_raw = lsm9ds0_write_raw,
-	.driver_module = THIS_MODULE,
 };
 
 /* Don't process errors, just throw warnings */
@@ -1057,6 +1055,7 @@ static int lsm9ds0_probe(struct i2c_client *client,
 	indio_dev->dev.parent = &client->dev;
 	indio_dev->name = dev_name(&client->dev);
 	indio_dev->modes = INDIO_DIRECT_MODE | INDIO_BUFFER_TRIGGERED;
+	indio_dev->driver_module = THIS_MODULE;
 
 
 	if (sensor_type == GYRO) {
