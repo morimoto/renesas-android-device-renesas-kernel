@@ -102,8 +102,8 @@ DTB_BLOBS := \
 endif
 
 ifeq ($(TARGET_PRODUCT),kingfisher)
-DTB_BLOBS := $(KERNEL_DTB_BLOBS)/r8a7795-ulcb-android.dtb --id=0x0b779520 \
-	$(KERNEL_DTB_BLOBS)/r8a7795-ulcb-android.dtb --id=0x0b779530
+DTB_BLOBS := $(KERNEL_DTB_BLOBS)/r8a7795-ulcb-kf-android.dtb --id=0x0b779520 \
+	$(KERNEL_DTB_BLOBS)/r8a7795-ulcb-kf-android.dtb --id=0x0b779530
 DTBO_BLOBS += \
 	$(KERNEL_DTBO_BLOBS)/r8a7795-h3ulcb-4x2g-overlay.dtb --id=0x0b779530 --custom0=0x736b6b66 --custom1=0x34783267 --custom2=0x33300000 \
 	$(KERNEL_DTBO_BLOBS)/r8a7795-h3ulcb-4x2g-overlay.dtb --id=0x0b779520 --custom0=0x736b6b66 --custom1=0x34783267 --custom2=0x32300000 \
