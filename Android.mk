@@ -37,7 +37,7 @@ KERNEL_OUT_ABS              := $(abspath $(KERNEL_OUT))
 KERNEL_CONFIG               := $(KERNEL_OUT)/.config
 KERNEL_IMAGE_BINARY         := $(KERNEL_OUT)/arch/$(TARGET_ARCH)/boot/Image.lz4
 KERNEL_DTB_BLOBS            := $(KERNEL_OUT)/arch/$(TARGET_ARCH)/boot/dts/renesas
-KERNEL_DTBO_BLOBS           := $(KERNEL_DTB_BLOBS)
+KERNEL_DTBO_BLOBS           := $(KERNEL_DTB_BLOBS)/android/overlays
 
 KERNEL_COMPILE_FLAGS        := HOSTCC=$(ANDROID_CLANG_TOOLCHAIN) HOSTCFLAGS="-fuse-ld=lld" HOSTLDFLAGS=-fuse-ld=lld ARCH=$(TARGET_ARCH)
 KERNEL_COMPILE_FLAGS        += CC=$(ANDROID_CLANG_TOOLCHAIN) CLANG_TRIPLE=$(BSP_GCC_CROSS_COMPILE) CROSS_COMPILE=$(BSP_GCC_CROSS_COMPILE)
@@ -116,11 +116,11 @@ endif
 # 0x41413130 - 'AA10'
 # 0x41413132 - 'AA12'
 # 0x61766200 - 'avb'
-#DTBO_BLOBS += \
-#	$(KERNEL_DTBO_BLOBS)/lvds-TX31D200VM0BAA-overlay.dtb --id=0x00779000 --custom0=0x72636172 --custom1=0x6c766473 --custom2=0x54583331 \
-#	$(KERNEL_DTBO_BLOBS)/lvds-AA104XD12-overlay.dtb      --id=0x00779000 --custom0=0x72636172 --custom1=0x6c766473 --custom2=0x41413130 \
-#	$(KERNEL_DTBO_BLOBS)/lvds-AA121TD01-overlay.dtb      --id=0x00779000 --custom0=0x72636172 --custom1=0x6c766473 --custom2=0x41413132 \
-#	$(KERNEL_DTBO_BLOBS)/android-avb-overlay.dtb         --id=0x00779000 --custom0=0x72636172 --custom1=0x61766200
+DTBO_BLOBS += \
+	$(KERNEL_DTBO_BLOBS)/lvds-TX31D200VM0BAA-overlay.dtb --id=0x00779000 --custom0=0x72636172 --custom1=0x6c766473 --custom2=0x54583331 \
+	$(KERNEL_DTBO_BLOBS)/lvds-AA104XD12-overlay.dtb      --id=0x00779000 --custom0=0x72636172 --custom1=0x6c766473 --custom2=0x41413130 \
+	$(KERNEL_DTBO_BLOBS)/lvds-AA121TD01-overlay.dtb      --id=0x00779000 --custom0=0x72636172 --custom1=0x6c766473 --custom2=0x41413132 \
+	$(KERNEL_DTBO_BLOBS)/android-avb-overlay.dtb         --id=0x00779000 --custom0=0x72636172 --custom1=0x61766200
 
 # Include only for Renesas ones.
 ifeq ($(DTB_BLOBS),)
@@ -154,8 +154,8 @@ $(KERNEL_MODULES): $(KERNEL_IMAGE_BINARY) $(KERNEL_MODULES_OUT)
 $(PRODUCT_OUT)/kernel: $(KERNEL_IMAGE_BINARY) $(PRODUCT_OUT)/dtb.img $(PRODUCT_OUT)/dtbo.img
 	cp -v $< $@
 
-#$(KERNEL_EXT_MODULES): $(KERNEL_MODULES)
-#$(BOARD_VENDOR_KERNEL_MODULES): $(KERNEL_EXT_MODULES)
+$(KERNEL_EXT_MODULES): $(KERNEL_MODULES)
+$(BOARD_VENDOR_KERNEL_MODULES): $(KERNEL_EXT_MODULES)
 
 $(BOARD_PREBUILT_DTBIMAGE): $(KERNEL_IMAGE_BINARY) $(AVBTOOL)
 	$(MKDTIMG) create $(BOARD_PREBUILT_DTBIMAGE) --page_size=4096 $(DTB_BLOBS)
