@@ -18,28 +18,28 @@
 
 #include <sound/soc.h>
 
-static struct snd_soc_dai_driver si468x_dai = {
-	.name = "si468x-pcm",
-	.capture = {
-		.channels_min = 2,
-		.channels_max = 2,
-		.rates = SNDRV_PCM_RATE_48000,
-		.formats = SNDRV_PCM_FMTBIT_S16_LE,
+static struct snd_soc_dai_driver si468x_dai[] = {
+	{
+		.name = "si468x-pcm",
+		.capture = {
+			.channels_min = 2,
+			.channels_max = 2,
+			.rates = SNDRV_PCM_RATE_48000,
+			.formats = SNDRV_PCM_FMTBIT_S16_LE,
+		},
 	},
 };
 
-static struct snd_soc_codec_driver soc_codec_dev_si468x;
+static const struct snd_soc_component_driver soc_component_si468x;
 
 static int si468x_probe(struct platform_device *pdev)
 {
-	return snd_soc_register_codec(&pdev->dev, &soc_codec_dev_si468x,
-			&si468x_dai, 1);
+	return devm_snd_soc_register_component(&pdev->dev, &soc_component_si468x,
+			si468x_dai, ARRAY_SIZE(si468x_dai));
 }
 
 static int si468x_remove(struct platform_device *pdev)
 {
-	snd_soc_unregister_codec(&pdev->dev);
-
 	return 0;
 }
 
