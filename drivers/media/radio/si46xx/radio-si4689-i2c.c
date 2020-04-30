@@ -1353,6 +1353,8 @@ static int si4689_i2c_probe(struct i2c_client *client,
     rdev->videodev.fops        = &si4689_fops;
     rdev->videodev.ioctl_ops   = &si4689_ioctl_ops;
     rdev->videodev.release     = video_device_release_empty;
+    rdev->videodev.device_caps =
+            V4L2_CAP_TUNER | V4L2_CAP_RADIO | V4L2_CAP_MODULATOR;
 
     video_set_drvdata(&rdev->videodev, rdev);
 
