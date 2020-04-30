@@ -113,7 +113,7 @@ struct snd_soc_component {
 	struct snd_soc_card *card;
 
 	unsigned int active;
-
+	unsigned int registered_as_component:1;
 	unsigned int suspended:1; /* is in suspend PM state */
 
 	struct list_head list;
