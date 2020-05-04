@@ -203,8 +203,15 @@ DEVICE_ATTR_RW(backup_mode);
 static int bd9571mwv_resume(struct device *dev)
 {
 	struct bd9571mwv_reg *bdreg = dev_get_drvdata(dev);
-
-	return bd9571mwv_bkup_mode_set(bdreg, bdreg->bkup_mode_cnt_shadow);
+	int ret;
+	unsigned int val;
+	ret = regmap_read(bdreg->bd->regmap, BD9571MWV_BKUP_MODE_CNT, &val);
+	if (ret) {
+		dev_err(bdreg->bd->dev, "Failed to read backup mode (ret=%i)\n", ret);
+		return bd9571mwv_bkup_mode_set(bdreg, bdreg->bkup_mode_cnt_shadow);
+	}
+	/* Restore the role of the ACC switch from a wake-up switch to a power switch.*/
+	return bd9571mwv_bkup_mode_set(bdreg, val & ~BD9571MWV_BKUP_MODE_CNT_KEEPON_MASK);
 }
 
 static const struct dev_pm_ops bd9571mwv_pm  = {
