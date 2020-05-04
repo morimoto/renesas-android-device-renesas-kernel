@@ -974,6 +974,7 @@
 	non-removable;
 	fixed-emmc-driver-type = <1>;
 	status = "okay";
+	/delete-property/ mmc-hs400-1_8v;
 };
 
 &sdhi3 {
