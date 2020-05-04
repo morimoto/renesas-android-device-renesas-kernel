@@ -487,6 +487,7 @@
 	non-removable;
 	full-pwr-cycle-in-suspend;
 	status = "okay";
+	/delete-property/ mmc-hs400-1_8v;
 };
 
 &ssi1 {
