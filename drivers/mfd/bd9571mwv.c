@@ -314,12 +314,12 @@ static int bd9571mwv_probe(struct i2c_client *client,
 	}
 
 	if (product_code == BD9571MWV_PRODUCT_CODE_VAL) {
-		ret = mfd_add_devices(bd->dev, PLATFORM_DEVID_AUTO,
+		ret = mfd_add_devices(bd->dev, PLATFORM_DEVID_NONE,
 				      bd9571mwv_cells,
 				      ARRAY_SIZE(bd9571mwv_cells), NULL, 0,
 				      regmap_irq_get_domain(bd->irq_data));
 	} else {
-		ret = mfd_add_devices(bd->dev, PLATFORM_DEVID_AUTO,
+		ret = mfd_add_devices(bd->dev, PLATFORM_DEVID_NONE,
 				      bd9574mwf_cells,
 				      ARRAY_SIZE(bd9574mwf_cells), NULL, 0,
 				      regmap_irq_get_domain(bd->irq_data));
