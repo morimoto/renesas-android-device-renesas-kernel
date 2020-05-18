@@ -51,16 +51,35 @@
 		simple-audio-card,name = "pcm3168a";
 
 		simple-audio-card,dai-link@0 {
+			/* DAC */
+			reg = <0>;
 			format = "left_j";
-			cpu@0 {
+			cpu {
 				sound-dai = <&rcar_sound 0>;
 				dai-tdm-slot-num = <8>;
-				dai-tdm-slot-width = <24>;
+				dai-tdm-slot-width = <32>;
 			};
-			codec@0 {
-				sound-dai = <&pcm3168a>;
+			codec {
+				sound-dai = <&pcm3168a 0>;
 				dai-tdm-slot-num = <8>;
-				dai-tdm-slot-width = <24>;
+				dai-tdm-slot-width = <32>;
+				system-clock-frequency = <24576000>;
+			};
+		};
+
+		simple-audio-card,dai-link@1 {
+			/* ADC */
+			reg = <1>;
+			format = "left_j";
+			cpu {
+				sound-dai = <&rcar_sound 0>;
+				dai-tdm-slot-num = <8>;
+				dai-tdm-slot-width = <32>;
+			};
+			codec {
+				sound-dai = <&pcm3168a 1>;
+				dai-tdm-slot-num = <8>;
+				dai-tdm-slot-width = <32>;
 				system-clock-frequency = <24576000>;
 			};
 		};
@@ -612,7 +631,7 @@
 		/* Audio, GPS and Gyro node(s) */
 
 		pcm3168a: audio-codec@44 {
-			#sound-dai-cells = <0>;
+			#sound-dai-cells = <1>;
 			compatible = "ti,pcm3168a";
 			reg = <0x44>;
 			clocks = <&snd_clk>;
