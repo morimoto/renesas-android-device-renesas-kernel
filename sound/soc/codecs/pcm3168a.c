@@ -589,7 +589,7 @@ static int pcm3168a_startup(struct snd_pcm_substream *substream,
 	case PCM3168A_FMT_I2S:
 	case PCM3168A_FMT_DSP_A:
 	case PCM3168A_FMT_DSP_B:
-		sample_min  = 24;
+		sample_min  = 16;
 		channel_max = channel_maxs[dai->id];
 		break;
 	default:
