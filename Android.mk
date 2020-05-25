@@ -50,6 +50,10 @@ KERNEL_MODULES_OUT_ABS      := $(abspath $(KERNEL_MODULES_OUT))
 BOARD_PREBUILT_DTBOIMAGE    := $(KERNEL_OUT)/dtbo.img
 BOARD_PREBUILT_DTBIMAGE     := $(KERNEL_OUT)/dtb.img
 
+ifeq ($(ENABLE_ION_LMK),true)
+KERNEL_CONFIGS_EXTRA        += $(TARGET_KERNEL_SOURCE)/arch/$(TARGET_ARCH)/configs/android_ion_lmk.config
+endif
+
 ifeq ($(TARGET_USES_HIGHEST_DPI),true)
 DTB_FOOTER := -uhd
 endif
