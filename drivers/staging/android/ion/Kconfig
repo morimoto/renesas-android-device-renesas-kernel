@@ -58,3 +58,9 @@ config ION_RCAR
 	depends on (ARCH_R8A7790 || ARCH_R8A7791 || ARCH_R8A7793 || ARCH_R8A7794 || ARCH_R8A7795) && ION_OF
 	help
 	  RCar specific ION extensions
+
+config ION_RCAR_LMK
+	tristate "ION low-memory killer for rcar"
+	depends on (ARCH_R8A7790 || ARCH_R8A7791 || ARCH_R8A7793 || ARCH_R8A7794 || ARCH_R8A7795) && ION_RCAR
+	help
+	  RCar ION low-memory killer
