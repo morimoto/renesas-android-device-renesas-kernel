@@ -475,8 +475,8 @@ static int pcm3168a_hw_params(struct snd_pcm_substream *substream,
 			break;
 	}
 
-	if (i == max_ratio) {
-		dev_err(component->dev, "unsupported sysclk ratio\n");
+	if (i == max_ratio && master_mode) {
+		dev_err(component->dev, "unsupported sysclk ratio: %d\n", ratio);
 		return -EINVAL;
 	}
 
