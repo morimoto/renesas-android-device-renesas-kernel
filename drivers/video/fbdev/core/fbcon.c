@@ -1221,6 +1221,9 @@ finished:
 	if (!con_is_bound(&fb_con))
 		fbcon_exit();
 
+	if (vc->vc_num == logo_shown)
+		logo_shown = FBCON_LOGO_CANSHOW;
+
 	return;
 }
 
@@ -2588,7 +2591,8 @@ static int fbcon_copy_font(struct vc_data *vc, int con)
  *  is ever implemented.
  */
 
-static int fbcon_set_font(struct vc_data *vc, struct console_font *font, unsigned flags)
+static int fbcon_set_font(struct vc_data *vc, struct console_font *font,
+			  unsigned int flags)
 {
 	struct fb_info *info = registered_fb[con2fb_map[vc->vc_num]];
 	unsigned charcount = font->charcount;
@@ -3041,7 +3045,7 @@ static int fbcon_fb_unbind(int idx)
 	for (i = first_fb_vc; i <= last_fb_vc; i++) {
 		if (con2fb_map[i] != idx &&
 		    con2fb_map[i] != -1) {
-			new_idx = i;
+			new_idx = con2fb_map[i];
 			break;
 		}
 	}

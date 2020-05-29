@@ -24,6 +24,8 @@
 #include <linux/delay.h>
 #include <linux/wait.h>
 #include <linux/pr.h>
+#include <linux/blk-crypto.h>
+#include <linux/keyslot-manager.h>
 
 #define DM_MSG_PREFIX "core"
 
@@ -1034,12 +1036,14 @@ void dm_accept_partial_bio(struct bio *bio, unsigned n_sectors)
 EXPORT_SYMBOL_GPL(dm_accept_partial_bio);
 
 /*
- * The zone descriptors obtained with a zone report indicate
- * zone positions within the target device. The zone descriptors
- * must be remapped to match their position within the dm device.
- * A target may call dm_remap_zone_report after completion of a
- * REQ_OP_ZONE_REPORT bio to remap the zone descriptors obtained
- * from the target device mapping to the dm device.
+ * The zone descriptors obtained with a zone report indicate zone positions
+ * within the target backing device, regardless of that device is a partition
+ * and regardless of the target mapping start sector on the device or partition.
+ * The zone descriptors start sector and write pointer position must be adjusted
+ * to match their relative position within the dm device.
+ * A target may call dm_remap_zone_report() after completion of a
+ * REQ_OP_ZONE_REPORT bio to remap the zone descriptors obtained from the
+ * backing device.
  */
 void dm_remap_zone_report(struct dm_target *ti, struct bio *bio, sector_t start)
 {
@@ -1050,12 +1054,22 @@ void dm_remap_zone_report(struct dm_target *ti, struct bio *bio, sector_t start)
 	struct blk_zone *zone;
 	unsigned int nr_rep = 0;
 	unsigned int ofst;
+	sector_t part_offset;
 	struct bio_vec bvec;
 	struct bvec_iter iter;
 	void *addr;
 
 	if (bio->bi_status)
 		return;
+
+	/*
+	 * bio sector was incremented by the request size on completion. Taking
+	 * into account the original request sector, the target start offset on
+	 * the backing device and the target mapping offset (ti->begin), the
+	 * start sector of the backing device. The partition offset is always 0
+	 * if the target uses a whole device.
+	 */
+	part_offset = bio->bi_iter.bi_sector + ti->begin - (start + bio_end_sector(report_bio));
 
 	/*
 	 * Remap the start sector of the reported zones. For sequential zones,
@@ -1074,6 +1088,7 @@ void dm_remap_zone_report(struct dm_target *ti, struct bio *bio, sector_t start)
 		/* Set zones start sector */
 		while (hdr->nr_zones && ofst < bvec.bv_len) {
 			zone = addr + ofst;
+			zone->start -= part_offset;
 			if (zone->start >= start + ti->len) {
 				hdr->nr_zones = 0;
 				break;
@@ -1085,7 +1100,7 @@ void dm_remap_zone_report(struct dm_target *ti, struct bio *bio, sector_t start)
 				else if (zone->cond == BLK_ZONE_COND_EMPTY)
 					zone->wp = zone->start;
 				else
-					zone->wp = zone->wp + ti->begin - start;
+					zone->wp = zone->wp + ti->begin - start - part_offset;
 			}
 			ofst += sizeof(struct blk_zone);
 			hdr->nr_zones--;
@@ -1236,9 +1251,10 @@ static int clone_bio(struct dm_target_io *tio, struct bio *bio,
 
 	__bio_clone_fast(clone, bio);
 
+	bio_crypt_clone(clone, bio, GFP_NOIO);
+
 	if (unlikely(bio_integrity(bio) != NULL)) {
 		int r;
-
 		if (unlikely(!dm_target_has_integrity(tio->ti->type) &&
 			     !dm_target_passes_integrity(tio->ti->type))) {
 			DMWARN("%s: the target %s doesn't support integrity data.",
@@ -1634,7 +1650,6 @@ void dm_init_md_queue(struct mapped_device *md)
 	 * - must do so here (in alloc_dev callchain) before queue is used
 	 */
 	md->queue->queuedata = md;
-	md->queue->backing_dev_info->congested_data = md;
 }
 
 void dm_init_normal_md_queue(struct mapped_device *md)
@@ -1645,8 +1660,11 @@ void dm_init_normal_md_queue(struct mapped_device *md)
 	/*
 	 * Initialize aspects of queue that aren't relevant for blk-mq
 	 */
+	md->queue->backing_dev_info->congested_data = md;
 	md->queue->backing_dev_info->congested_fn = dm_any_congested;
 }
+
+static void dm_destroy_inline_encryption(struct request_queue *q);
 
 static void cleanup_mapped_device(struct mapped_device *md)
 {
@@ -1672,8 +1690,10 @@ static void cleanup_mapped_device(struct mapped_device *md)
 		put_disk(md->disk);
 	}
 
-	if (md->queue)
+	if (md->queue) {
+		dm_destroy_inline_encryption(md->queue);
 		blk_cleanup_queue(md->queue);
+	}
 
 	cleanup_srcu_struct(&md->io_barrier);
 
@@ -1737,6 +1757,12 @@ static struct mapped_device *alloc_dev(int minor)
 		goto bad;
 
 	dm_init_md_queue(md);
+	/*
+	 * default to bio-based required ->make_request_fn until DM
+	 * table is loaded and md->type established. If request-based
+	 * table is loaded: blk-mq will override accordingly.
+	 */
+	blk_queue_make_request(md->queue, dm_make_request);
 
 	md->disk = alloc_disk_node(1, numa_node_id);
 	if (!md->disk)
@@ -2016,6 +2042,166 @@ struct queue_limits *dm_get_queue_limits(struct mapped_device *md)
 }
 EXPORT_SYMBOL_GPL(dm_get_queue_limits);
 
+#ifdef CONFIG_BLK_INLINE_ENCRYPTION
+struct dm_keyslot_evict_args {
+	const struct blk_crypto_key *key;
+	int err;
+};
+
+static int dm_keyslot_evict_callback(struct dm_target *ti, struct dm_dev *dev,
+				     sector_t start, sector_t len, void *data)
+{
+	struct dm_keyslot_evict_args *args = data;
+	int err;
+
+	err = blk_crypto_evict_key(dev->bdev->bd_queue, args->key);
+	if (!args->err)
+		args->err = err;
+	/* Always try to evict the key from all devices. */
+	return 0;
+}
+
+/*
+ * When an inline encryption key is evicted from a device-mapper device, evict
+ * it from all the underlying devices.
+ */
+static int dm_keyslot_evict(struct keyslot_manager *ksm,
+			    const struct blk_crypto_key *key, unsigned int slot)
+{
+	struct mapped_device *md = keyslot_manager_private(ksm);
+	struct dm_keyslot_evict_args args = { key };
+	struct dm_table *t;
+	int srcu_idx;
+	int i;
+	struct dm_target *ti;
+
+	t = dm_get_live_table(md, &srcu_idx);
+	if (!t)
+		return 0;
+	for (i = 0; i < dm_table_get_num_targets(t); i++) {
+		ti = dm_table_get_target(t, i);
+		if (!ti->type->iterate_devices)
+			continue;
+		ti->type->iterate_devices(ti, dm_keyslot_evict_callback, &args);
+	}
+	dm_put_live_table(md, srcu_idx);
+	return args.err;
+}
+
+struct dm_derive_raw_secret_args {
+	const u8 *wrapped_key;
+	unsigned int wrapped_key_size;
+	u8 *secret;
+	unsigned int secret_size;
+	int err;
+};
+
+static int dm_derive_raw_secret_callback(struct dm_target *ti,
+					 struct dm_dev *dev, sector_t start,
+					 sector_t len, void *data)
+{
+	struct dm_derive_raw_secret_args *args = data;
+	struct request_queue *q = dev->bdev->bd_queue;
+
+	if (!args->err)
+		return 0;
+
+	if (!q->ksm) {
+		args->err = -EOPNOTSUPP;
+		return 0;
+	}
+
+	args->err = keyslot_manager_derive_raw_secret(q->ksm, args->wrapped_key,
+						args->wrapped_key_size,
+						args->secret,
+						args->secret_size);
+	/* Try another device in case this fails. */
+	return 0;
+}
+
+/*
+ * Retrieve the raw_secret from the underlying device. Given that
+ * only only one raw_secret can exist for a particular wrappedkey,
+ * retrieve it only from the first device that supports derive_raw_secret()
+ */
+static int dm_derive_raw_secret(struct keyslot_manager *ksm,
+				const u8 *wrapped_key,
+				unsigned int wrapped_key_size,
+				u8 *secret, unsigned int secret_size)
+{
+	struct mapped_device *md = keyslot_manager_private(ksm);
+	struct dm_derive_raw_secret_args args = {
+		.wrapped_key = wrapped_key,
+		.wrapped_key_size = wrapped_key_size,
+		.secret = secret,
+		.secret_size = secret_size,
+		.err = -EOPNOTSUPP,
+	};
+	struct dm_table *t;
+	int srcu_idx;
+	int i;
+	struct dm_target *ti;
+
+	t = dm_get_live_table(md, &srcu_idx);
+	if (!t)
+		return -EOPNOTSUPP;
+	for (i = 0; i < dm_table_get_num_targets(t); i++) {
+		ti = dm_table_get_target(t, i);
+		if (!ti->type->iterate_devices)
+			continue;
+		ti->type->iterate_devices(ti, dm_derive_raw_secret_callback,
+					  &args);
+		if (!args.err)
+			break;
+	}
+	dm_put_live_table(md, srcu_idx);
+	return args.err;
+}
+
+static struct keyslot_mgmt_ll_ops dm_ksm_ll_ops = {
+	.keyslot_evict = dm_keyslot_evict,
+	.derive_raw_secret = dm_derive_raw_secret,
+};
+
+static int dm_init_inline_encryption(struct mapped_device *md)
+{
+	unsigned int features;
+	unsigned int mode_masks[BLK_ENCRYPTION_MODE_MAX];
+
+	/*
+	 * Initially declare support for all crypto settings.  Anything
+	 * unsupported by a child device will be removed later when calculating
+	 * the device restrictions.
+	 */
+	features = BLK_CRYPTO_FEATURE_STANDARD_KEYS |
+		   BLK_CRYPTO_FEATURE_WRAPPED_KEYS;
+	memset(mode_masks, 0xFF, sizeof(mode_masks));
+
+	md->queue->ksm = keyslot_manager_create_passthrough(NULL,
+							    &dm_ksm_ll_ops,
+							    features,
+							    mode_masks, md);
+	if (!md->queue->ksm)
+		return -ENOMEM;
+	return 0;
+}
+
+static void dm_destroy_inline_encryption(struct request_queue *q)
+{
+	keyslot_manager_destroy(q->ksm);
+	q->ksm = NULL;
+}
+#else /* CONFIG_BLK_INLINE_ENCRYPTION */
+static inline int dm_init_inline_encryption(struct mapped_device *md)
+{
+	return 0;
+}
+
+static inline void dm_destroy_inline_encryption(struct request_queue *q)
+{
+}
+#endif /* !CONFIG_BLK_INLINE_ENCRYPTION */
+
 /*
  * Setup the DM device's queue based on md's type
  */
@@ -2042,7 +2228,6 @@ int dm_setup_md_queue(struct mapped_device *md, struct dm_table *t)
 	case DM_TYPE_BIO_BASED:
 	case DM_TYPE_DAX_BIO_BASED:
 		dm_init_normal_md_queue(md);
-		blk_queue_make_request(md->queue, dm_make_request);
 		/*
 		 * DM handles splitting bios as needed.  Free the bio_split bioset
 		 * since it won't be used (saves 1 process per bio-based DM device).
@@ -2053,6 +2238,12 @@ int dm_setup_md_queue(struct mapped_device *md, struct dm_table *t)
 	case DM_TYPE_NONE:
 		WARN_ON_ONCE(true);
 		break;
+	}
+
+	r = dm_init_inline_encryption(md);
+	if (r) {
+		DMERR("Cannot initialize inline encryption");
+		return r;
 	}
 
 	return 0;
