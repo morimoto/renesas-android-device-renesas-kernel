@@ -1565,3 +1565,8 @@
 #define UBLOX_VID			0x1546
 #define UBLOX_C099F9P_ZED_PID		0x0502
 #define UBLOX_C099F9P_ODIN_PID		0x0503
+/*
+ * IOData devices
+ */
+#define IODATA_VID			0x04bb
+#define IODATA_CUSTOM_GPS_PID		0x093c /* Custom USB GPS device */
