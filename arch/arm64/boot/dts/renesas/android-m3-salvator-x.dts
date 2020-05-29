@@ -1,0 +1,15 @@
+/*
+ * Device Tree Source for the Salvator-X board with R-Car M3-W
+ * Android specific extensions
+ *
+ * Copyright (C) 2018 GlobalLogic
+ *
+ * This file is licensed under the terms of the GNU General Public License
+ * version 2.  This program is licensed "as is" without any warranty of any
+ * kind, whether express or implied.
+ */
+
+/dts-v1/;
+#include "r8a7796-salvator-x.dts"
+#include "android-m3.dtsi"
+#include "android-salvator.dtsi"
