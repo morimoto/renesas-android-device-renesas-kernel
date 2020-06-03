@@ -503,6 +503,8 @@
 };
 
 &gpio_exp_77 {
+	/* W/A: Failed to request IRQ 9 on irqchip e6055000.gpio. GPIO set as output. */
+	status = "disabled";
 	#interrupt-cells = <2>;
 
 	mpcie_wake {
