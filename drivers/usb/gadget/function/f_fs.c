@@ -1103,16 +1103,8 @@ static ssize_t ffs_epfile_write_iter(struct kiocb *kiocb, struct iov_iter *from)
 	ssize_t res;
 
 	ENTER();
-
-	if (!is_sync_kiocb(kiocb)) {
-		p = kzalloc(sizeof(io_data), GFP_KERNEL);
-		if (unlikely(!p))
-			return -ENOMEM;
-		p->aio = true;
-	} else {
-		memset(p, 0, sizeof(*p));
-		p->aio = false;
-	}
+	memset(p, 0, sizeof(*p));
+	p->aio = false;
 
 	p->read = false;
 	p->kiocb = kiocb;
