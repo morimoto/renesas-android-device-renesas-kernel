@@ -21,7 +21,6 @@
 struct usbhsg_request {
 	struct usb_request	req;
 	struct usbhs_pkt	pkt;
-	bool done;
 };
 
 #define EP_NAME_SIZE 8
@@ -127,13 +126,10 @@ static void __usbhsg_queue_pop(struct usbhsg_uep *uep,
 	if (pipe)
 		dev_dbg(dev, "pipe %d : queue pop\n", usbhs_pipe_number(pipe));
 
-	if (!ureq->done) {
-		ureq->done = true;
-		spin_unlock(usbhs_priv_to_lock(priv));
-		ureq->req.status = status;
-		usb_gadget_giveback_request(&uep->ep, &ureq->req);
-		spin_lock(usbhs_priv_to_lock(priv));
-	}
+	ureq->req.status = status;
+	spin_unlock(usbhs_priv_to_lock(priv));
+	usb_gadget_giveback_request(&uep->ep, &ureq->req);
+	spin_lock(usbhs_priv_to_lock(priv));
 }
 
 static void usbhsg_queue_pop(struct usbhsg_uep *uep,
