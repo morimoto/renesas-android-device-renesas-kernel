@@ -173,7 +173,7 @@ static struct cpumask freq_scaled_cpus;
 static int rcar_ems_cpufreq_notifier_call(struct notifier_block *nb,
 	unsigned long event, void *data)
 {
-	struct cpufreq_policy *policy = data;
+	struct cpufreq_policy_data *policy = data;
 	int mode;
 
 	if (!cpumask_test_cpu(policy->cpu, &freq_scaled_cpus))

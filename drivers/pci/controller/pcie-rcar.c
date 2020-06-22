@@ -93,11 +93,11 @@
 #define  LINK_SPEED_2_5GTS	(1 << 16)
 #define  LINK_SPEED_5_0GTS	(2 << 16)
 #define MACCTLR			0x011058
-#define  MACCTLR_NFTS_MASK     GENMASK(23, 16) /* The name is from SH7786 */
+#define  MACCTLR_NFTS_MASK	GENMASK(23, 16)	/* The name is from SH7786 */
 #define  SPEED_CHANGE		BIT(24)
 #define  SCRAMBLE_DISABLE	BIT(27)
-#define  LTSMDIS               BIT(31)
-#define  MACCTLR_INIT_VAL      (LTSMDIS | MACCTLR_NFTS_MASK)
+#define  LTSMDIS		BIT(31)
+#define  MACCTLR_INIT_VAL	(LTSMDIS | MACCTLR_NFTS_MASK)
 #define PMSR			0x01105c
 #define  L1FAEG			BIT(31)
 #define  PM_ENTER_L1RX		BIT(23)
@@ -163,6 +163,8 @@ struct rcar_pcie {
 	struct			rcar_msi msi;
 };
 
+static int rcar_pcie_wait_for_dl(struct rcar_pcie *pcie);
+
 static void rcar_pci_write_reg(struct rcar_pcie *pcie, u32 val,
 			       unsigned int reg)
 {
@@ -203,8 +205,8 @@ static int rcar_pcie_config_access(struct rcar_pcie *pcie,
 		unsigned int devfn, int where, u32 *data)
 {
 	unsigned int dev, func, reg, index;
+	int ret;
 	u32 val;
-
 	dev = PCI_SLOT(devfn);
 	func = PCI_FUNC(devfn);
 	reg = where & ~3;
@@ -244,12 +246,21 @@ static int rcar_pcie_config_access(struct rcar_pcie *pcie,
 
 	if (pcie->root_bus_nr < 0)
 		return PCIBIOS_DEVICE_NOT_FOUND;
-
 	/*
 	 * If we are not in L1 link state and we have received PM_ENTER_L1 DLLP,
 	 * transition to L1 link state. The HW will handle coming of of L1.
 	 */
 	val = rcar_pci_read_reg(pcie, PMSR);
+
+	if (val == 0 || (rcar_pci_read_reg(pcie, PCIETCTLR) & DL_DOWN)) {
+		/* Wait PCI Express link is re-initialized */
+		dev_info(&bus->dev, "Wait PCI Express link is re-initialized\n");
+		rcar_pci_write_reg(pcie, CFINIT, PCIETCTLR);
+		ret = rcar_pcie_wait_for_dl(pcie);
+		if (ret)
+			return ret;
+	}
+
 	if ((val & PM_ENTER_L1RX) && ((val & PMSTATE) != PMSTATE_L1)) {
 		rcar_pci_write_reg(pcie, L1_INIT, PMCTLR);
 
@@ -260,6 +271,7 @@ static int rcar_pcie_config_access(struct rcar_pcie *pcie,
 		/* Clear flags indicating link has transitioned to L1 */
 		rcar_pci_write_reg(pcie, L1FAEG | PM_ENTER_L1RX, PMSR);
 	}
+
 
 	/* Clear errors */
 	rcar_pci_write_reg(pcie, rcar_pci_read_reg(pcie, PCIEERRFR), PCIEERRFR);
@@ -1304,23 +1316,18 @@ err_free_bridge:
 }
 
 #ifdef CONFIG_PM_SLEEP
-static int rcar_pcie_resume_noirq(struct device *dev)
+static int rcar_pcie_suspend(struct device *dev)
+{
+	/* Processing is unnecessary */
+	return 0;
+}
+
+static int rcar_pcie_resume(struct device *dev)
 {
 	struct rcar_pcie *pcie = dev_get_drvdata(dev);
 	unsigned int data;
 	int err;
 	int (*hw_init_fn)(struct rcar_pcie *);
-
-	if (rcar_pci_read_reg(pcie, PMSR) &&
-	    !(rcar_pci_read_reg(pcie, PCIETCTLR) & DL_DOWN))
-		return 0;
-
-	/* Re-establish the PCIe link */
-	rcar_pci_write_reg(pcie, MACCTLR_INIT_VAL, MACCTLR);
-	rcar_pci_write_reg(pcie, CFINIT, PCIETCTLR);
-	err = rcar_pcie_wait_for_dl(pcie);
-	if (err)
-		return err;
 
 	/* HW initialize on Resume */
 	if (!pcie) {
@@ -1358,21 +1365,33 @@ static int rcar_pcie_resume_noirq(struct device *dev)
 
 	return 0;
 }
+#endif /* CONFIG_PM_SLEEP */
+
+static int rcar_pcie_resume_noirq(struct device *dev)
+{
+	struct rcar_pcie *pcie = dev_get_drvdata(dev);
+
+	if (rcar_pci_read_reg(pcie, PMSR) &&
+	    !(rcar_pci_read_reg(pcie, PCIETCTLR) & DL_DOWN))
+		return 0;
+
+	/* Re-establish the PCIe link */
+	rcar_pci_write_reg(pcie, MACCTLR_INIT_VAL, MACCTLR);
+	rcar_pci_write_reg(pcie, CFINIT, PCIETCTLR);
+	return rcar_pcie_wait_for_dl(pcie);
+}
 
 static const struct dev_pm_ops rcar_pcie_pm_ops = {
 	.resume_noirq = rcar_pcie_resume_noirq,
+	.resume = rcar_pcie_resume,
+	.suspend = rcar_pcie_suspend,
 };
-
-#define DEV_PM_OPS (&rcar_pcie_pm_ops)
-#else /* CONFIG_PM_SLEEP */
-#define DEV_PM_OPS NULL
-#endif /* CONFIG_PM_SLEEP */
 
 static struct platform_driver rcar_pcie_driver = {
 	.driver = {
 		.name = "rcar-pcie",
 		.of_match_table = rcar_pcie_of_match,
-		.pm = DEV_PM_OPS,
+		.pm = &rcar_pcie_pm_ops,
 		.suppress_bind_attrs = true,
 	},
 	.probe = rcar_pcie_probe,
