@@ -207,6 +207,15 @@ struct ffs_buffer {
 	char storage[];
 };
 
+/*
+*This is enum for the queued variable defined
+* in the struct ffs_io_data below
+*/
+enum {
+	WORK_NOT_QUEUED,
+	WORK_QUEUED
+};
+
 /*  ffs_io_data structure ***************************************************/
 
 struct ffs_io_data {
@@ -220,6 +229,11 @@ struct ffs_io_data {
 
 	struct mm_struct *mm;
 	struct work_struct work;
+	/*
+	* Need to cancel the pending
+	* completion works
+	*/
+	atomic_t queued;
 
 	struct usb_ep *ep;
 	struct usb_request *req;
@@ -790,8 +804,19 @@ static void ffs_epfile_async_io_complete(struct usb_ep *_ep,
 
 	ENTER();
 
+	if (atomic_read(&io_data->queued) == WORK_QUEUED) {
+		if (!cancel_work_sync(&io_data->work)) {
+			/*
+			* We are here because queued work was started already.
+			* If so, then we should not schedule the same work again
+			* to avoid double free issue
+			*/
+			return;
+		}
+	}
 	INIT_WORK(&io_data->work, ffs_user_copy_worker);
 	queue_work(ffs->io_completion_wq, &io_data->work);
+	atomic_set(&io_data->queued, WORK_QUEUED);
 }
 
 static void __ffs_epfile_read_buffer_free(struct ffs_epfile *epfile)
@@ -1114,6 +1139,7 @@ static ssize_t ffs_epfile_write_iter(struct kiocb *kiocb, struct iov_iter *from)
 		p->aio = false;
 	}
 
+	atomic_set(&p->queued, WORK_NOT_QUEUED);
 	p->read = false;
 	p->kiocb = kiocb;
 	p->data = *from;
@@ -1151,6 +1177,7 @@ static ssize_t ffs_epfile_read_iter(struct kiocb *kiocb, struct iov_iter *to)
 		p->aio = false;
 	}
 
+	atomic_set(&p->queued, WORK_NOT_QUEUED);
 	p->read = true;
 	p->kiocb = kiocb;
 	if (p->aio) {
