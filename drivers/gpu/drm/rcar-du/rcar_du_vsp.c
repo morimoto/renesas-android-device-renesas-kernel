@@ -168,6 +168,7 @@ static void rcar_du_vsp_plane_setup(struct rcar_du_vsp_plane *plane)
 			((state->colorkey & RCAR_DU_COLORKEY_EN_MASK) != 0),
 		.colorkey_alpha =
 			(state->colorkey_alpha & RCAR_DU_COLORKEY_ALPHA_MASK),
+		.pixel_blend_mode = state->state.pixel_blend_mode
 	};
 	unsigned int i;
 
@@ -375,6 +376,7 @@ static void rcar_du_vsp_plane_reset(struct drm_plane *plane)
 	state->colorkey = RCAR_DU_COLORKEY_NONE;
 	state->colorkey_alpha = 0;
 	state->state.zpos = plane->type == DRM_PLANE_TYPE_PRIMARY ? 0 : 1;
+	state->state.pixel_blend_mode = DRM_MODE_BLEND_PIXEL_NONE;
 
 	plane->state = &state->state;
 	plane->state->plane = plane;
@@ -637,6 +639,10 @@ int rcar_du_vsp_init(struct rcar_du_vsp *vsp, struct device_node *np,
 							   0);
 			drm_plane_create_zpos_property(&plane->plane, 1, 1,
 						       vsp->num_planes - 1);
+			drm_plane_create_blend_mode_property(&plane->plane,
+					       BIT(DRM_MODE_BLEND_PIXEL_NONE) |
+					       BIT(DRM_MODE_BLEND_PREMULTI) |
+					       BIT(DRM_MODE_BLEND_COVERAGE));
 		}
 	}
 
