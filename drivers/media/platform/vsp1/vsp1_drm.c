@@ -905,6 +905,7 @@ int vsp1_du_atomic_update(struct device *dev, unsigned int pipe_index,
 	rpf->colorkey = cfg->colorkey;
 	rpf->colorkey_en = cfg->colorkey_en;
 	rpf->colorkey_alpha = cfg->colorkey_alpha;
+	rpf->format.flags = cfg->pixel_blend_mode == 0 ? V4L2_PIX_FMT_FLAG_PREMUL_ALPHA : 0;
 
 	rpf->mem.addr[0] = cfg->mem[0];
 	rpf->mem.addr[1] = cfg->mem[1];

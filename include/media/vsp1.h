@@ -62,6 +62,7 @@ int vsp1_du_setup_lif(struct device *dev, unsigned int pipe_index,
  * @colorkey: colorkey value
  * @colorkey_alpha: colorkey alpha value
  * @colorkey_en: colorkey enable value
+ * @pixel_blend_mode: pixel blend mode (0: premultiplied, 1: coverage, 2: none)
  */
 struct vsp1_du_atomic_config {
 	u32 pixelformat;
@@ -74,6 +75,7 @@ struct vsp1_du_atomic_config {
 	u32 colorkey;
 	u32 colorkey_alpha;
 	bool colorkey_en;
+	u16 pixel_blend_mode;
 };
 
 /**
