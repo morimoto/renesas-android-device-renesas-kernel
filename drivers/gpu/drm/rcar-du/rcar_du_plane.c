@@ -727,6 +727,7 @@ static void rcar_du_plane_reset(struct drm_plane *plane)
 	state->alpha = 255;
 	state->colorkey = RCAR_DU_COLORKEY_NONE;
 	state->state.zpos = plane->type == DRM_PLANE_TYPE_PRIMARY ? 0 : 1;
+	state->state.pixel_blend_mode = DRM_MODE_BLEND_PIXEL_NONE;
 
 	plane->state = &state->state;
 	plane->state->plane = plane;
@@ -834,6 +835,10 @@ int rcar_du_planes_init(struct rcar_du_group *rgrp)
 					   rcdu->props.colorkey,
 					   RCAR_DU_COLORKEY_NONE);
 		drm_plane_create_zpos_property(&plane->plane, 1, 1, 7);
+		drm_plane_create_blend_mode_property(&plane->plane,
+					   BIT(DRM_MODE_BLEND_PIXEL_NONE) |
+					   BIT(DRM_MODE_BLEND_PREMULTI) |
+					   BIT(DRM_MODE_BLEND_COVERAGE));
 	}
 
 	return 0;

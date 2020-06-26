@@ -879,6 +879,7 @@ int vsp1_du_atomic_update(struct device *dev, unsigned int pipe_index,
 	rpf->colorkey_en = cfg->colorkey_en;
 	rpf->colorkey_alpha = cfg->colorkey_alpha;
 	rpf->interlaced = cfg->interlaced;
+	rpf->format.flags = cfg->pixel_blend_mode == 0 ? V4L2_PIX_FMT_FLAG_PREMUL_ALPHA : 0;
 
 	if ((vsp1->ths_quirks & VSP1_AUTO_FLD_NOT_SUPPORT) &&
 	    rpf->interlaced) {

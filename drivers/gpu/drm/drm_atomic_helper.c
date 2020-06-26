@@ -3389,6 +3389,8 @@ void drm_atomic_helper_plane_reset(struct drm_plane *plane)
 		/* Reset the alpha value to fully opaque if it matters */
 		if (plane->alpha_property)
 			plane->state->alpha = plane->alpha_property->values[1];
+
+		plane->state->pixel_blend_mode = DRM_MODE_BLEND_PIXEL_NONE;
 	}
 }
 EXPORT_SYMBOL(drm_atomic_helper_plane_reset);

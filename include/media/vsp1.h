@@ -58,6 +58,7 @@ int vsp1_du_setup_lif(struct device *dev, unsigned int pipe_index,
  * @dst: destination rectangle on the display (integer coordinates)
  * @alpha: alpha value (0: fully transparent, 255: fully opaque)
  * @zpos: Z position of the plane (from 0 to number of planes minus 1)
+ * @pixel_blend_mode: pixel blend mode (0: premultiplied, 1: coverage, 2: none)
  */
 struct vsp1_du_atomic_config {
 	u32 pixelformat;
@@ -71,6 +72,7 @@ struct vsp1_du_atomic_config {
 	u32 colorkey_alpha;
 	bool colorkey_en;
 	bool interlaced;
+	u16 pixel_blend_mode;
 };
 
 /**
