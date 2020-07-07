@@ -334,7 +334,7 @@ bool rtl92cu_rx_query_desc(struct ieee80211_hw *hw,
 	hdr = (struct ieee80211_hdr *)(skb->data);
 	if (unlikely(ieee80211_is_beacon(hdr->frame_control) ||
 			ieee80211_is_probe_resp(hdr->frame_control))) {
-		rx_status->boottime_ns = ktime_get_boot_ns();
+		rx_status->boottime_ns = ktime_get_boottime_ns();
 	}
 
 	return true;
