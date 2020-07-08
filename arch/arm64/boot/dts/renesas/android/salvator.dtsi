@@ -114,6 +114,10 @@
 		dais = <&rsnd_port0>;
 };
 
+&ak4613 {
+	sound-name-prefix = "ak4613";
+};
+
 &pfc {
 	can0_pins: can0 {
 		groups = "can0_data_a";
