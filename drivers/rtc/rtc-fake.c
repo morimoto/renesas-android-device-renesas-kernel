@@ -121,7 +121,7 @@ static int rtc_fake_probe(struct platform_device *pdev)
     struct rtc_fake_data *rfd;
 
     rfd = devm_kzalloc(&pdev->dev, sizeof(rfd), GFP_KERNEL);
-    if (rfd)
+    if (!rfd)
 	    return -ENOMEM;
     /* Initially alarm is disabled. */
 
