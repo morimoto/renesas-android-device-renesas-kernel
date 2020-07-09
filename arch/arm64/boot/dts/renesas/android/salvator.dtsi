@@ -34,6 +34,8 @@
 		};
 	};
 
+	/delete-node/keys;
+
 	gpio_keys {
 		compatible = "gpio-keys";
 
