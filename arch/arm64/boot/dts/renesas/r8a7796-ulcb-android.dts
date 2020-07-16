@@ -1,0 +1,87 @@
+/*
+ * Device Tree Source for the M3ULCB (R-Car Starter Kit Pro) board
+ * Android specific extensions
+ *
+ * Copyright (C) 2020 GlobalLogic
+ *
+ * This file is licensed under the terms of the GNU General Public License
+ * version 2.  This program is licensed "as is" without any warranty of any
+ * kind, whether express or implied.
+ */
+
+#ifndef __M3ULCB_OVERWRITE__
+#include "r8a7796-m3ulcb.dts"
+#endif // __M3ULCB_OVERWRITE__
+#include "android/r8a7796.dtsi"
+
+/ {
+	/delete-node/keyboard;
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		power {
+			label = "SW-3";
+			gpios = <&gpio6 11 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_POWER>;
+			gpio-key,wakeup;
+		};
+
+		volume-down {
+			label = "SW-4";
+			gpios = <&gpio6 12 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_VOLUMEDOWN>;
+		};
+
+		volume-up {
+			label = "SW-5";
+			gpios = <&gpio6 13 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_VOLUMEUP>;
+		};
+
+		soft-sw0 {
+			label = "SW-2-1";
+			gpios = <&gpio5 17 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_F1>;
+		};
+
+		soft-sw1 {
+			label = "SW-2-2";
+			gpios = <&gpio5 20 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_F2>;
+		};
+
+		soft-sw2 {
+			label = "SW-2-3";
+			gpios = <&gpio5 22 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_F3>;
+		};
+
+		soft-sw3 {
+			label = "SW-2-4";
+			gpios = <&gpio5 23 GPIO_ACTIVE_LOW>;
+			linux,code = <KEY_F4>;
+		};
+	};
+
+	ion {
+		compatible = "renesas,ion-rcar";
+
+		ion_heap {
+			compatible = "renesas,ion-rcar-heap";
+			memory-region = <&ion_reserved>;
+			heap-name = "rcar-ion";
+		};
+	};
+};
+
+&hdmi0 {
+	ports {
+		port@0 {
+			reg = <0>;
+			rcar_dw_hdmi0_in: endpoint {
+				remote-endpoint = <&du_out_hdmi0>;
+			};
+		};
+	};
+};
