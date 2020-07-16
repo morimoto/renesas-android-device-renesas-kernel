@@ -1,8 +1,8 @@
 /*
- * Device Tree Source for the H3ULCB Kingfisher board
+ * Device Tree Source for the M3ULCB Kingfisher board
  * Android specific extensions
  *
- * Copyright (C) 2018 GlobalLogic
+ * Copyright (C) 2020 GlobalLogic
  *
  * This file is licensed under the terms of the GNU General Public License
  * version 2.  This program is licensed "as is" without any warranty of any
@@ -10,8 +10,8 @@
  */
 
 /dts-v1/;
-#define __H3ULCB_OVERWRITE__
-#include "r8a7795-h3ulcb-kf.dts"
-#include "r8a7795-ulcb-android.dts"
-#include "android/h3ulcb-kf.dtsi"
+#define __M3ULCB_OVERWRITE__
+#include "r8a7796-m3ulcb-kf.dts"
+#include "r8a7796-ulcb-android.dts"
+#include "android/m3ulcb-kf.dtsi"
 #include "android/ulcb-kf-cn10.dtsi"

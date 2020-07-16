@@ -21,6 +21,7 @@ dtb-$(CONFIG_ARCH_R8A7796) +=  r8a7796-salvator-x-android.dtb
 dtb-$(CONFIG_ARCH_R8A7796) +=  r8a7796-salvator-xs-android.dtb
 dtb-$(CONFIG_ARCH_R8A7796) +=  r8a7796-salvator-xs-2x4g-android.dtb
 dtb-$(CONFIG_ARCH_R8A77965) += r8a77965-salvator-xs-android.dtb
+dtb-$(CONFIG_ARCH_R8A7796) +=  r8a7796-ulcb-kf-android.dtb
 
 dts-dirs	:= android/overlays
 subdir-y	:= $(dts-dirs)
