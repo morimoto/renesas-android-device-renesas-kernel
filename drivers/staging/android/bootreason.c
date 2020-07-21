@@ -63,38 +63,9 @@ static int reboot_notifier_call(
 	/* Override boot reason if any */
 	if (cmd) {
 		if (strlen(cmd) && strlen(cmd) < REASON_MAX_LEN) {
-			if (strncmp(cmd, "bootloader",
-					strlen("bootloader")) == 0) {
-				memset(msg.reason, 0, sizeof(msg.reason));
-				snprintf(msg.reason, sizeof(msg.reason), "%s",
-						"reboot,bootloader");
-			} else if (strncmp(cmd, "recovery",
-					strlen("recovery")) == 0) {
-				memset(msg.reason, 0, sizeof(msg.reason));
-				snprintf(msg.reason, sizeof(msg.reason), "%s",
-						"reboot,recovery");
-			} else if (strncmp(cmd, "userrequested",
-					strlen("userrequested")) == 0) {
-				memset(msg.reason, 0, sizeof(msg.reason));
-				snprintf(msg.reason, sizeof(msg.reason), "%s",
-						"reboot,userrequested");
-			} else if (strncmp(cmd, "watchdog",
-					strlen("watchdog")) == 0) {
-				memset(msg.reason, 0, sizeof(msg.reason));
-				snprintf(msg.reason, sizeof(msg.reason), "%s",
-						"watchdog");
-			} else if (strncmp(cmd, "adb",
-					strlen("adb")) == 0) {
-				memset(msg.reason, 0, sizeof(msg.reason));
-				snprintf(msg.reason, sizeof(msg.reason), "%s",
-						"reboot,adb");
-			} else if (strncmp(cmd, "shell",
-					strlen("shell")) == 0) {
-				memset(msg.reason, 0, sizeof(msg.reason));
-				snprintf(msg.reason, sizeof(msg.reason), "%s",
-						"reboot,shell");
-			}
-			/* Add some mapping here... */
+			memset(msg.reason, 0, sizeof(msg.reason));
+			snprintf(msg.reason, sizeof(msg.reason), "%s%s",
+						"reboot,", cmd);
 		}
 	} else if (reboot_reason) {
 		snprintf(msg.reason, sizeof(msg.reason), "%s", reboot_reason);
