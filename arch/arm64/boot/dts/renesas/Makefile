@@ -26,8 +26,7 @@ dtb-$(CONFIG_ARCH_R8A7796) +=  r8a7796-ulcb-kf-android.dtb
 dts-dirs	:= android/overlays
 subdir-y	:= $(dts-dirs)
 
-DTC_FLAGS += -@ -p 1024
-
+DTC_FLAGS += -@ -p 2048
 always := $(dtb-y)
 clean-files := *.dtb
 
