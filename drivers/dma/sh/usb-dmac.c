@@ -490,7 +490,7 @@ static u32 usb_dmac_chan_get_residue_if_complete(struct usb_dmac_chan *chan,
 	struct usb_dmac_desc *desc;
 	u32 residue = 0;
 
-	list_for_each_entry_reverse(desc, &chan->desc_freed, node) {
+	list_for_each_entry_reverse(desc, &chan->desc_got, node) {
 		if (desc->done_cookie == cookie) {
 			residue = desc->residue;
 			break;
