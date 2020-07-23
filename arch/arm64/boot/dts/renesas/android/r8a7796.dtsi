@@ -60,7 +60,7 @@
 
 		ion_reserved: linux,ion@68000000 {
 			compatible = "ion-region";
-			reg = <0x00000000 0x68000000 0x0 0x18000000>; /* 384Mb */
+			reg = <0x00000000 0x68000000 0x0 0x20000000>; /* 512Mb */
 		};
 	};
 	cpus {
