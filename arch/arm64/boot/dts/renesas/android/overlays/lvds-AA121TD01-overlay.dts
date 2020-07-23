@@ -52,6 +52,8 @@
 };
 
 &lvds0 {
+	status = "okay";
+
 	ports {
 		port@1 {
 			lvds0_out: endpoint {

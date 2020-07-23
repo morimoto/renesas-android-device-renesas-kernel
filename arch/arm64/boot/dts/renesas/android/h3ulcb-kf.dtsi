@@ -42,6 +42,14 @@
 		};
 	};
 
+	lvds: lvds {
+		port {
+			lvds_in: endpoint {
+				remote-endpoint = <&lvds0_out>;
+			};
+		};
+	};
+
 	/delete-node/sound;
 
 	sound_ext: sound@0 {
