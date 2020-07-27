@@ -43,6 +43,16 @@
 	status = "okay";
 };
 
+&lvds0 {
+	 ports {
+		port@1 {
+			lvds0_out: endpoint {
+				remote-endpoint = <&lvds_in>;
+			};
+		};
+	};
+};
+
 &i2c2 {
 	gpio_exp_74: gpio@74 {
 		compatible = "ti,tca9539";
