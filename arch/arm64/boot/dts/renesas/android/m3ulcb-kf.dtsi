@@ -58,6 +58,9 @@
 		simple-audio-card,format = "left_j";
 		simple-audio-card,name = "pcm3168a";
 
+		#address-cells = <1>;
+		#size-cells = <0>;
+
 		simple-audio-card,dai-link@0 {
 			/* DAC */
 			reg = <0>;

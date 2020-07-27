@@ -19,61 +19,76 @@
 		reg = <1>;
 
 		/* Slot A (CN10) */
-		ov106xx@0 {
+		ov106xx@60 {
 			compatible = "ovti,ov106xx";
 			reg = <0x60>;
 
 			port@0 {
-				ov106xx_in0: endpoint {
+				ov106xx_in0ep0vin: endpoint@0 {
 					clock-lanes = <0>;
 					data-lanes = <1 2 3 4>;
 					remote-endpoint = <&vin0ep0>;
 				};
+				ov106xx_in0ep0max: endpoint@1 {
+					clock-lanes = <0>;
+					data-lanes = <1 2 3 4>;
+					remote-endpoint = <&max9286_des0ep0ov106>;
+				};
 			};
 			port@1 {
 				ov106xx_max9286_des0ep0: endpoint@0 {
-					remote-endpoint = <&max9286_des0ep0>;
+					remote-endpoint = <&max9286_des0ep0ov106max>;
 				};
 			};
 		};
 
-		ov106xx@1 {
+		ov106xx@61 {
 			compatible = "ovti,ov106xx";
 			reg = <0x61>;
 
-				port@0 {
-				ov106xx_in1: endpoint {
+			port@0 {
+				ov106xx_in1vin: endpoint@0 {
 					clock-lanes = <0>;
 					data-lanes = <1 2 3 4>;
 					remote-endpoint = <&vin1ep0>;
 				};
+				ov106xx_in1max: endpoint@1 {
+					clock-lanes = <0>;
+					data-lanes = <1 2 3 4>;
+					remote-endpoint = <&max9286_des0ep1ov106>;
+				};
 			};
 			port@1 {
 				ov106xx_max9286_des0ep1: endpoint@0 {
-					remote-endpoint = <&max9286_des0ep1>;
+					remote-endpoint = <&max9286_des0ep1ov106max>;
 				};
 			};
 		};
 
-		ov106xx@2 {
+		ov106xx@62 {
 			compatible = "ovti,ov106xx";
 			reg = <0x62>;
 
 			port@0 {
-				ov106xx_in2: endpoint {
+				ov106xx_in2vin: endpoint@0 {
 					clock-lanes = <0>;
 					data-lanes = <1 2 3 4>;
 					remote-endpoint = <&vin2ep0>;
 				};
+				ov106xx_in2max: endpoint@1 {
+					clock-lanes = <0>;
+					data-lanes = <1 2 3 4>;
+					remote-endpoint = <&max9286_des0ep2ov106>;
+				};
 			};
 			port@1 {
 				ov106xx_max9286_des0ep2: endpoint@0 {
-					remote-endpoint = <&max9286_des0ep2>;
+					remote-endpoint = <&max9286_des0ep2ov106max>;
 				};
 			};
 		};
 
-		ov106xx@3 {
+		ov106xx@63 {
 			compatible = "ovti,ov106xx";
 			reg = <0x63>;
 
@@ -81,24 +96,25 @@
 				ov106xx_in3: endpoint {
 					clock-lanes = <0>;
 					data-lanes = <1 2 3 4>;
-					remote-endpoint = <&vin3ep0>;
+					remote-endpoint = <&vin3ep0ov106>;
 				};
 			};
 			port@1 {
 				ov106xx_max9286_des0ep3: endpoint@0 {
-					remote-endpoint = <&max9286_des0ep3>;
+					remote-endpoint = <&max9286_des0ep3ov106max>;
 				};
 			};
 		};
 
 		/* MAX9286 @ 0x2c */
-		max9286@0 {
+		max9286@2c {
 			compatible = "maxim,max9286";
 			reg = <0x2c>;
 			maxim,sensor_delay = <350>;
 			maxim,links = <4>;
 			maxim,lanes = <4>;
-			maxim,resetb-gpio = <1>;
+			/* Should be replaced with correct phandle reference */
+			/* maxim,resetb-gpio = <1>; */
 			maxim,fsync-mode = "automatic";
 			maxim,timeout = <100>;
 
@@ -108,31 +124,71 @@
 			POC3-gpios = <&video_a_ext 10 GPIO_ACTIVE_HIGH>;
 
 			port@0 {
-				max9286_des0ep0: endpoint@0 {
+				max9286_des0ep0ov106: endpoint@0 {
 					max9271-addr = <0x50>;
 					dvp-order = <1>;
-					remote-endpoint = <&ov106xx_in0>;
+					remote-endpoint = <&ov106xx_in0ep0max>;
 				};
-				max9286_des0ep1: endpoint@1 {
+				max9286_des0ep0vin: endpoint@1 {
+					max9271-addr = <0x50>;
+					dvp-order = <1>;
+					remote-endpoint = <&vin0_max9286_des0ep0>;
+				};
+				max9286_des0ep0ov106max: endpoint@2 {
+					max9271-addr = <0x50>;
+					dvp-order = <1>;
+					remote-endpoint = <&ov106xx_max9286_des0ep0>;
+				};
+				max9286_des0ep1ov106: endpoint@3 {
 					max9271-addr = <0x51>;
 					dvp-order = <1>;
-					remote-endpoint = <&ov106xx_in1>;
+					remote-endpoint = <&ov106xx_in1max>;
 				};
-				max9286_des0ep2: endpoint@2 {
+				max9286_des0ep1vin: endpoint@4 {
+					max9271-addr = <0x51>;
+					dvp-order = <1>;
+					remote-endpoint = <&vin1_max9286_des0ep1>;
+				};
+				max9286_des0ep1ov106max: endpoint@5 {
+					max9271-addr = <0x51>;
+					dvp-order = <1>;
+					remote-endpoint = <&ov106xx_max9286_des0ep1>;
+				};
+				max9286_des0ep2ov106: endpoint@6 {
 					max9271-addr = <0x52>;
 					dvp-order = <1>;
-					remote-endpoint = <&ov106xx_in2>;
+					remote-endpoint = <&ov106xx_in2max>;
 				};
-				max9286_des0ep3: endpoint@3 {
+				max9286_des0ep2vin: endpoint@7 {
+					max9271-addr = <0x52>;
+					dvp-order = <1>;
+					remote-endpoint = <&vin2_max9286_des0ep2>;
+				};
+				max9286_des0ep2ov106max: endpoint@8 {
+					max9271-addr = <0x52>;
+					dvp-order = <1>;
+					remote-endpoint = <&ov106xx_max9286_des0ep2>;
+				};
+				max9286_des0ep3vin: endpoint@9 {
 					max9271-addr = <0x53>;
 					dvp-order = <1>;
-					remote-endpoint = <&ov106xx_in3>;
+					remote-endpoint = <&vin3ep0max>;
+				};
+				max9286_des0ep3ov106max: endpoint@10 {
+					max9271-addr = <0x53>;
+					dvp-order = <1>;
+					remote-endpoint = <&ov106xx_max9286_des0ep3>;
+				};
+				max9286_des0ep3vinmax: endpoint@11 {
+					max9271-addr = <0x53>;
+					dvp-order = <1>;
+					remote-endpoint = <&vin3_max9286_des0ep3>;
 				};
 			};
 			port@1 {
 				max9286_csi0ep0: endpoint {
 					csi-rate = <700>;
-					remote-endpoint = <&csi40_ep>;
+					remote-endpoint = <&csi40_ep0>;
 				};
 			};
 		};
@@ -203,19 +259,19 @@
 				csi,select = "csi40";
 				virtual,channel = <0>;
 				data-lanes = <1 2 3 4>;
-				remote-endpoint = <&ov106xx_in0>;
+				remote-endpoint = <&ov106xx_in0ep0vin>;
 			};
 		};
 		port@1 {
 			reg = <1>;
 			csi0ep0: endpoint {
-				remote-endpoint = <&csi40_ep>;
+				remote-endpoint = <&csi40_ep1>;
 			};
 		};
 		port@2 {
 			reg = <2>;
 			vin0_max9286_des0ep0: endpoint@0 {
-				remote-endpoint = <&max9286_des0ep0>;
+				remote-endpoint = <&max9286_des0ep0vin>;
 			};
 		};
 	};
@@ -234,19 +290,19 @@
 				csi,select = "csi40";
 				virtual,channel = <1>;
 				data-lanes = <1 2 3 4>;
-				remote-endpoint = <&ov106xx_in1>;
+				remote-endpoint = <&ov106xx_in1vin>;
 			};
 		};
 		port@1 {
 			reg = <1>;
 			csi0ep1: endpoint {
-				remote-endpoint = <&csi40_ep>;
+				remote-endpoint = <&csi40_ep2>;
 			};
 		};
 		port@2 {
 			reg = <2>;
 			vin1_max9286_des0ep1: endpoint@0 {
-				remote-endpoint = <&max9286_des0ep1>;
+				remote-endpoint = <&max9286_des0ep1vin>;
 			};
 		};
 	};
@@ -265,19 +321,19 @@
 				csi,select = "csi40";
 				virtual,channel = <2>;
 				data-lanes = <1 2 3 4>;
-				remote-endpoint = <&ov106xx_in2>;
+				remote-endpoint = <&ov106xx_in2vin>;
 			};
 		};
 		port@1 {
 			reg = <1>;
 			csi0ep2: endpoint {
-				remote-endpoint = <&csi40_ep>;
+				remote-endpoint = <&csi40_ep3>;
 			};
 		};
 		port@2 {
 			reg = <2>;
 			vin2_max9286_des0ep2: endpoint@0 {
-				remote-endpoint = <&max9286_des0ep2>;
+				remote-endpoint = <&max9286_des0ep2vin>;
 			};
 		};
 	};
@@ -292,23 +348,30 @@
 
 		port@0 {
 			reg = <0>;
-			vin3ep0: endpoint {
+			vin3ep0ov106: endpoint@0 {
 				csi,select = "csi40";
 				virtual,channel = <3>;
 				data-lanes = <1 2 3 4>;
 				remote-endpoint = <&ov106xx_in3>;
 			};
+
+			vin3ep0max: endpoint@1 {
+				csi,select = "csi40";
+				virtual,channel = <3>;
+				data-lanes = <1 2 3 4>;
+				remote-endpoint = <&max9286_des0ep3vin>;
+			};
 		};
 		port@1 {
 			reg = <1>;
 			csi0ep3: endpoint {
-				remote-endpoint = <&csi40_ep>;
+				remote-endpoint = <&csi40_ep4>;
 			};
 		};
 		port@2 {
 			reg = <2>;
 			vin3_max9286_des0ep3: endpoint@0 {
-				remote-endpoint = <&max9286_des0ep3>;
+				remote-endpoint = <&max9286_des0ep3vinmax>;
 			};
 		};
 	};
@@ -337,10 +400,39 @@
 	};
 
 	port {
-		csi40_ep: endpoint {
+		csi40_ep0: endpoint@0 {
 			clock-lanes = <0>;
 			data-lanes = <1 2 3 4>;
 			csi-rate = <300>;
+			remote-endpoint = <&max9286_csi0ep0>;
+		};
+
+		csi40_ep1: endpoint@1 {
+			clock-lanes = <0>;
+			data-lanes = <1 2 3 4>;
+			csi-rate = <300>;
+			remote-endpoint = <&csi0ep0>;
+		};
+
+		csi40_ep2: endpoint@2 {
+			clock-lanes = <0>;
+			data-lanes = <1 2 3 4>;
+			csi-rate = <300>;
+			remote-endpoint = <&csi0ep1>;
+		};
+
+		csi40_ep3: endpoint@3 {
+			clock-lanes = <0>;
+			data-lanes = <1 2 3 4>;
+			csi-rate = <300>;
+			remote-endpoint = <&csi0ep2>;
+		};
+
+		csi40_ep4: endpoint@4 {
+			clock-lanes = <0>;
+			data-lanes = <1 2 3 4>;
+			csi-rate = <300>;
+			remote-endpoint = <&csi0ep3>;
 		};
 	};
 };
