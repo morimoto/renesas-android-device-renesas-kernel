@@ -55,19 +55,11 @@ DTB_FOOTER := -uhd
 endif
 
 ifeq ($(TARGET_PRODUCT),salvator)
+ifeq ($(TARGET_BOARD_PLATFORM),r8a7795)
 DTB_BLOBS := \
 	$(KERNEL_DTB_BLOBS)/r8a7795-salvator-x-android.dtb --id=0x00779520 \
-	$(KERNEL_DTB_BLOBS)/r8a7796-salvator-x-android.dtb --id=0x00779610 \
-	$(KERNEL_DTB_BLOBS)/r8a7796-salvator-x-android.dtb --id=0x00779611 \
-	$(KERNEL_DTB_BLOBS)/r8a7796-salvator-x-android.dtb --id=0x00779613 \
-	$(KERNEL_DTB_BLOBS)/r8a7796-salvator-x-android.dtb --id=0x00779620 \
-	$(KERNEL_DTB_BLOBS)/r8a7795-salvator-xs-android.dtb --id=0x04779520 \
-	$(KERNEL_DTB_BLOBS)/r8a7796-salvator-xs-android.dtb --id=0x04779610 \
-	$(KERNEL_DTB_BLOBS)/r8a7796-salvator-xs-android.dtb --id=0x04779611 \
-	$(KERNEL_DTB_BLOBS)/r8a7796-salvator-xs-android.dtb --id=0x04779613 \
-	$(KERNEL_DTB_BLOBS)/r8a7796-salvator-xs-android.dtb --id=0x04779620 \
-	$(KERNEL_DTB_BLOBS)/r8a7796-salvator-xs-2x4g-android.dtb --id=0x04779630 \
-	$(KERNEL_DTB_BLOBS)/r8a77965-salvator-xs-android.dtb --id=0x04779650
+	$(KERNEL_DTB_BLOBS)/r8a7795-salvator-xs-android.dtb --id=0x04779520
+
 ifeq ($(H3_OPTION),4GB2x2)
 DTB_BLOBS += \
 	$(KERNEL_DTB_BLOBS)/r8a7795-salvator-xs-2x2g-android.dtb --id=0x04779530
@@ -96,16 +88,37 @@ DTBO_BLOBS += \
 	$(KERNEL_DTBO_BLOBS)/r8a7795v2-salvator-overlay.dtb    --id=0x04779520 --custom0=0x73616c76 --custom1=0x76320000
 endif
 
+ifeq ($(TARGET_BOARD_PLATFORM),r8a7796)
+DTB_BLOBS := \
+	$(KERNEL_DTB_BLOBS)/r8a7796-salvator-x-android.dtb --id=0x00779610 \
+	$(KERNEL_DTB_BLOBS)/r8a7796-salvator-x-android.dtb --id=0x00779611 \
+	$(KERNEL_DTB_BLOBS)/r8a7796-salvator-x-android.dtb --id=0x00779613 \
+	$(KERNEL_DTB_BLOBS)/r8a7796-salvator-x-android.dtb --id=0x00779620 \
+	$(KERNEL_DTB_BLOBS)/r8a7796-salvator-xs-android.dtb --id=0x04779610 \
+	$(KERNEL_DTB_BLOBS)/r8a7796-salvator-xs-android.dtb --id=0x04779611 \
+	$(KERNEL_DTB_BLOBS)/r8a7796-salvator-xs-android.dtb --id=0x04779613 \
+	$(KERNEL_DTB_BLOBS)/r8a7796-salvator-xs-android.dtb --id=0x04779620 \
+	$(KERNEL_DTB_BLOBS)/r8a7796-salvator-xs-2x4g-android.dtb --id=0x04779630
+endif
+
+ifeq ($(TARGET_BOARD_PLATFORM),r8a77965)
+DTB_BLOBS := \
+	$(KERNEL_DTB_BLOBS)/r8a77965-salvator-xs-android.dtb --id=0x04779650
+endif
+endif #ifeq ($(TARGET_PRODUCT),salvator)
+
 ifeq ($(TARGET_PRODUCT),ulcb)
+ifeq ($(TARGET_BOARD_PLATFORM),r8a7795)
 DTB_BLOBS := \
     $(KERNEL_DTB_BLOBS)/r8a7795-ulcb-android.dtb --id=0x0b779520
 endif
+endif #ifeq ($(TARGET_PRODUCT),ulcb)
 
 ifeq ($(TARGET_PRODUCT),kingfisher)
+ifeq ($(TARGET_BOARD_PLATFORM),r8a7795)
 DTB_BLOBS := \
 	$(KERNEL_DTB_BLOBS)/r8a7795-ulcb-kf-android.dtb --id=0x0b779520 \
-	$(KERNEL_DTB_BLOBS)/r8a7795-ulcb-kf-android.dtb --id=0x0b779530 \
-	$(KERNEL_DTB_BLOBS)/r8a7796-ulcb-kf-android.dtb --id=0x02779630
+	$(KERNEL_DTB_BLOBS)/r8a7795-ulcb-kf-android.dtb --id=0x0b779530
 
 DTBO_BLOBS += \
 	$(KERNEL_DTBO_BLOBS)/r8a7795-h3ulcb-4x2g-overlay.dtb --id=0x0b779530 --custom0=0x736b6b66 --custom1=0x34783267 --custom2=0x33300000 \
@@ -113,6 +126,12 @@ DTBO_BLOBS += \
 	$(KERNEL_DTBO_BLOBS)/r8a7795v3-h3ulcb-kf-overlay.dtb --id=0x0b779530 --custom0=0x736b6b66 --custom1=0x76330000 \
 	$(KERNEL_DTBO_BLOBS)/r8a7795v2-h3ulcb-kf-overlay.dtb --id=0x0b779520 --custom0=0x736b6b66 --custom1=0x76320000
 endif
+
+ifeq ($(TARGET_BOARD_PLATFORM),r8a7796)
+DTB_BLOBS := \
+	$(KERNEL_DTB_BLOBS)/r8a7796-ulcb-kf-android.dtb --id=0x02779630
+endif
+endif #ifeq ($(TARGET_PRODUCT),kingfisher)
 
 # 0x6c766473 - 'lvds'
 # 0x54583331 - 'TX31'
