@@ -11,7 +11,14 @@
 
 /dts-v1/;
 #define __M3ULCB_OVERWRITE__
-#include "r8a7796-m3ulcb-kf.dts"
+#include "r8a7796-m3ulcb-2x4g.dts"
+#include "ulcb-kf.dtsi"
 #include "r8a7796-ulcb-android.dts"
 #include "android/m3ulcb-kf.dtsi"
 #include "android/ulcb-kf-cn10.dtsi"
+
+/ {
+	model = "Renesas M3ULCB Kingfisher board based on r8a7796 ES3.0 + with 8GiB (2 x 4 GiB)";
+	compatible = "shimafuji,kingfisher", "renesas,m3ulcb",
+		     "renesas,r8a7796";
+};
