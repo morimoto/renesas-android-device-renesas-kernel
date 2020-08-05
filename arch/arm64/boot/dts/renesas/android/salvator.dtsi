@@ -143,11 +143,3 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
-
-&pciec0 {
-	status = "disabled";
-};
-
-&pciec1 {
-	status = "disabled";
-};
