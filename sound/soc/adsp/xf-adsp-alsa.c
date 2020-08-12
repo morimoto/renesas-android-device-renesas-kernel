@@ -3687,14 +3687,25 @@ static int snd_adsp_pcm_new(struct snd_soc_pcm_runtime *runtime)
 		};
 
 		/* add basic control instances */
-		for (i = 0; i < TDM_CONTROL_NUM; i++) {
-			kctl[i] = snd_ctl_new1(tdm_ctr[i], adsp_card);
-			err = snd_ctl_add(card, kctl[i]);
-			if (err < 0)
-				return -EINVAL;
+		if (runtime->codec_dai->id == 0) {
+			/* playback */
+			for (i = 0; i < 2; i++) {
+				kctl[i] = snd_ctl_new1(tdm_ctr[i], adsp_card);
+				err = snd_ctl_add(card, kctl[i]);
+				if (err < 0)
+					return -EINVAL;
+			}
+		} else {
+			/* capture */
+			for (i = 2; i < TDM_CONTROL_NUM; i++) {
+				kctl[i] = snd_ctl_new1(tdm_ctr[i], adsp_card);
+				err = snd_ctl_add(card, kctl[i]);
+				if (err < 0)
+					return -EINVAL;
+			}
 		}
 
-		return snd_pcm_lib_preallocate_pages_for_all(runtime->pcm,
+		snd_pcm_lib_preallocate_pages_for_all(runtime->pcm,
 				SNDRV_DMA_TYPE_CONTINUOUS,
 				snd_dma_continuous_data(GFP_KERNEL),
 				TDM_MAX_BUFFER_BYTES, TDM_MAX_BUFFER_BYTES);
@@ -3708,13 +3719,9 @@ static int snd_adsp_pcm_new(struct snd_soc_pcm_runtime *runtime)
  * ***************************************************************************/
 
 /** callback function of platform driver */
-static struct snd_soc_platform_driver snd_adsp_platform = {
+static const struct snd_soc_component_driver snd_adsp_soc_component = {
 	.pcm_new	= &snd_adsp_pcm_new,
 	.ops		= &snd_adsp_pcm_ops,
-};
-
-/** component information of driver */
-static const struct snd_soc_component_driver snd_adsp_component = {
 	.name		= "snd_adsp",
 };
 
@@ -4047,12 +4054,6 @@ static int snd_adsp_probe(struct platform_device *pdev)
 	if (snd_adsp_device_params_parse(&pdev->dev) < 0)
 		return -EINVAL;
 
-	/* register platform device */
-	if (snd_soc_register_platform(&pdev->dev, &snd_adsp_platform) < 0) {
-		snd_soc_unregister_platform(&pdev->dev);
-		return -EINVAL;
-	}
-
 	/* fill format information of sound DAI driver for Rdr/Cap function */
 	for (i = 0; i < (MAX_DAI_IDX - 1); i++) {
 		snd_adsp_dai[i].playback.rates = SND_ADSP_SAMPLE_RATES;
@@ -4077,11 +4078,12 @@ static int snd_adsp_probe(struct platform_device *pdev)
 	snd_adsp_dai[i].capture.channels_min = TDM_MIN_CHANNEL;
 	snd_adsp_dai[i].capture.channels_max = TDM_MAX_CHANNEL;
 
-	/* register CPU dai */
-	if (snd_soc_register_component(&pdev->dev, &snd_adsp_component,
-				       snd_adsp_dai,
-				       ARRAY_SIZE(snd_adsp_dai)) < 0) {
-		snd_soc_unregister_platform(&pdev->dev);
+	/*
+	 *	asoc register
+	 */
+	if (devm_snd_soc_register_component(&pdev->dev, &snd_adsp_soc_component,
+			snd_adsp_dai, ARRAY_SIZE(snd_adsp_dai)) < 0) {
+		dev_err(&pdev->dev, "failed to register component\n");
 		return -EINVAL;
 	}
 
@@ -4110,10 +4112,6 @@ static int snd_adsp_remove(struct platform_device *pdev)
 
 	/* release the ADSP sound card */
 	kfree(adsp_card);
-
-	/* unregister platform driver */
-	snd_soc_unregister_component(&pdev->dev);
-	snd_soc_unregister_platform(&pdev->dev);
 
 	/* success */
 	return 0;
