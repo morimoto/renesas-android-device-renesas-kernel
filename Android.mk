@@ -105,6 +105,12 @@ ifeq ($(TARGET_BOARD_PLATFORM),r8a77965)
 DTB_BLOBS := \
 	$(KERNEL_DTB_BLOBS)/r8a77965-salvator-xs-android.dtb --id=0x04779650
 endif
+
+ifeq ($(ENABLE_ADSP),true)
+DTBO_BLOBS += \
+	$(KERNEL_DTBO_BLOBS)/salvator-adsp-overlay.dtb         --id=0x00779000 --custom0=0x73616c76 --custom1=0x61647370
+endif
+
 endif #ifeq ($(TARGET_PRODUCT),salvator)
 
 ifeq ($(TARGET_PRODUCT),ulcb)
@@ -131,6 +137,12 @@ ifeq ($(TARGET_BOARD_PLATFORM),r8a7796)
 DTB_BLOBS := \
 	$(KERNEL_DTB_BLOBS)/r8a7796-ulcb-kf-android.dtb --id=0x02779630
 endif
+
+ifeq ($(ENABLE_ADSP),true)
+DTBO_BLOBS += \
+	$(KERNEL_DTBO_BLOBS)/ulcb-kf-adsp-overlay.dtb        --id=0x00779000 --custom0=0x736b6b66 --custom1=0x61647370
+endif
+
 endif #ifeq ($(TARGET_PRODUCT),kingfisher)
 
 # 0x6c766473 - 'lvds'
