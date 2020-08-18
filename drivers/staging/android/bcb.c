@@ -46,10 +46,16 @@ struct bootloader_message {
 
 #ifdef CONFIG_BOOT_REASON
 static char *shutdown_reason;
+static char *recovery_command;
 
 void shutdown_reason_setup(char *s)
 {
 	shutdown_reason = s;
+}
+
+void recovery_command_setup(char *s)
+{
+	recovery_command = s;
 }
 #endif
 
@@ -192,6 +198,11 @@ static int bcb_reboot_notifier_call(
 	/* When the bootloader reads this area, it will null-terminate it
 	* and check if it matches any existing boot labels */
 	snprintf(bcb->command, sizeof(bcb->command), "bootonce-%s", cmd);
+
+#ifdef CONFIG_BOOT_REASON
+	if (recovery_command)
+		strncpy(bcb->recovery, recovery_command, sizeof(bcb->recovery));
+#endif
 
 	if (write_lba(bdev, 0, (u8 *)bcb, sizeof(*bcb)) != sizeof(*bcb)) {
 		pr_err("bcb: couldn't write bootloader control block\n");

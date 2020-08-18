@@ -14,6 +14,7 @@ struct bootreason_message {
 
 #ifdef CONFIG_BOOT_REASON
 void shutdown_reason_setup(char *s);
+void recovery_command_setup(char *s);
 #endif
 void reboot_reason_setup(char *s);
 
