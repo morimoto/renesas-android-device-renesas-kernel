@@ -14,8 +14,18 @@
 	};
 
 	keylongpress {
-		compatible = "key-long-press";
-		key_down_delay = <10000>;
+		compatible = "keylongpress";
+		reboot {
+			keys = <KEY_POWER>;
+			timeout-ms = <8000>;
+			action = "reboot";
+		};
+
+		fastboot {
+			keys = <KEY_POWER KEY_VOLUMEUP>;
+			timeout-ms = <8000>;
+			action = "fastboot";
+		};
 	};
 
 	android {
