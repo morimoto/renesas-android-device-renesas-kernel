@@ -61,7 +61,7 @@
 		ion_reserved: rcar-ion {
 			compatible = "shared-dma-pool";
 			reusable;
-			reg = <0x00000000 0x68000000 0x0 0x18000000>; /* 384Mb */
+			reg = <0x6 0x0 0x0 0x18000000>; /* 384Mb */
 		};
 	};
 	cpus {
