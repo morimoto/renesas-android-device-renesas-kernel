@@ -132,3 +132,35 @@
 &ipmmu_vp0 {
 	status = "okay";
 };
+
+&vin0 {
+	dma-mask-bits = <40>;
+};
+
+&vin1 {
+	dma-mask-bits = <40>;
+};
+
+&vin2 {
+	dma-mask-bits = <40>;
+};
+
+&vin3 {
+	dma-mask-bits = <40>;
+};
+
+&vin4 {
+	dma-mask-bits = <40>;
+};
+
+&vin5 {
+	dma-mask-bits = <40>;
+};
+
+&vin6 {
+	dma-mask-bits = <40>;
+};
+
+&vin7 {
+	dma-mask-bits = <40>;
+};

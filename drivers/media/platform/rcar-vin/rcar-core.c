@@ -1294,6 +1294,8 @@ static int rcar_vin_probe(struct platform_device *pdev)
 	struct rvin_dev *vin;
 	struct resource *mem;
 	int irq, ret;
+	struct device_node *np;
+	u32 dma_mask_bits;
 
 	vin = devm_kzalloc(&pdev->dev, sizeof(*vin), GFP_KERNEL);
 	if (!vin)
@@ -1322,6 +1324,15 @@ static int rcar_vin_probe(struct platform_device *pdev)
 	vin->base = devm_ioremap_resource(vin->dev, mem);
 	if (IS_ERR(vin->base))
 		return PTR_ERR(vin->base);
+
+	np = pdev->dev.of_node;
+	if (!of_property_read_u32(np, "dma-mask-bits", &dma_mask_bits)) {
+		ret = dma_set_mask_and_coherent(&pdev->dev, DMA_BIT_MASK(dma_mask_bits));
+		if (ret) {
+			pr_err("%s: Error (%d) setting DMA mask to %d for device %s \n", __func__,
+				ret, dma_mask_bits, pdev->name);
+		}
+	}
 
 	irq = platform_get_irq(pdev, 0);
 	if (irq < 0)
