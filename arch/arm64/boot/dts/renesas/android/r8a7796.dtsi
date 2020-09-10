@@ -314,33 +314,41 @@
 };
 
 &vin0 {
+	iommus = <&ipmmu_vi0 0>;
 	dma-mask-bits = <40>;
 };
 
 &vin1 {
+	iommus = <&ipmmu_vi0 0>;
 	dma-mask-bits = <40>;
 };
 
 &vin2 {
+	iommus = <&ipmmu_vi0 0>;
 	dma-mask-bits = <40>;
 };
 
 &vin3 {
+	iommus = <&ipmmu_vi0 0>;
 	dma-mask-bits = <40>;
 };
 
 &vin4 {
+	iommus = <&ipmmu_vi0 1>;
 	dma-mask-bits = <40>;
 };
 
 &vin5 {
+	iommus = <&ipmmu_vi0 1>;
 	dma-mask-bits = <40>;
 };
 
 &vin6 {
+	iommus = <&ipmmu_vi0 1>;
 	dma-mask-bits = <40>;
 };
 
 &vin7 {
+	iommus = <&ipmmu_vi0 1>;
 	dma-mask-bits = <40>;
 };

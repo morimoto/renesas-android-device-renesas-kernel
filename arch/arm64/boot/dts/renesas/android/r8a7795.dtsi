@@ -421,32 +421,40 @@
 
 &vin0 {
 	dma-mask-bits = <40>;
+	iommus = <&ipmmu_vi0 0>;
 };
 
 &vin1 {
 	dma-mask-bits = <40>;
+	iommus = <&ipmmu_vi0 0>;
 };
 
 &vin2 {
 	dma-mask-bits = <40>;
+	iommus = <&ipmmu_vi0 0>;
 };
 
 &vin3 {
 	dma-mask-bits = <40>;
+	iommus = <&ipmmu_vi0 0>;
 };
 
 &vin4 {
 	dma-mask-bits = <40>;
+	iommus = <&ipmmu_vi1 1>;
 };
 
 &vin5 {
 	dma-mask-bits = <40>;
+	iommus = <&ipmmu_vi1 1>;
 };
 
 &vin6 {
 	dma-mask-bits = <40>;
+	iommus = <&ipmmu_vi1 1>;
 };
 
 &vin7 {
 	dma-mask-bits = <40>;
+	iommus = <&ipmmu_vi1 1>;
 };
