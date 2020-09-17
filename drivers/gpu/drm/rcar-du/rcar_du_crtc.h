@@ -66,7 +66,9 @@ struct rcar_du_crtc {
 	struct rcar_du_group *group;
 	struct rcar_du_vsp *vsp;
 	unsigned int vsp_pipe;
+#if IS_ENABLED(CONFIG_DRM_RCAR_CMS)
 	void *cmm_handle;
+#endif
 
 	const char *const *sources;
 	unsigned int sources_count;
@@ -112,6 +114,7 @@ void rcar_du_crtc_finish_page_flip(struct rcar_du_crtc *rcrtc);
 
 void rcar_du_crtc_dsysr_clr_set(struct rcar_du_crtc *rcrtc, u32 clr, u32 set);
 
+#if IS_ENABLED(CONFIG_DRM_RCAR_CMS)
 /* DU-CMM functions */
 int rcar_du_cmm_init(struct rcar_du_crtc *rcrtc);
 int rcar_du_cmm_driver_open(struct drm_device *dev, struct drm_file *file_priv);
@@ -141,5 +144,6 @@ int rcar_du_cmm_free(struct drm_device *dev, void *data,
 int rcar_du_cmm_pm_suspend(struct rcar_du_crtc *rcrtc);
 int rcar_du_cmm_pm_resume(struct rcar_du_crtc *rcrtc);
 #endif /* CONFIG_PM_SLEEP */
+#endif
 
 #endif /* __RCAR_DU_CRTC_H__ */

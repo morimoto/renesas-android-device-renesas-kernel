@@ -284,9 +284,11 @@ static const struct rcar_du_device_info rcar_du_r8a7795_info = {
 		  | RCAR_DU_FEATURE_VSP1_SOURCE
 		  | RCAR_DU_FEATURE_INTERLACED
 		  | RCAR_DU_FEATURE_TVM_SYNC
+#if IS_ENABLED(CONFIG_DRM_RCAR_CMS)
 		  | RCAR_DU_FEATURE_CMM
 		  | RCAR_DU_FEATURE_CMM_LUT_DBUF
 		  | RCAR_DU_FEATURE_CMM_CLU_DBUF
+#endif
 		  | RCAR_DU_FEATURE_R8A7795_REGS,
 	.channels_mask = BIT(3) | BIT(2) | BIT(1) | BIT(0),
 	.routes = {
@@ -321,9 +323,11 @@ static const struct rcar_du_device_info rcar_du_r8a7796_info = {
 		  | RCAR_DU_FEATURE_VSP1_SOURCE
 		  | RCAR_DU_FEATURE_INTERLACED
 		  | RCAR_DU_FEATURE_TVM_SYNC
+#if IS_ENABLED(CONFIG_DRM_RCAR_CMS)
 		  | RCAR_DU_FEATURE_CMM
 		  | RCAR_DU_FEATURE_CMM_LUT_DBUF
 		  | RCAR_DU_FEATURE_CMM_CLU_DBUF
+#endif
 		  | RCAR_DU_FEATURE_R8A7796_REGS,
 	.channels_mask = BIT(2) | BIT(1) | BIT(0),
 	.routes = {
@@ -354,9 +358,11 @@ static const struct rcar_du_device_info rcar_du_r8a77965_info = {
 		  | RCAR_DU_FEATURE_VSP1_SOURCE
 		  | RCAR_DU_FEATURE_INTERLACED
 		  | RCAR_DU_FEATURE_TVM_SYNC
+#if IS_ENABLED(CONFIG_DRM_RCAR_CMS)
 		  | RCAR_DU_FEATURE_CMM
 		  | RCAR_DU_FEATURE_CMM_LUT_DBUF
 		  | RCAR_DU_FEATURE_CMM_CLU_DBUF
+#endif
 		  | RCAR_DU_FEATURE_R8A77965_REGS,
 	.channels_mask = BIT(3) | BIT(1) | BIT(0),
 	.routes = {
@@ -405,11 +411,13 @@ static const struct rcar_du_device_info rcar_du_r8a77970_info = {
 static const struct rcar_du_device_info rcar_du_r8a7799x_info = {
 	.gen = 3,
 	.features = RCAR_DU_FEATURE_CRTC_IRQ_CLOCK
-		  | RCAR_DU_FEATURE_VSP1_SOURCE
 		  | RCAR_DU_FEATURE_R8A7799X
+#if IS_ENABLED(CONFIG_DRM_RCAR_CMS)
 		  | RCAR_DU_FEATURE_CMM
 		  | RCAR_DU_FEATURE_CMM_LUT_DBUF
-		  | RCAR_DU_FEATURE_CMM_CLU_DBUF,
+		  | RCAR_DU_FEATURE_CMM_CLU_DBUF
+#endif
+		  | RCAR_DU_FEATURE_VSP1_SOURCE,
 	.channels_mask = BIT(1) | BIT(0),
 	.routes = {
 		/*
@@ -491,6 +499,7 @@ static const struct drm_ioctl_desc rcar_du_ioctls[] = {
 	DRM_IOCTL_DEF_DRV(RCAR_DU_SCRSHOT, rcar_du_vsp_write_back,
 			  DRM_UNLOCKED),
 
+#if IS_ENABLED(CONFIG_DRM_RCAR_CMS)
 	/* DU-CMM function */
 	DRM_IOCTL_DEF_DRV(RCAR_DU_CMM_SET_CLU, rcar_du_cmm_clu_set,
 			  DRM_UNLOCKED),
@@ -510,14 +519,17 @@ static const struct drm_ioctl_desc rcar_du_ioctls[] = {
 			  DRM_UNLOCKED),
 	DRM_IOCTL_DEF_DRV(RCAR_DU_CMM_FREE, rcar_du_cmm_free,
 			  DRM_UNLOCKED),
+#endif
 };
 
 DEFINE_DRM_GEM_CMA_FOPS(rcar_du_fops);
 
 static struct drm_driver rcar_du_driver = {
 	.driver_features	= DRIVER_GEM | DRIVER_MODESET | DRIVER_ATOMIC,
+#if IS_ENABLED(CONFIG_DRM_RCAR_CMS)
 	.open			= rcar_du_cmm_driver_open,
 	.postclose		= rcar_du_cmm_postclose,
+#endif
 	.gem_free_object_unlocked = drm_gem_cma_free_object,
 	.gem_vm_ops		= &drm_gem_cma_vm_ops,
 	.prime_handle_to_fd	= drm_gem_prime_handle_to_fd,
@@ -546,14 +558,19 @@ static struct drm_driver rcar_du_driver = {
 static int rcar_du_pm_suspend(struct device *dev)
 {
 	struct rcar_du_device *rcdu = dev_get_drvdata(dev);
+#if IS_ENABLED(CONFIG_DRM_RCAR_CMS)
 	int i;
+#endif
 #if IS_ENABLED(CONFIG_DRM_RCAR_DW_HDMI)
 	struct drm_encoder *encoder;
 #endif
+
+#if IS_ENABLED(CONFIG_DRM_RCAR_CMS)
 	if (rcar_du_has(rcdu, RCAR_DU_FEATURE_CMM)) {
 		for (i = 0; i < rcdu->num_crtcs; ++i)
 			rcar_du_cmm_pm_suspend(&rcdu->crtcs[i]);
 	}
+#endif
 
 #if IS_ENABLED(CONFIG_DRM_RCAR_DW_HDMI)
 	list_for_each_entry(encoder,
@@ -572,8 +589,9 @@ static int rcar_du_pm_suspend(struct device *dev)
 static int rcar_du_pm_resume(struct device *dev)
 {
 	struct rcar_du_device *rcdu = dev_get_drvdata(dev);
+#if IS_ENABLED(CONFIG_DRM_RCAR_CMS)
 	int i;
-
+#endif
 #if IS_ENABLED(CONFIG_DRM_RCAR_DW_HDMI)
 	struct drm_encoder *encoder;
 
@@ -587,10 +605,13 @@ static int rcar_du_pm_resume(struct device *dev)
 			dw_hdmi_s2r_ctrl(encoder->bridge, true);
 	}
 #endif
+
+#if IS_ENABLED(CONFIG_DRM_RCAR_CMS)
 	if (rcar_du_has(rcdu, RCAR_DU_FEATURE_CMM)) {
 		for (i = 0; i < rcdu->num_crtcs; ++i)
 			rcar_du_cmm_pm_resume(&rcdu->crtcs[i]);
 	}
+#endif
 
 #if IS_ENABLED(CONFIG_DRM_I2C_ADV7511)
 	drm_helper_hpd_irq_event(rcdu->ddev);

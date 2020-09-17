@@ -368,6 +368,8 @@ static void rcar_du_crtc_set_display_timing(struct rcar_du_crtc *rcrtc)
 	rcar_du_crtc_write(rcrtc, HDSR, mode->htotal - mode->hsync_start - 19);
 	rcar_du_crtc_write(rcrtc, HDER, mode->htotal - mode->hsync_start +
 					mode->hdisplay - 19);
+
+#if IS_ENABLED(CONFIG_DRM_RCAR_CMS)
 	if (rcar_du_has(rcrtc->group->dev, RCAR_DU_FEATURE_CMM)) {
 		rcar_du_crtc_write(rcrtc, HDSR, mode->htotal -
 						mode->hsync_start - 19 - 25);
@@ -381,6 +383,7 @@ static void rcar_du_crtc_set_display_timing(struct rcar_du_crtc *rcrtc)
 						mode->hsync_start +
 						mode->hdisplay - 19);
 	}
+#endif
 	rcar_du_crtc_write(rcrtc, HSWR, mode->hsync_end -
 					mode->hsync_start - 1);
 	rcar_du_crtc_write(rcrtc, HCR,  mode->htotal - 1);
@@ -641,9 +644,11 @@ static void rcar_du_crtc_start(struct rcar_du_crtc *rcrtc)
 
 	rcar_du_group_start_stop(rcrtc->group, true);
 
+#if IS_ENABLED(CONFIG_DRM_RCAR_CMS)
 	if (rcar_du_has(rcrtc->group->dev, RCAR_DU_FEATURE_CMM) &&
 	    !rcar_du_has(rcrtc->group->dev, RCAR_DU_FEATURE_R8A7799X))
 		rcar_du_cmm_start_stop(rcrtc, true);
+#endif
 }
 
 static void rcar_du_crtc_disable_planes(struct rcar_du_crtc *rcrtc)
@@ -679,9 +684,11 @@ static void rcar_du_crtc_stop(struct rcar_du_crtc *rcrtc)
 {
 	struct drm_crtc *crtc = &rcrtc->crtc;
 
+#if IS_ENABLED(CONFIG_DRM_RCAR_CMS)
 	if (rcar_du_has(rcrtc->group->dev, RCAR_DU_FEATURE_CMM) &&
 	    !rcar_du_has(rcrtc->group->dev, RCAR_DU_FEATURE_R8A7799X))
 		rcar_du_cmm_start_stop(rcrtc, false);
+#endif
 
 	/*
 	 * Disable all planes and wait for the change to take effect. This is
@@ -1202,8 +1209,10 @@ static irqreturn_t rcar_du_crtc_irq(int irq, void *arg)
 			rcar_du_crtc_finish_page_flip(rcrtc);
 		}
 
+#if IS_ENABLED(CONFIG_DRM_RCAR_CMS)
 		if (rcar_du_has(rcrtc->group->dev, RCAR_DU_FEATURE_CMM))
 			rcar_du_cmm_kick(rcrtc);
+#endif
 
 		ret = IRQ_HANDLED;
 	}
@@ -1324,8 +1333,9 @@ int rcar_du_crtc_create(struct rcar_du_group *rgrp, unsigned int swindex,
 	}
 
 	rcar_du_crtc_crc_init(rcrtc);
-
+#if IS_ENABLED(CONFIG_DRM_RCAR_CMS)
 	rcar_du_cmm_init(rcrtc);
+#endif
 
 	return 0;
 }

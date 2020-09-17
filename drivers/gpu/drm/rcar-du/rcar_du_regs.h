@@ -197,10 +197,12 @@
 #define DEFR6_MLOS1		(1 << 2)
 #define DEFR6_DEFAULT		(DEFR6_CODE | DEFR6_TCNE1)
 
+#if IS_ENABLED(CONFIG_DRM_RCAR_CMS)
 #define DEF7R			0x000ec
 #define DEF7R_CODE		(0x7779 << 16)
 #define DEF7R_CMME1		BIT(6)
 #define DEF7R_CMME0		BIT(4)
+#endif
 
 /* -----------------------------------------------------------------------------
  * R8A7790-only Control Registers
@@ -555,6 +557,7 @@
 #define GCBCR			0x11098
 #define BCBCR			0x1109c
 
+#if IS_ENABLED(CONFIG_DRM_RCAR_CMS)
 /* -----------------------------------------------------------------------------
  * DU Color Management Module Registers
  */
@@ -639,5 +642,6 @@
 #define CM2_LUT_TBL2_B(n)		(0x0B00 + ((n) * 4))
 #define CM2_CLU_ADDR2			0x0F00
 #define CM2_CLU_DATA2			0x0F04
+#endif
 
 #endif /* __RCAR_DU_REGS_H__ */

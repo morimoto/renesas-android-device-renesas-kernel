@@ -418,9 +418,15 @@ EXPORT_SYMBOL_GPL(rcar_lvds_clk_disable);
 static void rcar_lvds_enable(struct drm_bridge *bridge)
 {
 	struct rcar_lvds *lvds = bridge_to_rcar_lvds(bridge);
+	const struct drm_display_mode *mode = &lvds->display_mode;
+#if IS_ENABLED(CONFIG_DRM_RCAR_CMS)
+	/*
+	 * FIXME: We should really retrieve the CRTC through the state, but how
+	 * do we get a state pointer?
+	 */
 	struct drm_crtc *crtc = lvds->bridge.encoder->crtc;
 	struct rcar_du_crtc *rcrtc = to_rcar_crtc(crtc);
-	const struct drm_display_mode *mode = &lvds->display_mode;
+#endif
 	u32 lvdhcr;
 	u32 lvdcr0;
 	int ret;
@@ -531,9 +537,11 @@ static void rcar_lvds_enable(struct drm_bridge *bridge)
 	lvdcr0 |= LVDCR0_LVRES;
 	rcar_lvds_write(lvds, LVDCR0, lvdcr0);
 
+#if IS_ENABLED(CONFIG_DRM_RCAR_CMS)
 	if (rcar_du_has(rcrtc->group->dev, RCAR_DU_FEATURE_CMM) &&
 	    (lvds->info->quirks & RCAR_LVDS_QUIRK_EXT_PLL))
 		rcar_du_cmm_start_stop(rcrtc, true);
+#endif
 
 	if (lvds->panel) {
 		drm_panel_prepare(lvds->panel);
@@ -544,8 +552,10 @@ static void rcar_lvds_enable(struct drm_bridge *bridge)
 static void rcar_lvds_disable(struct drm_bridge *bridge)
 {
 	struct rcar_lvds *lvds = bridge_to_rcar_lvds(bridge);
+#if IS_ENABLED(CONFIG_DRM_RCAR_CMS)
 	struct drm_crtc *crtc = lvds->bridge.encoder->crtc;
 	struct rcar_du_crtc *rcrtc = to_rcar_crtc(crtc);
+#endif
 	u32 lvdcr0 = 0;
 
 	if (lvds->panel) {
@@ -553,9 +563,11 @@ static void rcar_lvds_disable(struct drm_bridge *bridge)
 		drm_panel_unprepare(lvds->panel);
 	}
 
+#if IS_ENABLED(CONFIG_DRM_RCAR_CMS)
 	if (rcar_du_has(rcrtc->group->dev, RCAR_DU_FEATURE_CMM) &&
 	    (lvds->info->quirks & RCAR_LVDS_QUIRK_EXT_PLL))
 		rcar_du_cmm_start_stop(rcrtc, false);
+#endif
 
 	lvdcr0 = rcar_lvds_read(lvds, LVDCR0) & ~LVDCR0_LVRES;
 	rcar_lvds_write(lvds, LVDCR0, lvdcr0);

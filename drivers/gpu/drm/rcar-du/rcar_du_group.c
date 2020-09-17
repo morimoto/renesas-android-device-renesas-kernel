@@ -181,10 +181,12 @@ static void rcar_du_group_setup(struct rcar_du_group *rgrp)
 	if (rcdu->info->gen >= 3)
 		rcar_du_group_write(rgrp, DEFR10, DEFR10_CODE | DEFR10_DEFE10);
 
+#if IS_ENABLED(CONFIG_DRM_RCAR_CMS)
 	if (rcar_du_has(rgrp->dev, RCAR_DU_FEATURE_CMM)) {
 		rcar_du_group_write(rgrp, DEF7R, DEF7R_CODE |
 				    DEF7R_CMME1 | DEF7R_CMME0);
 	}
+#endif
 
 	/*
 	 * Use DS1PR and DS2PR to configure planes priorities and connects the

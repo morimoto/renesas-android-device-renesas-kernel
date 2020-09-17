@@ -47,3 +47,8 @@ config DRM_RCAR_VSP
 config DRM_RCAR_WRITEBACK
 	bool
 	default y if ARM64
+
+config DRM_RCAR_CMS
+	bool "Enable Color Management Support."
+	depends on ARCH_RENESAS
+	default n
