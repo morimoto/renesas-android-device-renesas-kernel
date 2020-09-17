@@ -89,6 +89,9 @@ static struct ion_buffer *ion_buffer_create(struct ion_heap *heap,
 	if (!buffer)
 		return ERR_PTR(-ENOMEM);
 
+	/* W/A: temporary disable cached ION memory mappings */
+	flags &= ~ION_FLAG_CACHED;
+
 	buffer->heap = heap;
 	buffer->flags = flags;
 
