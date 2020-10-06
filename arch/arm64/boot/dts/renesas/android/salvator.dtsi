@@ -24,16 +24,6 @@
 	memory_ch4: memory@700000000 {
 	};
 
-	ion {
-		compatible = "renesas,ion-rcar";
-
-		ion_heap {
-			compatible = "renesas,ion-rcar-heap";
-			memory-region = <&ion_reserved>;
-			heap-name = "rcar-ion";
-		};
-	};
-
 	/delete-node/keys;
 
 	gpio_keys {
