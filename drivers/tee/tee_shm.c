@@ -381,8 +381,8 @@ void tee_shm_free(struct tee_shm *shm)
 	 */
 	if (shm->flags & TEE_SHM_DMA_BUF)
 		dma_buf_put(shm->dmabuf);
-
-	tee_shm_release(shm);
+	else
+		tee_shm_release(shm);
 }
 EXPORT_SYMBOL_GPL(tee_shm_free);
 
