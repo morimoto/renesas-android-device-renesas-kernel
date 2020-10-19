@@ -129,7 +129,7 @@
 				camera@60 {
 					compatible = LVDS_CAMERA;
 					reg = <0x60 0x0c>;
-
+					dvp-order = <1>;
 					port {
 						camera_out0: endpoint {
 							remote-endpoint = <&deser_in0>;
@@ -147,7 +147,7 @@
 				camera@61 {
 					compatible = LVDS_CAMERA;
 					reg = <0x61 0x0d>;
-
+					dvp-order = <1>;
 					port {
 						camera_out1: endpoint {
 							remote-endpoint = <&deser_in1>;
@@ -164,7 +164,7 @@
 				camera@62 {
 					compatible = LVDS_CAMERA;
 					reg = <0x62 0x0e>;
-
+					dvp-order = <1>;
 					port {
 						camera_out2: endpoint {
 							remote-endpoint = <&deser_in2>;
@@ -181,7 +181,7 @@
 				camera@63 {
 					compatible = LVDS_CAMERA;
 					reg = <0x63 0x0f>;
-
+					dvp-order = <1>;
 					port {
 						camera_out3: endpoint {
 							remote-endpoint = <&deser_in3>;
