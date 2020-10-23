@@ -14,7 +14,7 @@
 #include "r8a7796-m3ulcb-2x4g.dts"
 #include "ulcb-kf.dtsi"
 #include "r8a7796-ulcb-android.dts"
-#include "android/m3ulcb-kf.dtsi"
+#include "android/ulcb-kf.dtsi"
 #include "android/ulcb-kf-cn10.dtsi"
 
 / {

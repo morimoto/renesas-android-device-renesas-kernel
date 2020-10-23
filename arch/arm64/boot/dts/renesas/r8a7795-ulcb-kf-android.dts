@@ -13,5 +13,5 @@
 #define __H3ULCB_OVERWRITE__
 #include "r8a7795-h3ulcb-kf.dts"
 #include "r8a7795-ulcb-android.dts"
-#include "android/h3ulcb-kf.dtsi"
+#include "android/ulcb-kf.dtsi"
 #include "android/ulcb-kf-cn10.dtsi"
