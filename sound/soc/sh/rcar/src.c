@@ -15,6 +15,7 @@
 
 #include "rsnd.h"
 
+#define SRC_NAME_SIZE	32
 #define SRC_NAME "src"
 
 /* SCU_SYSTEM_STATUS0/1 */
@@ -552,6 +553,8 @@ static int rsnd_src_pcm_new(struct rsnd_mod *mod,
 {
 	struct rsnd_src *src = rsnd_mod_to_src(mod);
 	int ret;
+	char name[SRC_NAME_SIZE];
+	int src_id = rsnd_mod_id(mod);
 
 	/*
 	 * enable SRC sync convert if possible
@@ -567,20 +570,24 @@ static int rsnd_src_pcm_new(struct rsnd_mod *mod,
 	/*
 	 * enable sync convert
 	 */
-	ret = rsnd_kctrl_new_s(mod, io, rtd,
+	snprintf(name, SRC_NAME_SIZE,
 			       rsnd_io_is_play(io) ?
-			       "SRC Out Rate Switch" :
-			       "SRC In Rate Switch",
+			       "SRC%d Out Rate Switch" :
+			       "SRC%d In Rate Switch", src_id);
+	ret = rsnd_kctrl_new_s(mod, io, rtd,
+			       name,
 			       rsnd_kctrl_accept_anytime,
 			       rsnd_src_set_convert_rate,
 			       &src->sen, 1);
 	if (ret < 0)
 		return ret;
 
-	ret = rsnd_kctrl_new_s(mod, io, rtd,
+	snprintf(name, SRC_NAME_SIZE,
 			       rsnd_io_is_play(io) ?
-			       "SRC Out Rate" :
-			       "SRC In Rate",
+			       "SRC%d Out Rate" :
+			       "SRC%d In Rate", src_id);
+	ret = rsnd_kctrl_new_s(mod, io, rtd,
+			       name,
 			       rsnd_kctrl_accept_runtime,
 			       rsnd_src_set_convert_rate,
 			       &src->sync, 192000);

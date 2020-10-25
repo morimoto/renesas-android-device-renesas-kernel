@@ -29,8 +29,7 @@
 
 #include "rsnd.h"
 
-#define RSND_DVC_NAME_SIZE	16
-
+#define DVC_NAME_SIZE	32
 #define DVC_NAME "dvc"
 
 struct rsnd_dvc {
@@ -217,11 +216,16 @@ static int rsnd_dvc_pcm_new(struct rsnd_mod *mod,
 	int is_play = rsnd_io_is_play(io);
 	int channels = rsnd_rdai_channels_get(rdai);
 	int ret;
+	char name[DVC_NAME_SIZE];
+	int dvc_id = rsnd_mod_id(mod);
 
 	/* Volume */
-	ret = rsnd_kctrl_new_m(mod, io, rtd,
+	snprintf(name, DVC_NAME_SIZE,
 			is_play ?
-			"DVC Out Playback Volume" : "DVC In Capture Volume",
+			"DVC%d Out Playback Volume" :
+			"DVC%d In Capture Volume", dvc_id);
+	ret = rsnd_kctrl_new_m(mod, io, rtd,
+			name,
 			rsnd_kctrl_accept_anytime,
 			rsnd_dvc_volume_update,
 			&dvc->volume, channels,
@@ -230,9 +234,12 @@ static int rsnd_dvc_pcm_new(struct rsnd_mod *mod,
 		return ret;
 
 	/* Mute */
-	ret = rsnd_kctrl_new_m(mod, io, rtd,
+	snprintf(name, DVC_NAME_SIZE,
 			is_play ?
-			"DVC Out Mute Switch" : "DVC In Mute Switch",
+			"DVC%d Out Mute Switch" :
+			"DVC%d In Mute Switch", dvc_id);
+	ret = rsnd_kctrl_new_m(mod, io, rtd,
+			name,
 			rsnd_kctrl_accept_anytime,
 			rsnd_dvc_volume_update,
 			&dvc->mute, channels,
@@ -241,18 +248,24 @@ static int rsnd_dvc_pcm_new(struct rsnd_mod *mod,
 		return ret;
 
 	/* Ramp */
-	ret = rsnd_kctrl_new_s(mod, io, rtd,
+	snprintf(name, DVC_NAME_SIZE,
 			is_play ?
-			"DVC Out Ramp Switch" : "DVC In Ramp Switch",
+			"DVC%d Out Ramp Switch" :
+			"DVC%d In Ramp Switch", dvc_id);
+	ret = rsnd_kctrl_new_s(mod, io, rtd,
+			name,
 			rsnd_kctrl_accept_anytime,
 			rsnd_dvc_volume_update,
 			&dvc->ren, 1);
 	if (ret < 0)
 		return ret;
 
-	ret = rsnd_kctrl_new_e(mod, io, rtd,
+	snprintf(name, DVC_NAME_SIZE,
 			is_play ?
-			"DVC Out Ramp Up Rate" : "DVC In Ramp Up Rate",
+			"DVC%d Out Ramp Up Rate" :
+			"DVC%d In Ramp Up Rate", dvc_id);
+	ret = rsnd_kctrl_new_e(mod, io, rtd,
+			name,
 			rsnd_kctrl_accept_anytime,
 			rsnd_dvc_volume_update,
 			&dvc->rup,
@@ -261,9 +274,12 @@ static int rsnd_dvc_pcm_new(struct rsnd_mod *mod,
 	if (ret < 0)
 		return ret;
 
-	ret = rsnd_kctrl_new_e(mod, io, rtd,
+	snprintf(name, DVC_NAME_SIZE,
 			is_play ?
-			"DVC Out Ramp Down Rate" : "DVC In Ramp Down Rate",
+			"DVC%d Out Ramp Down Rate" :
+			"DVC%d In Ramp Down Rate", dvc_id);
+	ret = rsnd_kctrl_new_e(mod, io, rtd,
+			name,
 			rsnd_kctrl_accept_anytime,
 			rsnd_dvc_volume_update,
 			&dvc->rdown,
@@ -310,7 +326,7 @@ int rsnd_dvc_probe(struct rsnd_priv *priv)
 	struct device *dev = rsnd_priv_to_dev(priv);
 	struct rsnd_dvc *dvc;
 	struct clk *clk;
-	char name[RSND_DVC_NAME_SIZE];
+	char name[DVC_NAME_SIZE];
 	int i, nr, ret;
 
 	/* This driver doesn't support Gen1 at this point */
@@ -341,7 +357,7 @@ int rsnd_dvc_probe(struct rsnd_priv *priv)
 	for_each_child_of_node(node, np) {
 		dvc = rsnd_dvc_get(priv, i);
 
-		snprintf(name, RSND_DVC_NAME_SIZE, "%s.%d",
+		snprintf(name, DVC_NAME_SIZE, "%s.%d",
 			 DVC_NAME, i);
 
 		clk = devm_clk_get(dev, name);

@@ -32,7 +32,7 @@
 
 #include "rsnd.h"
 
-#define MIX_NAME_SIZE	16
+#define MIX_NAME_SIZE	32
 #define MIX_NAME "mix"
 
 struct rsnd_mix {
@@ -178,6 +178,8 @@ static int rsnd_mix_pcm_new(struct rsnd_mod *mod,
 	struct rsnd_mod *src_mod = rsnd_io_to_mod_src(io);
 	struct rsnd_kctrl_cfg_s *volume;
 	int ret;
+	char name[MIX_NAME_SIZE];
+	int mix_id = rsnd_mod_id(mod);
 
 	switch (rsnd_mod_id(src_mod)) {
 	case 3:
@@ -206,8 +208,9 @@ static int rsnd_mix_pcm_new(struct rsnd_mod *mod,
 	}
 
 	/* Volume */
+	snprintf(name, MIX_NAME_SIZE, "MIX%d Playback Volume", mix_id);
 	ret = rsnd_kctrl_new_s(mod, io, rtd,
-			       "MIX Playback Volume",
+			       name,
 			       rsnd_kctrl_accept_anytime,
 			       rsnd_mix_volume_update,
 			       volume, VOL_MAX);
@@ -219,16 +222,18 @@ static int rsnd_mix_pcm_new(struct rsnd_mod *mod,
 		return ret;
 
 	/* Ramp */
+	snprintf(name, MIX_NAME_SIZE, "MIX%d Ramp Switch", mix_id);
 	ret = rsnd_kctrl_new_s(mod, io, rtd,
-			       "MIX Ramp Switch",
+			       name,
 			       rsnd_kctrl_accept_anytime,
 			       rsnd_mix_volume_update,
 			       &mix->ren, 1);
 	if (ret < 0)
 		return ret;
 
+	snprintf(name, MIX_NAME_SIZE, "MIX%d Ramp Up Rate", mix_id);
 	ret = rsnd_kctrl_new_e(mod, io, rtd,
-			       "MIX Ramp Up Rate",
+			       name,
 			       rsnd_kctrl_accept_anytime,
 			       rsnd_mix_volume_update,
 			       &mix->rup,
@@ -237,8 +242,9 @@ static int rsnd_mix_pcm_new(struct rsnd_mod *mod,
 	if (ret < 0)
 		return ret;
 
+	snprintf(name, MIX_NAME_SIZE, "MIX%d Ramp Down Rate", mix_id);
 	ret = rsnd_kctrl_new_e(mod, io, rtd,
-			       "MIX Ramp Down Rate",
+			       name,
 			       rsnd_kctrl_accept_anytime,
 			       rsnd_mix_volume_update,
 			       &mix->rdw,

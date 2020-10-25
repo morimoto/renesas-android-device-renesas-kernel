@@ -6,7 +6,7 @@
 
 #include "rsnd.h"
 
-#define CTU_NAME_SIZE	16
+#define CTU_NAME_SIZE	32
 #define CTU_NAME "ctu"
 
 /*
@@ -197,19 +197,23 @@ static int rsnd_ctu_pcm_new(struct rsnd_mod *mod,
 {
 	struct rsnd_ctu *ctu = rsnd_mod_to_ctu(mod);
 	int ret;
+	int ctu_id = rsnd_mod_id(mod);
+	char name[CTU_NAME_SIZE];
 
 	if (rsnd_flags_has(ctu, KCTRL_INITIALIZED))
 		return 0;
 
 	/* CTU Pass */
-	ret = rsnd_kctrl_new_m(mod, io, rtd, "CTU Pass",
+	snprintf(name, CTU_NAME_SIZE, "CTU%d%d Pass", ctu_id, mod->id);
+	ret = rsnd_kctrl_new_m(mod, io, rtd, name,
 			       rsnd_kctrl_accept_anytime,
 			       NULL,
 			       &ctu->pass, RSND_MAX_CHANNELS,
 			       0xC);
 
 	/* ROW0 */
-	ret = rsnd_kctrl_new_m(mod, io, rtd, "CTU SV0",
+	snprintf(name, CTU_NAME_SIZE, "CTU%d%d SV0", ctu_id, mod->id);
+	ret = rsnd_kctrl_new_m(mod, io, rtd, name,
 			       rsnd_kctrl_accept_anytime,
 			       NULL,
 			       &ctu->sv[0], RSND_MAX_CHANNELS,
@@ -218,7 +222,8 @@ static int rsnd_ctu_pcm_new(struct rsnd_mod *mod,
 		return ret;
 
 	/* ROW1 */
-	ret = rsnd_kctrl_new_m(mod, io, rtd, "CTU SV1",
+	snprintf(name, CTU_NAME_SIZE, "CTU%d%d SV1", ctu_id, mod->id);
+	ret = rsnd_kctrl_new_m(mod, io, rtd, name,
 			       rsnd_kctrl_accept_anytime,
 			       NULL,
 			       &ctu->sv[1], RSND_MAX_CHANNELS,
@@ -227,7 +232,8 @@ static int rsnd_ctu_pcm_new(struct rsnd_mod *mod,
 		return ret;
 
 	/* ROW2 */
-	ret = rsnd_kctrl_new_m(mod, io, rtd, "CTU SV2",
+	snprintf(name, CTU_NAME_SIZE, "CTU%d%d SV2", ctu_id, mod->id);
+	ret = rsnd_kctrl_new_m(mod, io, rtd, name,
 			       rsnd_kctrl_accept_anytime,
 			       NULL,
 			       &ctu->sv[2], RSND_MAX_CHANNELS,
@@ -236,7 +242,8 @@ static int rsnd_ctu_pcm_new(struct rsnd_mod *mod,
 		return ret;
 
 	/* ROW3 */
-	ret = rsnd_kctrl_new_m(mod, io, rtd, "CTU SV3",
+	snprintf(name, CTU_NAME_SIZE, "CTU%d%d SV3", ctu_id, mod->id);
+	ret = rsnd_kctrl_new_m(mod, io, rtd, name,
 			       rsnd_kctrl_accept_anytime,
 			       NULL,
 			       &ctu->sv[3], RSND_MAX_CHANNELS,
@@ -245,7 +252,8 @@ static int rsnd_ctu_pcm_new(struct rsnd_mod *mod,
 		return ret;
 
 	/* Reset */
-	ret = rsnd_kctrl_new_s(mod, io, rtd, "CTU Reset",
+	snprintf(name, CTU_NAME_SIZE, "CTU%d%d Reset", ctu_id, mod->id);
+	ret = rsnd_kctrl_new_s(mod, io, rtd, name,
 			       rsnd_kctrl_accept_anytime,
 			       rsnd_ctu_value_reset,
 			       &ctu->reset, 1);
@@ -335,6 +343,7 @@ int rsnd_ctu_probe(struct rsnd_priv *priv)
 		 * CTU00, CTU01, CTU02, CTU03 => CTU0
 		 * CTU10, CTU11, CTU12, CTU13 => CTU1
 		 */
+
 		snprintf(name, CTU_NAME_SIZE, "%s.%d",
 			 CTU_NAME, i / 4);
 
