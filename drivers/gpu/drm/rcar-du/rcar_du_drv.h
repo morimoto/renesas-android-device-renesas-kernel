@@ -34,6 +34,13 @@ struct rcar_du_encoder;
 #define RCAR_DU_FEATURE_R8A77990_REGS	BIT(7)	/* Use R8A77990 registers */
 #define RCAR_DU_FEATURE_R8A77995_REGS	BIT(8)	/* Use R8A77995 registers */
 #define RCAR_DU_FEATURE_R8A779A0_REGS	BIT(9)  /* Use R8A779A0 registers */
+/* Has DEF7R register & CMM */
+#define RCAR_DU_FEATURE_CMM		BIT(10)
+/* Has CMM LUT Double buffer */
+#define RCAR_DU_FEATURE_CMM_LUT_DBUF	BIT(11)
+/* Has CMM CLU Double buffer */
+#define RCAR_DU_FEATURE_CMM_CLU_DBUF	BIT(12)
+#define RCAR_DU_FEATURE_R8A7799X	BIT(13)
 
 #define RCAR_DU_QUIRK_ALIGN_128B	BIT(0)	/* Align pitches to 128 bytes */
 

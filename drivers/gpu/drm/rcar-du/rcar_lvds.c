@@ -27,6 +27,8 @@
 
 #include "rcar_lvds.h"
 #include "rcar_lvds_regs.h"
+#include "rcar_du_crtc.h"
+#include "rcar_du_drv.h"
 
 struct rcar_lvds;
 
@@ -416,6 +418,8 @@ EXPORT_SYMBOL_GPL(rcar_lvds_clk_disable);
 static void rcar_lvds_enable(struct drm_bridge *bridge)
 {
 	struct rcar_lvds *lvds = bridge_to_rcar_lvds(bridge);
+	struct drm_crtc *crtc = lvds->bridge.encoder->crtc;
+	struct rcar_du_crtc *rcrtc = to_rcar_crtc(crtc);
 	const struct drm_display_mode *mode = &lvds->display_mode;
 	u32 lvdhcr;
 	u32 lvdcr0;
@@ -527,6 +531,10 @@ static void rcar_lvds_enable(struct drm_bridge *bridge)
 	lvdcr0 |= LVDCR0_LVRES;
 	rcar_lvds_write(lvds, LVDCR0, lvdcr0);
 
+	if (rcar_du_has(rcrtc->group->dev, RCAR_DU_FEATURE_CMM) &&
+	    (lvds->info->quirks & RCAR_LVDS_QUIRK_EXT_PLL))
+		rcar_du_cmm_start_stop(rcrtc, true);
+
 	if (lvds->panel) {
 		drm_panel_prepare(lvds->panel);
 		drm_panel_enable(lvds->panel);
@@ -536,12 +544,18 @@ static void rcar_lvds_enable(struct drm_bridge *bridge)
 static void rcar_lvds_disable(struct drm_bridge *bridge)
 {
 	struct rcar_lvds *lvds = bridge_to_rcar_lvds(bridge);
+	struct drm_crtc *crtc = lvds->bridge.encoder->crtc;
+	struct rcar_du_crtc *rcrtc = to_rcar_crtc(crtc);
 	u32 lvdcr0 = 0;
 
 	if (lvds->panel) {
 		drm_panel_disable(lvds->panel);
 		drm_panel_unprepare(lvds->panel);
 	}
+
+	if (rcar_du_has(rcrtc->group->dev, RCAR_DU_FEATURE_CMM) &&
+	    (lvds->info->quirks & RCAR_LVDS_QUIRK_EXT_PLL))
+		rcar_du_cmm_start_stop(rcrtc, false);
 
 	lvdcr0 = rcar_lvds_read(lvds, LVDCR0) & ~LVDCR0_LVRES;
 	rcar_lvds_write(lvds, LVDCR0, lvdcr0);

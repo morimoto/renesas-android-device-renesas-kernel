@@ -6,6 +6,8 @@ rcar-du-drm-y := rcar_du_crtc.o \
 		 rcar_du_kms.o \
 		 rcar_du_plane.o \
 
+rcar-du-drm-y += rcar_du_cmm.o
+
 rcar-du-drm-$(CONFIG_DRM_RCAR_LVDS)	+= rcar_du_of.o \
 					   rcar_du_of_lvds_r8a7790.dtb.o \
 					   rcar_du_of_lvds_r8a7791.dtb.o \
