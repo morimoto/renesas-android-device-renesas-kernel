@@ -53,7 +53,6 @@ struct pcm3168a_io_params {
 	bool master_mode;
 	unsigned int fmt;
 	int tdm_slots;
-	u32 tdm_mask;
 	int slot_width;
 };
 
@@ -407,10 +406,8 @@ static int pcm3168a_set_tdm_slot(struct snd_soc_dai *dai, unsigned int tx_mask,
 	struct pcm3168a_priv *pcm3168a = snd_soc_component_get_drvdata(component);
 	struct pcm3168a_io_params *io_params = &pcm3168a->io_params[dai->id];
 
-	if (tx_mask >= (1<<slots) || rx_mask >= (1<<slots)) {
-		dev_err(component->dev,
-			"Bad tdm mask tx: 0x%08x rx: 0x%08x slots %d\n",
-			tx_mask, rx_mask, slots);
+	if ((slots != 8) && (slots != 4)) {
+		dev_err(component->dev, "Bad tdm slots %d\n", slots);
 		return -EINVAL;
 	}
 
@@ -423,11 +420,6 @@ static int pcm3168a_set_tdm_slot(struct snd_soc_dai *dai, unsigned int tx_mask,
 
 	io_params->tdm_slots = slots;
 	io_params->slot_width = slot_width;
-	/* Ignore the not relevant mask for the DAI/direction */
-	if (dai->id == PCM3168A_DAI_DAC)
-		io_params->tdm_mask = tx_mask;
-	else
-		io_params->tdm_mask = rx_mask;
 
 	return 0;
 }
