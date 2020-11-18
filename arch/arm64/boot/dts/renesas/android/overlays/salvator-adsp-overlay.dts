@@ -21,31 +21,40 @@
 			"Capture2", "ak4613 Capture",
 			"Capture3", "ak4613 Capture",
 			"ak4613 Playback", "DAI0 Playback",
-			"DAI0 Capture", "ak4613 Capture";
+			"DAI0 Capture", "ak4613 Capture",
+			"ak4613 Playback", "DAI1 Playback",
+			"ak4613 Playback", "DAI2 Playback",
+			"ak4613 Playback", "DAI3 Playback";
 
 	dais = <&adsp_port0
 		&adsp_port1
 		&adsp_port2
 		&adsp_port3
-		&rsnd_port0>;
+		&rsnd_mix_port0
+		&rsnd_mix_port1
+		&rsnd_mix_port2
+		&rsnd_mix_port3>;
 };
 
 &ak4613 {
 	port {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
 		/* In case of ADSP overlay these EPs appear in reverse order,
 		 * so asoc-audio-graph-scu-card fails to parse DT. Avoid this by
 		 * placing EPs in such below order
 		 */
-		ak4613_endpoint3: endpoint@3 {
+		ak4613_endpoint3: endpoint@7 {
 			remote-endpoint = <&adsp_endpoint3>;
 		};
-		ak4613_endpoint2: endpoint@2 {
+		ak4613_endpoint2: endpoint@6 {
 			remote-endpoint = <&adsp_endpoint2>;
 		};
-		ak4613_endpoint1: endpoint@1 {
+		ak4613_endpoint1: endpoint@5 {
 			remote-endpoint = <&adsp_endpoint1>;
 		};
-		ak4613_endpoint0: endpoint@0 {
+		ak4613_endpoint0: endpoint@4 {
 			remote-endpoint = <&adsp_endpoint0>;
 		};
 	};

@@ -91,23 +91,121 @@
 /delete-node/ &adsp_port1;
 /delete-node/ &adsp_port2;
 /delete-node/ &adsp_port3;
+/delete-node/ &rsnd_port0;
 /delete-node/ &ak4613_endpoint0;
 /delete-node/ &ak4613_endpoint1;
 /delete-node/ &ak4613_endpoint2;
 /delete-node/ &ak4613_endpoint3;
+/delete-node/ &ak4613_endpoint4;
 
 &rcar_adsp_sound {
 	status = "disabled";
 };
 
+&rcar_sound {
+
+	/* Multi DAI */
+	#sound-dai-cells = <1>;
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		rsnd_mix_port0: port@0 {
+			reg = <0>;
+			rsnd_mix_endpoint0: endpoint {
+				remote-endpoint = <&ak4613_mix_endpoint0>;
+
+				dai-format = "left_j";
+				bitclock-master = <&rsnd_mix_endpoint0>;
+				frame-master = <&rsnd_mix_endpoint0>;
+
+				playback = <&src3 &ctu00 &mix0 &dvc0 &ssi0>;
+				capture  = <&ssi1 &src1 &dvc1>;
+			};
+		};
+
+		rsnd_mix_port1: port@1 {
+			reg = <1>;
+			rsnd_mix_endpoint1: endpoint {
+				remote-endpoint = <&ak4613_mix_endpoint1>;
+
+				dai-format = "left_j";
+				bitclock-master = <&rsnd_mix_endpoint1>;
+				frame-master = <&rsnd_mix_endpoint1>;
+
+				playback = <&src4 &ctu01 &mix0 &dvc0 &ssi0>;
+			};
+		};
+
+		rsnd_mix_port2: port@2 {
+			reg = <2>;
+			rsnd_mix_endpoint2: endpoint {
+				remote-endpoint = <&ak4613_mix_endpoint2>;
+
+				dai-format = "left_j";
+				bitclock-master = <&rsnd_mix_endpoint2>;
+				frame-master = <&rsnd_mix_endpoint2>;
+
+				playback = <&src0 &ctu02 &mix0 &dvc0 &ssi0>;
+			};
+		};
+
+		rsnd_mix_port3: port@3 {
+			reg = <3>;
+			rsnd_mix_endpoint3: endpoint {
+				remote-endpoint = <&ak4613_mix_endpoint3>;
+
+				dai-format = "left_j";
+				bitclock-master = <&rsnd_mix_endpoint3>;
+				frame-master = <&rsnd_mix_endpoint3>;
+
+				playback = <&src2 &ctu03 &mix0 &dvc0 &ssi0>;
+			};
+		};
+	};
+};
+
 &sound_card {
-		routing = "ak4613 Playback", "DAI0 Playback",
-				"DAI0 Capture", "ak4613 Capture";
-		dais = <&rsnd_port0>;
+
+	routing = "ak4613 Playback", "DAI0 Playback",
+	"DAI0 Capture", "ak4613 Capture",
+	"ak4613 Playback", "DAI1 Playback",
+	"ak4613 Playback", "DAI2 Playback",
+	"ak4613 Playback", "DAI3 Playback";
+
+	compatible = "audio-graph-scu-card";
+
+	dais = <&rsnd_mix_port0
+			&rsnd_mix_port1
+			&rsnd_mix_port2
+			&rsnd_mix_port3>;
 };
 
 &ak4613 {
 	sound-name-prefix = "ak4613";
+
+	port {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ak4613_mix_endpoint0: endpoint@0 {
+			reg = <0>;
+			remote-endpoint = <&rsnd_mix_endpoint0>;
+		};
+		ak4613_mix_endpoint1: endpoint@1 {
+			reg = <1>;
+			remote-endpoint = <&rsnd_mix_endpoint1>;
+		};
+		ak4613_mix_endpoint2: endpoint@2 {
+			reg = <2>;
+			remote-endpoint = <&rsnd_mix_endpoint2>;
+		};
+		ak4613_mix_endpoint3: endpoint@3 {
+			reg = <3>;
+			remote-endpoint = <&rsnd_mix_endpoint3>;
+		};
+	};
 };
 
 &pfc {
