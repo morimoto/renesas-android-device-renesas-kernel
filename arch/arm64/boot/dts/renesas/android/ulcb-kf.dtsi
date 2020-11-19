@@ -55,8 +55,15 @@
 	sound_ext: sound@0 {
 		compatible = "simple-audio-card";
 
+		#sound-dai-cells = <1>;
+
 		simple-audio-card,format = "left_j";
 		simple-audio-card,name = "pcm3168a";
+		simple-audio-card,routing =
+			"Playback", "DAI0 Playback",
+			"Playback", "DAI4 Playback",
+			"Playback", "DAI5 Playback",
+			"DAI0 Capture", "Capture";
 
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -65,8 +72,21 @@
 			/* DAC */
 			reg = <0>;
 			format = "left_j";
-			cpu {
+			bitclock-master = <&sndcpu_p>;
+			frame-master = <&sndcpu_p>;
+
+			sndcpu_p: cpu@0 {
 				sound-dai = <&rcar_sound 0>;
+				dai-tdm-slot-num = <8>;
+				dai-tdm-slot-width = <32>;
+			};
+			cpu@4 {
+				sound-dai = <&rcar_sound 4>;
+				dai-tdm-slot-num = <8>;
+				dai-tdm-slot-width = <32>;
+			};
+			cpu@5 {
+				sound-dai = <&rcar_sound 5>;
 				dai-tdm-slot-num = <8>;
 				dai-tdm-slot-width = <32>;
 			};
@@ -82,7 +102,10 @@
 			/* ADC */
 			reg = <1>;
 			format = "left_j";
-			cpu {
+			bitclock-master = <&sndcpu_c>;
+			frame-master = <&sndcpu_c>;
+
+			sndcpu_c: cpu@0 {
 				sound-dai = <&rcar_sound 0>;
 				dai-tdm-slot-num = <8>;
 				dai-tdm-slot-width = <32>;
@@ -370,7 +393,7 @@
 		/delete-node/dai0;
 
 		dai0 {
-			playback = <&ssi3>;
+			playback = <&src0 &ctu02 &mix0 &dvc0 &ssi3>;
 			capture  = <&ssi4>;
 		};
 
@@ -380,12 +403,20 @@
 		};
 
 		dai2 {
-			capture = <&ssi6 &src0 &dvc0>;
+			capture = <&ssi6 &src1 &dvc1>;
 		};
 
 		dai3 {
 			playback = <&ssi7>;
 			capture  = <&ssi8>;
+		};
+
+		dai4 {
+			playback = <&src3 &ctu00 &mix0 &dvc0 &ssi3>;
+		};
+
+		dai5 {
+			playback = <&src4 &ctu01 &mix0 &dvc0 &ssi3>;
 		};
 	};
 };
