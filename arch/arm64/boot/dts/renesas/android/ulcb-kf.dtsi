@@ -187,15 +187,9 @@
 
 	codec_en_reg: regulator@6 {
 		compatible = "regulator-fixed";
-		regulator-name = "codec-en-regulator";
+		regulator-name = "PCM3168A Vcc Vdd";
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
-
-		gpio = <&gpio_exp_74 15 0>;
-
-		/* delay - CHECK */
-		startup-delay-us = <70000>;
-		enable-active-high;
 	};
 
 	amp_en_reg: regulator@7 {
@@ -249,11 +243,11 @@
 		regulator-max-microvolt = <3300000>;
 	};
 
-	snd_clk: snd_clk {
-		compatible = "fixed-clock";
+	pcm3168a_clk: pcm3168a_clk {
+		compatible = "gpio-mux-clock";
+		clocks = <&cs2000>, <&audio_clk_a>;
 		#clock-cells = <0>;
-		clock-frequency = <24576000>;
-		clock-output-names = "scki";
+		select-gpios = <&gpio_exp_75 13 GPIO_ACTIVE_HIGH>;
 	};
 
 	bt_reg: regulator-bt {
@@ -678,10 +672,9 @@
 			#sound-dai-cells = <1>;
 			compatible = "ti,pcm3168a";
 			reg = <0x44>;
-			clocks = <&snd_clk>;
+			clocks = <&pcm3168a_clk>;
 			clock-names = "scki";
 			tdm;
-			snd_clk_sel_gpio = <&gpio_exp_75 13 GPIO_ACTIVE_HIGH>; /* (U5) P15 */
 			VDD1-supply = <&codec_en_reg>;
 			VDD2-supply = <&codec_en_reg>;
 			VCCAD1-supply = <&codec_en_reg>;

@@ -90,6 +90,12 @@
 			output-high;
 			line-name = "OTG EXTLPn";
 		};
+		snd_rst {
+			gpio-hog;
+			gpios = <15 GPIO_ACTIVE_HIGH>;
+			output-high;
+			line-name = "pcm3168a reset";
+		};
 	};
 
 	gpio_exp_75: gpio@75 {
@@ -108,6 +114,7 @@
 		#size-cells = <0>;
 		reg = <0x71>;
 		reset-gpios = <&gpio5 3 GPIO_ACTIVE_LOW>;
+		i2c-mux-idle-disconnect;
 	};
 };
 
